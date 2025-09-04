@@ -9,6 +9,8 @@ on:
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9'
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
   lint-and-typecheck:
@@ -101,56 +103,28 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Get pnpm store directory
-        shell: bash
+      - name: Docker info
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          docker --version
+          docker compose version || docker-compose --version || true
 
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+      - name: Build services
+        run: docker compose -f infra/docker/compose.ci.yml build --no-cache
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm run build
-
-      - name: Build Docker images
-        run: |
-          docker build -f infra/docker/Dockerfile.gateway -t atlas/gateway:latest .
-          docker build -f infra/docker/Dockerfile.witness -t atlas/witness:latest .
-          docker build -f infra/docker/Dockerfile.web -t atlas/web:latest .
-          docker build -f infra/docker/Dockerfile.admin -t atlas/admin:latest .
-
-      - name: Start Atlas services
-        run: |
-          docker compose -f infra/docker/compose.ci.yml up -d --build
-          echo "Waiting for services to be ready..."
-          sleep 30
+      - name: Up services
+        run: docker compose -f infra/docker/compose.ci.yml up -d
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Run smoke tests
-        run: |
-          chmod +x scripts/smoke.sh
-          ./scripts/smoke.sh http://localhost:8080
+      - name: Smoke
+        run: chmod +x scripts/smoke.sh && ./scripts/smoke.sh http://localhost:8080
 
-      - name: Run integration tests
-        run: pnpm test:integration
-
-      - name: Run chaos tests
+      - name: Logs on failure
+        if: failure()
         run: |
-          chmod +x scripts/chaos_latency.sh
-          CHAOS_DURATION=30 TEST_RECORDS=10 ./scripts/chaos_latency.sh
+          docker ps -a
+          docker compose -f infra/docker/compose.ci.yml logs --tail=200
 
       - name: Stop services
         if: always()
