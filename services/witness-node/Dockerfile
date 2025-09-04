@@ -3,6 +3,7 @@ WORKDIR /app
 RUN corepack enable
 
 FROM base AS deps
+ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm -v && pnpm install --frozen-lockfile --prefer-offline
 

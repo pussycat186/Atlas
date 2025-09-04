@@ -7,6 +7,7 @@ RUN corepack enable
 
 # ---- deps ----
 FROM base AS deps
+ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml ./
 # if workspace: copy only gateway package + lock for partial install
 # (for simplicity, install in place)
