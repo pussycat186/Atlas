@@ -7,6 +7,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm -v && pnpm install --frozen-lockfile --prefer-offline
 
 FROM deps AS build
+ENV NODE_ENV=development
 COPY . .
 RUN pnpm -r build || pnpm build || true
 
