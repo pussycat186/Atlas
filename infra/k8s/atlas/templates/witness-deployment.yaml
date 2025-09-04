@@ -1,0 +1,98 @@
+{{- range $i := until (int .Values.witnesses.replicaCount) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "atlas.fullname" $ }}-witness-{{ add $i 1 }}
+  labels:
+    {{- include "atlas.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: witness
+    witness-id: w{{ add $i 1 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "atlas.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: witness
+      witness-id: w{{ add $i 1 }}
+  template:
+    metadata:
+      labels:
+        {{- include "atlas.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: witness
+        witness-id: w{{ add $i 1 }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "atlas.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: witness
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.global.imageRegistry }}/{{ $.Values.witnesses.image.repository }}:{{ $.Values.witnesses.image.tag | default $.Values.global.imageTag }}"
+          imagePullPolicy: {{ $.Values.witnesses.image.pullPolicy | default $.Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: {{ $.Values.env.NODE_ENV | quote }}
+            - name: LOG_LEVEL
+              value: {{ $.Values.env.LOG_LEVEL | quote }}
+            - name: PORT
+              value: "3001"
+            - name: WITNESS_ID
+              value: "w{{ add $i 1 }}"
+            - name: WITNESS_REGION
+              value: {{ index $.Values.witnessConfig.witnesses $i "region" | quote }}
+            - name: SECURITY_TRACK
+              value: {{ $.Values.witnessConfig.security_track | quote }}
+            - name: DATA_DIR
+              value: "/app/data"
+          livenessProbe:
+            httpGet:
+              path: /witness/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /witness/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml $.Values.witnesses.resources | nindent 12 }}
+          volumeMounts:
+            - name: witness-data
+              mountPath: /app/data
+          {{- with $.Values.witnesses.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.witnesses.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: witness-data
+          {{- if $.Values.witnesses.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "atlas.fullname" $ }}-witness-{{ add $i 1 }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with $.Values.witnesses.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{- end }}

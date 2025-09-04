@@ -1,0 +1,19 @@
+apiVersion: v2
+name: atlas
+description: Atlas Secure Fabric - Zero-crypto messaging and storage platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - messaging
+  - storage
+  - consensus
+  - blockchain
+  - distributed
+home: https://github.com/pussycat186/Atlas
+sources:
+  - https://github.com/pussycat186/Atlas
+maintainers:
+  - name: Atlas Team
+    email: team@atlas.dev
+dependencies: []

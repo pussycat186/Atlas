@@ -1,0 +1,166 @@
+# Atlas Helm Chart Values
+
+# Global configuration
+global:
+  imageRegistry: "atlas"
+  imageTag: "latest"
+  imagePullPolicy: IfNotPresent
+
+# Gateway service configuration
+gateway:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: atlas/gateway
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Witness nodes configuration
+witnesses:
+  enabled: true
+  replicaCount: 5
+  image:
+    repository: atlas/witness
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3001
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  nodeSelector: {}
+  tolerations: []
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - atlas-witness
+          topologyKey: kubernetes.io/hostname
+
+# Web application configuration
+web:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: atlas/web
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3003
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Admin dashboard configuration
+admin:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: atlas/admin
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3002
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: atlas.local
+      paths:
+        - path: /
+          pathType: Prefix
+        - path: /admin
+          pathType: Prefix
+  tls: []
+
+# Service monitor for Prometheus
+serviceMonitor:
+  enabled: false
+  namespace: ""
+  interval: 30s
+  scrapeTimeout: 10s
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+# Environment variables
+env:
+  NODE_ENV: production
+  LOG_LEVEL: info
+
+# Witness configuration
+witnessConfig:
+  total_witnesses: 5
+  quorum_size: 4
+  max_timestamp_skew_ms: 2000
+  security_track: "Z"
+  witnesses:
+    - witness_id: "w1"
+      region: "us-east-1"
+    - witness_id: "w2"
+      region: "us-west-2"
+    - witness_id: "w3"
+      region: "eu-west-1"
+    - witness_id: "w4"
+      region: "ap-southeast-1"
+    - witness_id: "w5"
+      region: "ap-northeast-1"

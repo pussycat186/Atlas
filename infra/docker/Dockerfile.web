@@ -1,0 +1,51 @@
+# Atlas Web App Dockerfile
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY packages/fabric-protocol/package.json ./packages/fabric-protocol/
+COPY packages/fabric-client/package.json ./packages/fabric-client/
+COPY apps/web/package.json ./apps/web/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Build the application
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build packages
+RUN pnpm build --filter=@atlas/fabric-protocol
+RUN pnpm build --filter=@atlas/fabric-client
+RUN pnpm build --filter=@atlas/web
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3003
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 atlas
+
+# Copy built application
+COPY --from=builder --chown=atlas:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=atlas:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=atlas:nodejs /app/apps/web/public ./apps/web/public
+
+USER atlas
+
+EXPOSE 3003
+
+CMD ["node", "apps/web/server.js"]
