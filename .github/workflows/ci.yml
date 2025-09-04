@@ -103,6 +103,19 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Restore dist artifacts from previous step (optional)
+        run: |
+          echo "(dist present in repo checkout)"
+
       - name: Docker info
         run: |
           docker --version

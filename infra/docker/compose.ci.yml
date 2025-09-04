@@ -1,14 +1,7 @@
-version: '3.8'
-
 services:
   w1:
     build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
     environment: [ WITNESS_ID=w1, PORT=8091 ]
-    healthcheck:
-      test: ["CMD", "node", "-e", "process.exit(0)"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
   w2:
     build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
     environment: [ WITNESS_ID=w2, PORT=8092 ]
