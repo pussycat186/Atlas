@@ -9,15 +9,15 @@ RUN corepack enable
 FROM base AS deps
 ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml ./
-# if workspace: copy only gateway package + lock for partial install
-# (for simplicity, install in place)
+# Install all dependencies including dev dependencies
 RUN corepack enable && pnpm -v && pnpm install --frozen-lockfile --prefer-offline
 
 # ---- build ----
 FROM deps AS build
 ENV NODE_ENV=development
 COPY . .
-RUN pnpm -r build || pnpm build || true
+# Build packages first, then services
+RUN pnpm run build || pnpm -r build || pnpm build || true
 
 # ---- runtime ----
 FROM node:20-alpine AS runtime

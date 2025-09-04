@@ -5,12 +5,14 @@ RUN corepack enable
 FROM base AS deps
 ENV NODE_ENV=development
 COPY package.json pnpm-lock.yaml ./
+# Install all dependencies including dev dependencies
 RUN corepack enable && pnpm -v && pnpm install --frozen-lockfile --prefer-offline
 
 FROM deps AS build
 ENV NODE_ENV=development
 COPY . .
-RUN pnpm -r build || pnpm build || true
+# Build packages first, then services
+RUN pnpm run build || pnpm -r build || pnpm build || true
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
