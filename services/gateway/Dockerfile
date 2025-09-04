@@ -7,7 +7,7 @@ RUN corepack enable
 
 # ---- deps ----
 FROM base AS deps
-COPY package.json pnpm-lock.yaml .npmrc* ./* . 2>/dev/null || true
+COPY package.json pnpm-lock.yaml ./
 # if workspace: copy only gateway package + lock for partial install
 # (for simplicity, install in place)
 RUN corepack enable && pnpm -v && pnpm install --frozen-lockfile --prefer-offline

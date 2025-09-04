@@ -3,7 +3,7 @@ WORKDIR /app
 RUN corepack enable
 
 FROM base AS deps
-COPY package.json pnpm-lock.yaml .npmrc* ./* . 2>/dev/null || true
+COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm -v && pnpm install --frozen-lockfile --prefer-offline
 
 FROM deps AS build
