@@ -24,8 +24,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY services/witness-node/package.json ./package.json
 COPY services/witness-node/dist ./dist
 # copy workspace packages manually
-RUN mkdir -p ./node_modules/@atlas
+RUN mkdir -p ./node_modules/@atlas/fabric-protocol
 COPY packages/fabric-protocol/package.json ./node_modules/@atlas/fabric-protocol/package.json
-COPY packages/fabric-protocol/dist ./node_modules/@atlas/fabric-protocol/
+COPY packages/fabric-protocol/dist ./node_modules/@atlas/fabric-protocol/dist
 EXPOSE 8091
 CMD ["node", "dist/server.js"]
