@@ -6,6 +6,8 @@ COPY services/gateway/package.json ./
 COPY services/gateway/dist ./dist
 # copy the full node_modules from the monorepo (includes external deps like fastify)
 COPY node_modules ./node_modules
+# copy the .pnpm directory for pnpm workspace dependencies
+COPY node_modules/.pnpm ./node_modules/.pnpm
 # copy workspace packages
 COPY packages/fabric-client/package.json ./node_modules/@atlas/fabric-client/package.json
 COPY packages/fabric-client/dist ./node_modules/@atlas/fabric-client/dist
