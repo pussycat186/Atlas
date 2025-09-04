@@ -132,13 +132,27 @@ export class WitnessServer {
       }
     });
 
-    // Get ledger as NDJSON (public mirror)
+    // Get ledger as NDJSON (public mirror) - streaming endpoint
     this.fastify.get('/ledger.ndjson', async (request, reply) => {
       try {
-        const ndjson = await this.witness.getLedger().exportAsNDJSON();
+        const { since } = request.query as { since?: string };
         
         reply.type('application/x-ndjson');
-        return ndjson;
+        reply.header('Cache-Control', 'no-cache');
+        reply.header('Connection', 'keep-alive');
+        
+        // Stream ledger entries
+        const entries = await this.witness.getLedger().readLedger({
+          since,
+        });
+
+        // Stream each entry as NDJSON
+        for (const entry of entries) {
+          const ndjsonLine = JSON.stringify(entry) + '\n';
+          reply.raw.write(ndjsonLine);
+        }
+        
+        reply.raw.end();
       } catch (error) {
         reply.code(500);
         return {

@@ -6,12 +6,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   ExclamationTriangleIcon, 
   CheckCircleIcon, 
   ClockIcon,
   ServerIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  ArrowRightIcon
 } from '@heroicons/react/24/outline';
 import { adminService, type SystemMetrics, type WitnessStatus } from '@/lib/admin-client';
 import { format } from 'date-fns';
@@ -199,25 +201,45 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="flex space-x-4">
-          <a
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link
             href="/conflicts"
-            className="btn-primary"
+            className="group p-4 border border-gray-200 rounded-lg hover:border-atlas-300 hover:shadow-md transition-all"
           >
-            View Conflicts
-          </a>
-          <a
-            href="/witnesses"
-            className="btn-secondary"
-          >
-            Witness Details
-          </a>
-          <a
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-gray-900">Conflict Management</h4>
+                <p className="text-sm text-gray-500">View and resolve conflicts</p>
+              </div>
+              <ArrowRightIcon className="w-5 h-5 text-gray-400 group-hover:text-atlas-600" />
+            </div>
+          </Link>
+          
+          <Link
             href="/metrics"
-            className="btn-secondary"
+            className="group p-4 border border-gray-200 rounded-lg hover:border-atlas-300 hover:shadow-md transition-all"
           >
-            Detailed Metrics
-          </a>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-gray-900">System Metrics</h4>
+                <p className="text-sm text-gray-500">Performance and health data</p>
+              </div>
+              <ArrowRightIcon className="w-5 h-5 text-gray-400 group-hover:text-atlas-600" />
+            </div>
+          </Link>
+          
+          <Link
+            href="/witnesses"
+            className="group p-4 border border-gray-200 rounded-lg hover:border-atlas-300 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-gray-900">Witness Details</h4>
+                <p className="text-sm text-gray-500">Individual witness status</p>
+              </div>
+              <ArrowRightIcon className="w-5 h-5 text-gray-400 group-hover:text-atlas-600" />
+            </div>
+          </Link>
         </div>
       </div>
     </div>

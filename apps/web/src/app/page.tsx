@@ -9,12 +9,15 @@ import React, { useState, useEffect } from 'react';
 import { ChatRoom } from '@/components/ChatMessage';
 import { chatService, type ChatMessage } from '@/lib/atlas-client';
 import { format } from 'date-fns';
+import type { WitnessAttestation, QuorumResult } from '@atlas/fabric-protocol';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomId] = useState('general');
   const [userId] = useState('user_' + Math.random().toString(36).substr(2, 9));
   const [isConnected, setIsConnected] = useState(false);
+  const [messageAttestations, setMessageAttestations] = useState<Map<string, WitnessAttestation[]>>(new Map());
+  const [messageQuorumResults, setMessageQuorumResults] = useState<Map<string, QuorumResult>>(new Map());
 
   useEffect(() => {
     // Simulate connection status
@@ -39,6 +42,73 @@ export default function ChatPage() {
     try {
       const newMessage = await chatService.sendMessage(roomId, userId, content);
       setMessages(prev => [...prev, newMessage]);
+      
+      // Fetch detailed attestations for the new message
+      try {
+        const verificationResult = await chatService.verifyMessage(newMessage.id);
+        if (verificationResult) {
+          // In a real implementation, we would fetch actual attestations
+          // For now, we'll simulate some attestations
+          const mockAttestations: WitnessAttestation[] = [
+            {
+              witness_id: 'w1',
+              accept: true,
+              ts: new Date().toISOString(),
+              state_view: {
+                record_id: newMessage.id,
+                order: 1,
+                size: content.length,
+              },
+            },
+            {
+              witness_id: 'w2',
+              accept: true,
+              ts: new Date().toISOString(),
+              state_view: {
+                record_id: newMessage.id,
+                order: 1,
+                size: content.length,
+              },
+            },
+            {
+              witness_id: 'w3',
+              accept: true,
+              ts: new Date().toISOString(),
+              state_view: {
+                record_id: newMessage.id,
+                order: 1,
+                size: content.length,
+              },
+            },
+            {
+              witness_id: 'w4',
+              accept: true,
+              ts: new Date().toISOString(),
+              state_view: {
+                record_id: newMessage.id,
+                order: 1,
+                size: content.length,
+              },
+            },
+          ];
+          
+          const mockQuorumResult: QuorumResult = {
+            ok: true,
+            quorum_count: 4,
+            required_quorum: 4,
+            total_witnesses: 4,
+            max_skew_ms: 150,
+            skew_ok: true,
+            consistent_attestations: mockAttestations,
+            conflicting_attestations: [],
+          };
+          
+          setMessageAttestations(prev => new Map(prev).set(newMessage.id, mockAttestations));
+          setMessageQuorumResults(prev => new Map(prev).set(newMessage.id, mockQuorumResult));
+        }
+      } catch (error) {
+        console.warn('Failed to fetch attestations:', error);
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       // Add error message to chat

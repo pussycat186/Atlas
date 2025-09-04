@@ -4,7 +4,7 @@
  */
 
 import {
-  Record,
+  Record as AtlasRecord,
   WitnessAttestation,
   QuorumResult,
   ConflictTicket,
@@ -53,9 +53,46 @@ export class AtlasFabricClient {
   }
 
   /**
-   * Verify a record's integrity by checking witness attestations
+   * Core API: verifyRecord with witness URLs, quorum, and delta parameters
    */
-  async verifyRecord(recordId: string): Promise<QuorumResult> {
+  async verifyRecord(
+    recordId: string, 
+    witnessUrls?: string[], 
+    quorum?: number, 
+    deltaMs?: number
+  ): Promise<QuorumResult> {
+    // Use provided parameters or fall back to config
+    const targetQuorum = quorum || this.config.quorum_size;
+    const targetDelta = deltaMs || this.config.max_timestamp_skew_ms;
+    const targetWitnesses = witnessUrls || this.config.witnesses.map(w => w.endpoint);
+
+    // Fetch attestations from specified witnesses
+    const attestations: WitnessAttestation[] = [];
+    
+    for (const witnessUrl of targetWitnesses) {
+      try {
+        const response = await fetch(`${witnessUrl}/witness/records/${recordId}`);
+        if (response.ok) {
+          const result = await response.json();
+          attestations.push(result.attestation);
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch attestation from ${witnessUrl}:`, error);
+      }
+    }
+
+    if (attestations.length === 0) {
+      throw new Error(`No attestations found for record ${recordId}`);
+    }
+
+    // Verify quorum with custom parameters
+    return this.verifyQuorumWithParams(attestations, targetQuorum, targetDelta);
+  }
+
+  /**
+   * Legacy verifyRecord method for backward compatibility
+   */
+  async verifyRecordLegacy(recordId: string): Promise<QuorumResult> {
     const response = await fetch(`${this.gatewayEndpoint}/api/records/${recordId}/verify`);
     
     if (!response.ok) {
@@ -109,7 +146,49 @@ export class AtlasFabricClient {
   }
 
   /**
-   * Verify quorum consensus from witness attestations
+   * Verify quorum consensus from witness attestations with custom parameters
+   */
+  verifyQuorumWithParams(
+    attestations: WitnessAttestation[], 
+    requiredQuorum: number, 
+    maxSkewMs: number
+  ): QuorumResult {
+    const acceptedAttestations = attestations.filter(a => a.accept);
+    const rejectedAttestations = attestations.filter(a => !a.accept);
+
+    // Check if we have enough accepted attestations for quorum
+    const quorumCount = acceptedAttestations.length;
+    const hasQuorum = quorumCount >= requiredQuorum;
+
+    // Check timestamp skew
+    const timestamps = acceptedAttestations.map(a => new Date(a.ts).getTime());
+    const minTs = Math.min(...timestamps);
+    const maxTs = Math.max(...timestamps);
+    const actualSkewMs = maxTs - minTs;
+    const skewOk = actualSkewMs <= maxSkewMs;
+
+    // Check for state consistency among accepted attestations
+    const consistentAttestations = this.findConsistentAttestations(acceptedAttestations);
+    const conflictingAttestations = acceptedAttestations.filter(
+      a => !consistentAttestations.some(ca => ca.witness_id === a.witness_id)
+    );
+
+    const ok = hasQuorum && skewOk && consistentAttestations.length >= requiredQuorum;
+
+    return {
+      ok,
+      quorum_count: consistentAttestations.length,
+      required_quorum: requiredQuorum,
+      total_witnesses: attestations.length,
+      max_skew_ms: actualSkewMs,
+      skew_ok: skewOk,
+      consistent_attestations: consistentAttestations,
+      conflicting_attestations: [...conflictingAttestations, ...rejectedAttestations],
+    };
+  }
+
+  /**
+   * Verify quorum consensus from witness attestations (using config defaults)
    */
   verifyQuorum(attestations: WitnessAttestation[]): QuorumResult {
     const acceptedAttestations = attestations.filter(a => a.accept);

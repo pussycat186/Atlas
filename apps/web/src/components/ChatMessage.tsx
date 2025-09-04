@@ -3,22 +3,30 @@
  * Displays individual chat messages with integrity status
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
+import { EyeIcon } from '@heroicons/react/24/outline';
 import { IntegrityBadge, IntegrityDetails } from './IntegrityBadge';
+import { WitnessAttestationsModal } from './WitnessAttestationsModal';
 import type { ChatMessage } from '@/lib/atlas-client';
+import type { WitnessAttestation, QuorumResult } from '@atlas/fabric-protocol';
 
 interface ChatMessageProps {
   message: ChatMessage;
   showIntegrityDetails?: boolean;
   className?: string;
+  attestations?: WitnessAttestation[];
+  quorumResult?: QuorumResult;
 }
 
 export function ChatMessageComponent({ 
   message, 
   showIntegrityDetails = false, 
-  className = '' 
+  className = '',
+  attestations = [],
+  quorumResult
 }: ChatMessageProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const formatTime = (timestamp: string) => {
     return format(new Date(timestamp), 'HH:mm:ss');
   };
@@ -34,10 +42,22 @@ export function ChatMessageComponent({
             {formatTime(message.timestamp)}
           </span>
         </div>
-        <IntegrityBadge 
-          status={message.integrity_status}
-          showDetails={false}
-        />
+        <div className="flex items-center space-x-2">
+          <IntegrityBadge 
+            status={message.integrity_status}
+            showDetails={false}
+          />
+          {attestations.length > 0 && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-atlas-500"
+              title="View witness attestations"
+            >
+              <EyeIcon className="w-3 h-3 mr-1" />
+              Attestations
+            </button>
+          )}
+        </div>
       </div>
       
       <div className="text-gray-800 mb-3">
@@ -51,6 +71,17 @@ export function ChatMessageComponent({
             <div>Timestamp Skew: {message.max_skew_ms}ms</div>
           )}
         </div>
+      )}
+
+      {/* Witness Attestations Modal */}
+      {attestations.length > 0 && quorumResult && (
+        <WitnessAttestationsModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          recordId={message.id}
+          attestations={attestations}
+          quorumResult={quorumResult}
+        />
       )}
     </div>
   );

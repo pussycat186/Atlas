@@ -63,10 +63,10 @@ export class GatewayServer {
       };
     });
 
-    // Submit record
+    // Submit record (primary endpoint)
     this.fastify.post<{
       Body: GatewayAPI['submitRecord']['body'];
-    }>('/api/records', async (request, reply) => {
+    }>('/record', async (request, reply) => {
       try {
         const { app, record_id, payload, meta } = request.body;
         
@@ -106,10 +106,10 @@ export class GatewayServer {
       }
     });
 
-    // Verify record
+    // Verify record (primary endpoint)
     this.fastify.get<{
       Params: GatewayAPI['verifyRecord']['params'];
-    }>('/api/records/:record_id/verify', async (request, reply) => {
+    }>('/verify/:record_id', async (request, reply) => {
       try {
         const { record_id } = request.params;
         
@@ -153,6 +153,78 @@ export class GatewayServer {
           message: error instanceof Error ? error.message : 'Unknown error',
         };
       }
+    });
+
+    // Legacy API endpoints for backward compatibility
+    this.fastify.post<{
+      Body: GatewayAPI['submitRecord']['body'];
+    }>('/api/records', async (request, reply) => {
+      // Redirect to primary endpoint
+      const { app, record_id, payload, meta } = request.body;
+      
+      const attestations = await this.witnessClient.submitToAllWitnesses(
+        app,
+        record_id,
+        payload,
+        meta
+      );
+
+      const quorumResult = this.quorumManager.verifyQuorum(attestations);
+
+      if (quorumResult.conflict_ticket) {
+        this.broadcastConflict(quorumResult.conflict_ticket);
+      }
+
+      return {
+        success: quorumResult.ok,
+        record_id,
+        attestations,
+        quorum_result: {
+          ok: quorumResult.ok,
+          quorum_count: quorumResult.quorum_count,
+          max_skew_ms: quorumResult.max_skew_ms,
+          conflict_ticket: quorumResult.conflict_ticket?.conflict_id,
+        },
+      };
+    });
+
+    this.fastify.get<{
+      Params: GatewayAPI['verifyRecord']['params'];
+    }>('/api/records/:record_id/verify', async (request, reply) => {
+      // Redirect to primary endpoint
+      const { record_id } = request.params;
+      
+      const attestations: any[] = [];
+      const witnesses = this.witnessClient.getConfig().witnesses;
+      
+      for (const witness of witnesses) {
+        try {
+          const record = await this.witnessClient.getWitnessRecord(witness.witness_id, record_id);
+          if (record) {
+            attestations.push(record.attestation);
+          }
+        } catch (error) {
+          console.warn(`Failed to get record from witness ${witness.witness_id}:`, error);
+        }
+      }
+
+      if (attestations.length === 0) {
+        reply.code(404);
+        return { error: 'Record not found' };
+      }
+
+      const quorumResult = this.quorumManager.verifyQuorum(attestations);
+
+      return {
+        record_id,
+        verified: quorumResult.ok,
+        attestations,
+        quorum_result: {
+          ok: quorumResult.ok,
+          quorum_count: quorumResult.quorum_count,
+          max_skew_ms: quorumResult.max_skew_ms,
+        },
+      };
     });
 
     // Get conflicts
