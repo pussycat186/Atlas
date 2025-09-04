@@ -123,7 +123,7 @@ export class WitnessClient {
   private async checkWitnessHealth(witness: WitnessConfig): Promise<void> {
     const response = await fetch(`${witness.endpoint}/witness/health`, {
       method: 'GET',
-      timeout: 5000, // 5 second timeout
+      signal: AbortSignal.timeout(5000), // 5 second timeout
     });
 
     if (!response.ok) {
@@ -177,7 +177,7 @@ export class WitnessClient {
   }> {
     const response = await fetch(`${witness.endpoint}/witness/info`, {
       method: 'GET',
-      timeout: 5000,
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
@@ -205,7 +205,7 @@ export class WitnessClient {
 
     const response = await fetch(`${witness.endpoint}/witness/ledger?${params}`, {
       method: 'GET',
-      timeout: 10000,
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
@@ -226,7 +226,7 @@ export class WitnessClient {
 
     const response = await fetch(`${witness.endpoint}/witness/records/${recordId}`, {
       method: 'GET',
-      timeout: 5000,
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {

@@ -3,7 +3,7 @@
  * HTTP API contracts for Gateway and Witness services
  */
 
-import { Record as AtlasRecord, WitnessAttestation, ConflictTicket, LedgerEntry } from './types';
+import { AtlasRecord, WitnessAttestation, ConflictTicket, LedgerEntry } from './types';
 
 // Gateway API endpoints
 export interface GatewayAPI {

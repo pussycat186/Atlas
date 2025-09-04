@@ -8,7 +8,7 @@ export * from './utils';
 
 // Re-export commonly used types
 export type {
-  Record,
+  AtlasRecord,
   WitnessAttestation,
   QuorumResult,
   ConflictTicket,

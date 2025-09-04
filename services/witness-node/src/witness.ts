@@ -5,7 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import {
-  Record,
+  AtlasRecord,
   WitnessAttestation,
   StateView,
   RecordMeta,
@@ -47,11 +47,11 @@ export class WitnessNode {
       // Validate the record
       const validation = this.validateRecord(app, recordId, payload, meta);
       if (!validation.valid) {
-        return this.createRejectionAttestation(recordId, validation.reason);
+        return this.createRejectionAttestation(recordId, validation.reason || 'Validation failed');
       }
 
       // Create the record
-      const record: Record = {
+      const record: AtlasRecord = {
         record_id: recordId,
         ts: new Date().toISOString(),
         app,
@@ -162,7 +162,7 @@ export class WitnessNode {
   /**
    * Calculate state hash for Track-L
    */
-  private calculateStateHash(record: Record): string {
+  private calculateStateHash(record: AtlasRecord): string {
     // Simple hash implementation for Track-L
     // In production, this would use a proper cryptographic hash
     const data = JSON.stringify({

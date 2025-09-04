@@ -275,7 +275,7 @@ export class GatewayServer {
       fastify.get('/ws', { websocket: true }, (connection, req) => {
         console.log('WebSocket connection established');
         
-        connection.socket.on('message', (message) => {
+        connection.socket.on('message', (message: any) => {
           try {
             const data = JSON.parse(message.toString());
             console.log('WebSocket message received:', data);
@@ -424,7 +424,7 @@ export class GatewayServer {
     };
 
     // Broadcast to all WebSocket connections
-    this.fastify.websocketServer?.clients.forEach((client) => {
+    this.fastify.websocketServer?.clients.forEach((client: any) => {
       if (client.readyState === 1) { // WebSocket.OPEN
         client.send(JSON.stringify({
           type: 'conflict_detected',

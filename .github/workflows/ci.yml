@@ -7,8 +7,8 @@ on:
     branches: [ main, develop ]
 
 env:
-  NODE_VERSION: '18'
-  PNPM_VERSION: '8'
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
 
 jobs:
   lint-and-typecheck:
@@ -24,7 +24,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -63,7 +63,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -84,10 +84,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
-        run: pnpm build
+        run: pnpm run build
 
       - name: Run unit tests
-        run: pnpm test:unit
+        run: pnpm -r test -- --ci --reporters=default
 
   integration-test:
     name: Integration Test
@@ -103,7 +103,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -124,7 +124,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
-        run: pnpm build
+        run: pnpm run build
 
       - name: Build Docker images
         run: |
@@ -135,14 +135,17 @@ jobs:
 
       - name: Start Atlas services
         run: |
-          docker-compose -f infra/docker/compose.ci.yml up -d
+          docker compose -f infra/docker/compose.ci.yml up -d --build
           echo "Waiting for services to be ready..."
           sleep 30
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Run smoke tests
         run: |
           chmod +x scripts/smoke.sh
-          ./scripts/smoke.sh
+          ./scripts/smoke.sh http://localhost:8080
 
       - name: Run integration tests
         run: pnpm test:integration
@@ -154,7 +157,7 @@ jobs:
 
       - name: Stop services
         if: always()
-        run: docker-compose -f infra/docker/compose.ci.yml down -v
+        run: docker compose -f infra/docker/compose.ci.yml down -v
 
   build:
     name: Build
@@ -170,7 +173,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -191,7 +194,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build all packages
-        run: pnpm build
+        run: pnpm run build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3

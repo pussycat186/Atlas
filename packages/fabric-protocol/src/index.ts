@@ -8,7 +8,7 @@ export * from './api';
 
 // Re-export commonly used types for convenience
 export type {
-  Record,
+  AtlasRecord,
   WitnessAttestation,
   ConflictTicket,
   QuorumResult,
