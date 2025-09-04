@@ -9,7 +9,7 @@ import websocket from '@fastify/websocket';
 import { v4 as uuidv4 } from 'uuid';
 import { QuorumManager } from './quorum';
 import { WitnessClient } from './witness-client';
-import { GatewayAPI, AdminAPI, WebSocketEvents } from '@atlas/fabric-protocol';
+import { GatewayAPI, AdminAPI, WebSocketEvents, FabricConfig, WitnessConfig } from '@atlas/fabric-protocol';
 
 export class GatewayServer {
   private fastify: FastifyInstance;
@@ -20,7 +20,7 @@ export class GatewayServer {
   constructor(port: number = 3000) {
     this.startTime = Date.now();
     this.quorumManager = new QuorumManager();
-    this.witnessClient = new WitnessClient();
+    this.witnessClient = new WitnessClient(this.createConfigFromEnv());
     
     this.fastify = Fastify({
       logger: {
@@ -36,6 +36,41 @@ export class GatewayServer {
 
     this.setupPlugins();
     this.setupRoutes();
+  }
+
+  /**
+   * Create configuration from environment variables
+   */
+  private createConfigFromEnv(): Partial<FabricConfig> {
+    const witnessesEnv = process.env.WITNESSES;
+    const quorumEnv = process.env.QUORUM;
+    const deltaEnv = process.env.DELTA_MS;
+
+    if (!witnessesEnv) {
+      console.log('No WITNESSES environment variable found, using default config');
+      return {};
+    }
+
+    const witnessEndpoints = witnessesEnv.split(',');
+    const witnesses: WitnessConfig[] = witnessEndpoints.map((endpoint, index) => {
+      const witnessId = `w${index + 1}`;
+      return {
+        witness_id: witnessId,
+        endpoint: endpoint.trim(),
+        region: 'docker',
+        active: true,
+      };
+    });
+
+    const config: Partial<FabricConfig> = {
+      witnesses,
+      total_witnesses: witnesses.length,
+      quorum_size: quorumEnv ? parseInt(quorumEnv) : 4,
+      max_timestamp_skew_ms: deltaEnv ? parseInt(deltaEnv) : 2000,
+    };
+
+    console.log('Created config from environment:', JSON.stringify(config, null, 2));
+    return config;
   }
 
   /**
