@@ -39,18 +39,18 @@ jobs:
       - name: Cosign verify (gateway)
         env: { COSIGN_EXPERIMENTAL: 1 }
         run: |
-          set -euo pipefail
           cosign verify \
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-            ghcr.io/${OWNER}/atlas-gateway@${{ steps.dig.outputs.gw }}
+            --certificate-identity-regexp="https://github.com/${{ github.repository_owner }}/$(basename $GITHUB_REPOSITORY)/\\.github/workflows/release\\.yml@refs/tags/.*" \
+            ghcr.io/${{ github.repository_owner }}/atlas-gateway@${{ steps.dig.outputs.gw }}
 
       - name: Cosign verify (witness)
         env: { COSIGN_EXPERIMENTAL: 1 }
         run: |
-          set -euo pipefail
           cosign verify \
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-            ghcr.io/${OWNER}/atlas-witness@${{ steps.dig.outputs.wt }}
+            --certificate-identity-regexp="https://github.com/${{ github.repository_owner }}/$(basename $GITHUB_REPOSITORY)/\\.github/workflows/release\\.yml@refs/tags/.*" \
+            ghcr.io/${{ github.repository_owner }}/atlas-witness@${{ steps.dig.outputs.wt }}
 
       - name: Note: SLSA verification skipped
         run: |
