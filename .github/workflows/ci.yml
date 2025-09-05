@@ -216,6 +216,14 @@ jobs:
     needs: docker-build
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install deps (pnpm)
+        run: pnpm install
+      - name: Build TS
+        run: pnpm run build
       - name: Compose up
         run: docker compose -f infra/docker/compose.ci.yml up -d
       - name: Wait for Gateway metrics
