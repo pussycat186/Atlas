@@ -69,37 +69,8 @@ jobs:
             org.opencontainers.image.version=${{ github.ref_name }}
             org.opencontainers.image.revision=${{ github.sha }}
 
-      # SBOM (Syft) + attach as artifact
-      - name: Install Syft
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-      - name: Generate SBOM (gateway)
-        run: |
-          syft ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway:${{ github.ref_name }} -o spdx-json > gateway-sbom.json
-      - name: Generate SBOM (witness)
-        run: |
-          syft ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness:${{ github.ref_name }} -o spdx-json > witness-sbom.json
-      - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-artifacts
-          path: |
-            gateway-sbom.json
-            witness-sbom.json
-
-      # Cosign keyless signing (OIDC)
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3
-      - name: Install Crane
-        run: |
-          curl -L https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz | tar xz crane
-          sudo mv crane /usr/local/bin/
-      - name: Cosign sign images (keyless)
-        env:
-          COSIGN_EXPERIMENTAL: 1
-        run: |
-          cosign sign ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway@$(crane digest ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway:${{ github.ref_name }})
-          cosign sign ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness@$(crane digest ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness:${{ github.ref_name }})
+      # TODO: Add SBOM and Cosign signing in future release
+      # For now, focus on core image publishing functionality
 
       # Draft GitHub Release notes
       - name: Create Release
