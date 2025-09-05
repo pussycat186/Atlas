@@ -278,6 +278,43 @@ jobs:
             services.json
             traces.json
 
+  insights-dash-smoke:
+    runs-on: ubuntu-latest
+    needs: insights-trace-smoke
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install deps (pnpm)
+        run: pnpm install
+      - name: Build TS
+        run: pnpm run build
+      - name: Compose up full insights
+        run: docker compose -f observability/docker-compose.insights.yml up -d --build
+      - name: Wait for otelcol + grafana
+        run: |
+          for i in {1..50}; do curl -fsS http://localhost:8889/metrics && break || sleep 3; done
+          for i in {1..50}; do curl -fsS http://localhost:3007/login && break || sleep 3; done
+      - name: Generate traffic
+        run: |
+          RID=$(date +%s)
+          curl -fsS -X POST http://localhost:8080/record -H 'content-type: application/json' -d "{\"payload\":\"dash-$RID\"}" || true
+          sleep 4
+      - name: Assert Prom metrics non-empty
+        run: curl -fsS http://localhost:8889/metrics | tee prom.txt && test -s prom.txt
+      - name: Assert Jaeger shows gateway service
+        run: curl -fsS 'http://localhost:16686/api/services' | tee services.json && grep -q 'atlas-gateway' services.json
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: insights-dash-snapshots
+          path: |
+            prom.txt
+            services.json
+
   sec-verify:
     name: Security Verify
     runs-on: ubuntu-latest
