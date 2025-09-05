@@ -4,7 +4,7 @@
  */
 
 import {
-  Record as AtlasRecord,
+  AtlasRecord,
   WitnessAttestation,
   QuorumResult,
   ConflictTicket,

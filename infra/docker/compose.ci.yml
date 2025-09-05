@@ -1,197 +1,25 @@
-version: '3.8'
-
 services:
-  # Atlas Gateway (CI)
+  w1:
+    build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
+    environment: [ WITNESS_ID=w1, PORT=8091 ]
+  w2:
+    build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
+    environment: [ WITNESS_ID=w2, PORT=8092 ]
+  w3:
+    build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
+    environment: [ WITNESS_ID=w3, PORT=8093 ]
+  w4:
+    build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
+    environment: [ WITNESS_ID=w4, PORT=8094 ]
+  w5:
+    build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
+    environment: [ WITNESS_ID=w5, PORT=8095 ]
+
   gateway:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.gateway
+    build: { context: ../../, dockerfile: services/gateway/Dockerfile }
     environment:
-      - NODE_ENV=test
-      - PORT=3000
-      - LOG_LEVEL=warn
-    depends_on:
-      - witness-1
-      - witness-2
-      - witness-3
-      - witness-4
-      - witness-5
-    networks:
-      - atlas-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Witness Node 1 (CI)
-  witness-1:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.witness
-    environment:
-      - NODE_ENV=test
-      - PORT=3001
-      - WITNESS_ID=w1
-      - WITNESS_REGION=us-east-1
-      - SECURITY_TRACK=Z
-      - DATA_DIR=/app/data
-      - LOG_LEVEL=warn
-    volumes:
-      - witness-1-data:/app/data
-    networks:
-      - atlas-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/witness/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Witness Node 2 (CI)
-  witness-2:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.witness
-    environment:
-      - NODE_ENV=test
-      - PORT=3001
-      - WITNESS_ID=w2
-      - WITNESS_REGION=us-west-2
-      - SECURITY_TRACK=Z
-      - DATA_DIR=/app/data
-      - LOG_LEVEL=warn
-    volumes:
-      - witness-2-data:/app/data
-    networks:
-      - atlas-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/witness/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Witness Node 3 (CI)
-  witness-3:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.witness
-    environment:
-      - NODE_ENV=test
-      - PORT=3001
-      - WITNESS_ID=w3
-      - WITNESS_REGION=eu-west-1
-      - SECURITY_TRACK=Z
-      - DATA_DIR=/app/data
-      - LOG_LEVEL=warn
-    volumes:
-      - witness-3-data:/app/data
-    networks:
-      - atlas-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/witness/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Witness Node 4 (CI)
-  witness-4:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.witness
-    environment:
-      - NODE_ENV=test
-      - PORT=3001
-      - WITNESS_ID=w4
-      - WITNESS_REGION=ap-southeast-1
-      - SECURITY_TRACK=Z
-      - DATA_DIR=/app/data
-      - LOG_LEVEL=warn
-    volumes:
-      - witness-4-data:/app/data
-    networks:
-      - atlas-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/witness/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Witness Node 5 (CI)
-  witness-5:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.witness
-    environment:
-      - NODE_ENV=test
-      - PORT=3001
-      - WITNESS_ID=w5
-      - WITNESS_REGION=ap-northeast-1
-      - SECURITY_TRACK=Z
-      - DATA_DIR=/app/data
-      - LOG_LEVEL=warn
-    volumes:
-      - witness-5-data:/app/data
-    networks:
-      - atlas-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/witness/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Web Application (CI)
-  web:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.web
-    environment:
-      - NODE_ENV=test
-      - PORT=3003
-      - NEXT_PUBLIC_GATEWAY_URL=http://gateway:3000
-    depends_on:
-      - gateway
-    networks:
-      - atlas-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3003"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Admin Dashboard (CI)
-  admin:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.admin
-    environment:
-      - NODE_ENV=test
-      - PORT=3002
-      - NEXT_PUBLIC_GATEWAY_URL=http://gateway:3000
-    depends_on:
-      - gateway
-    networks:
-      - atlas-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3002"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-volumes:
-  witness-1-data:
-  witness-2-data:
-  witness-3-data:
-  witness-4-data:
-  witness-5-data:
-
-networks:
-  atlas-network:
-    driver: bridge
+      - WITNESSES=http://w1:8091,http://w2:8092,http://w3:8093,http://w4:8094,http://w5:8095
+      - QUORUM=4
+      - DELTA_MS=2000
+    ports: ["8080:8080"]
+    depends_on: [w1, w2, w3, w4, w5]

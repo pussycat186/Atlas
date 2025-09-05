@@ -5,7 +5,7 @@
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { Record, WitnessAttestation, LedgerEntry } from '@atlas/fabric-protocol';
+import { AtlasRecord, WitnessAttestation, LedgerEntry } from '@atlas/fabric-protocol';
 
 export class WitnessLedger {
   private ledgerPath: string;
@@ -48,7 +48,7 @@ export class WitnessLedger {
    * Append a record to the ledger
    */
   async appendRecord(
-    record: Record,
+    record: AtlasRecord,
     attestation: WitnessAttestation
   ): Promise<void> {
     const ledgerEntry: LedgerEntry = {
