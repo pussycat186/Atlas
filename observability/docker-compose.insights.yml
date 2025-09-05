@@ -7,19 +7,31 @@ services:
       - "4317:4317"     # OTLP gRPC
       - "4318:4318"     # OTLP HTTP
 
+  otelcol:
+    image: otel/opentelemetry-collector:0.104.0
+    command: ["--config=/etc/otelcol/config.yml"]
+    volumes:
+      - ./otel-collector.yml:/etc/otelcol/config.yml:ro
+    ports:
+      - "8889:8889"   # Prometheus metrics from Collector
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - jaeger
+
   gateway:
     build:
       context: ..
       dockerfile: services/gateway/Dockerfile
     environment:
       OTEL_ENABLED: "1"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
       OTEL_SERVICE_NAME: "atlas-gateway"
       DEPLOYMENT_ENV: "ci"
     ports:
       - "8080:8080"
     depends_on:
-      - jaeger
+      - otelcol
 
   w1:
     build:
@@ -27,11 +39,11 @@ services:
       dockerfile: services/witness-node/Dockerfile
     environment:
       OTEL_ENABLED: "1"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
       OTEL_SERVICE_NAME: "atlas-w1"
       DEPLOYMENT_ENV: "ci"
       WITNESS_PORT: "8091"
     ports:
       - "8091:8091"
     depends_on:
-      - jaeger
+      - otelcol
