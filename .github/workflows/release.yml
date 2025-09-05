@@ -71,7 +71,8 @@ jobs:
 
       - name: Resolve digests (gateway & witness)
         uses: imjasonh/setup-crane@v0.4
-      - run: |
+      - name: Get digests
+        run: |
           echo "gw=$(crane digest ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ github.ref_name }})" >> $GITHUB_OUTPUT
           echo "wt=$(crane digest ghcr.io/${{ github.repository_owner }}/atlas-witness:${{ github.ref_name }})" >> $GITHUB_OUTPUT
         id: digests
