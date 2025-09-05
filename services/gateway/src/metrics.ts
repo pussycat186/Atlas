@@ -1,4 +1,10 @@
 import client from 'prom-client';
+import { trace, context } from '@opentelemetry/api';
+
+function getTraceId(): string | undefined {
+  const span = trace.getSpan(context.active());
+  return span?.spanContext().traceId;
+}
 
 export const registry = new client.Registry();
 
@@ -102,8 +108,9 @@ export const recordWitnessRequest = (witnessId: string, endpoint: string, durati
     endpoint, 
     status 
   });
+  const traceId = getTraceId();
   witnessRequestDuration.observe({ 
     witness_id: witnessId, 
     endpoint 
-  }, duration);
+  }, duration, traceId ? { trace_id: traceId } : undefined);
 };
