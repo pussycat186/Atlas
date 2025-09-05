@@ -1,0 +1,44 @@
+name: verify-release
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/workflows/verify-release.yml'
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      OWNER: ${{ github.repository_owner }}
+      TAG: ${{ github.event.release.tag_name || 'latest' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sigstore/cosign-installer@v3
+      - uses: imjasonh/setup-crane@v0.4
+      - name: Resolve digests
+        id: dig
+        run: |
+          echo "gw=$(crane digest ghcr.io/${OWNER}/atlas-gateway:${TAG})" >> $GITHUB_OUTPUT
+          echo "wt=$(crane digest ghcr.io/${OWNER}/atlas-witness:${TAG})" >> $GITHUB_OUTPUT
+      - name: cosign verify (gateway)
+        env: { COSIGN_EXPERIMENTAL: 1 }
+        run: cosign verify --certificate-oidc-issuer=https://token.actions.githubusercontent.com ghcr.io/${OWNER}/atlas-gateway@${{ steps.dig.outputs.gw }}
+      - name: cosign verify (witness)
+        env: { COSIGN_EXPERIMENTAL: 1 }
+        run: cosign verify --certificate-oidc-issuer=https://token.actions.githubusercontent.com ghcr.io/${OWNER}/atlas-witness@${{ steps.dig.outputs.wt }}
+      - name: SLSA provenance (gateway)
+        uses: slsa-framework/slsa-verifier/actions/verify-artifact@v2.6.0
+        with:
+          subject-name: ghcr.io/${{ env.OWNER }}/atlas-gateway
+          subject-digest: ${{ steps.dig.outputs.gw }}
+      - name: SLSA provenance (witness)
+        uses: slsa-framework/slsa-verifier/actions/verify-artifact@v2.6.0
+        with:
+          subject-name: ghcr.io/${{ env.OWNER }}/atlas-witness
+          subject-digest: ${{ steps.dig.outputs.wt }}
