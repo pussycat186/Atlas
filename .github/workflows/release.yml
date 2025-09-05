@@ -56,3 +56,13 @@ jobs:
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ github.ref_name }}
             org.opencontainers.image.revision=${{ github.sha }}
+      - name: SBOM (gateway)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway:${{ github.ref_name }}
+          format: spdx-json
+      - name: SBOM (witness)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness:${{ github.ref_name }}
+          format: spdx-json
