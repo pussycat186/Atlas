@@ -7,6 +7,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { WitnessNode } from './witness';
 import { WitnessAPI } from '@atlas/fabric-protocol';
+import { metricsMiddleware, exposeMetrics, recordAttestation, updateLedgerSize, recordLedgerOperation } from './metrics';
 
 export class WitnessServer {
   private fastify: FastifyInstance;
@@ -44,6 +45,12 @@ export class WitnessServer {
    * Setup API routes
    */
   private setupRoutes(): void {
+    // Add metrics middleware
+    this.fastify.addHook('preHandler', metricsMiddleware);
+
+    // Metrics endpoint
+    this.fastify.get('/metrics', exposeMetrics);
+
     // Health check
     this.fastify.get('/witness/health', async (request, reply) => {
       const health = await this.witness.getHealth();
@@ -59,6 +66,7 @@ export class WitnessServer {
     this.fastify.post<{
       Body: WitnessAPI['submitRecord']['body'];
     }>('/witness/record', async (request, reply) => {
+      const startTime = Date.now();
       try {
         const { app, record_id, payload, meta } = request.body;
         
@@ -69,8 +77,16 @@ export class WitnessServer {
           meta
         );
 
+        const duration = (Date.now() - startTime) / 1000;
+        recordAttestation(app, 'success', duration);
+        recordLedgerOperation('add_record');
+
         return attestation;
       } catch (error) {
+        const duration = (Date.now() - startTime) / 1000;
+        recordAttestation('unknown', 'error', duration);
+        recordLedgerOperation('error');
+        
         reply.code(500);
         return {
           error: 'Failed to process record',
@@ -90,6 +106,10 @@ export class WitnessServer {
           since,
           limit: limit ? parseInt(limit.toString()) : undefined,
         });
+
+        // Update ledger size metric
+        updateLedgerSize(entries.length);
+        recordLedgerOperation('read_ledger');
 
         return {
           entries,

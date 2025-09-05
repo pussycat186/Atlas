@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { QuorumManager } from './quorum';
 import { WitnessClient } from './witness-client';
 import { GatewayAPI, AdminAPI, WebSocketEvents, FabricConfig, WitnessConfig } from '@atlas/fabric-protocol';
+import { metricsMiddleware, exposeMetrics, recordQuorumAttempt, recordQuorumSuccess, recordQuorumFailure } from './metrics';
 
 export class GatewayServer {
   private fastify: FastifyInstance;
@@ -89,6 +90,12 @@ export class GatewayServer {
    * Setup API routes
    */
   private setupRoutes(): void {
+    // Add metrics middleware
+    this.fastify.addHook('preHandler', metricsMiddleware);
+
+    // Metrics endpoint
+    this.fastify.get('/metrics', exposeMetrics);
+
     // Health check
     this.fastify.get('/health', async (request, reply) => {
       return {
@@ -116,6 +123,14 @@ export class GatewayServer {
         // Verify quorum
         const quorumResult = this.quorumManager.verifyQuorum(attestations);
 
+        // Record quorum metrics
+        recordQuorumAttempt('success');
+        if (quorumResult.ok) {
+          recordQuorumSuccess(quorumResult.quorum_count);
+        } else {
+          recordQuorumFailure(quorumResult.conflict_ticket ? 'conflict' : 'insufficient_quorum');
+        }
+
         // Broadcast conflict if detected
         if (quorumResult.conflict_ticket) {
           this.broadcastConflict(quorumResult.conflict_ticket);
@@ -133,6 +148,8 @@ export class GatewayServer {
           },
         };
       } catch (error) {
+        recordQuorumAttempt('error');
+        recordQuorumFailure('internal_error');
         reply.code(500);
         return {
           error: 'Failed to submit record',

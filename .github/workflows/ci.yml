@@ -218,6 +218,64 @@ jobs:
           docker build -f services/gateway/Dockerfile -t test/gateway:pr .
           docker build -f services/witness-node/Dockerfile -t test/witness:pr .
 
+  observability-smoke:
+    name: Observability Smoke Test
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Start Atlas stack
+        run: |
+          docker compose -f infra/docker/compose.ci.yml up -d
+          sleep 30
+
+      - name: Wait for metrics endpoints
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8080/metrics >/dev/null; then
+              echo "Gateway metrics endpoint ready"
+              break
+            fi
+            echo "Waiting for gateway metrics... ($i/30)"
+            sleep 2
+          done
+          
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8091/metrics >/dev/null; then
+              echo "Witness metrics endpoint ready"
+              break
+            fi
+            echo "Waiting for witness metrics... ($i/30)"
+            sleep 2
+          done
+
+      - name: Validate metrics format
+        run: |
+          echo "=== Gateway Metrics ==="
+          curl -fsS http://localhost:8080/metrics | head -20
+          
+          echo "=== Witness Metrics ==="
+          curl -fsS http://localhost:8091/metrics | head -20
+          
+          echo "=== Validating Prometheus format ==="
+          curl -fsS http://localhost:8080/metrics | grep -E "^(http_requests_total|quorum_|witness_)" | head -10
+          curl -fsS http://localhost:8091/metrics | grep -E "^(http_requests_total|witness_attestations_total|witness_ledger_size)" | head -10
+
+      - name: Test metrics endpoints
+        run: |
+          # Test that metrics endpoints return valid Prometheus format
+          curl -fsS http://localhost:8080/metrics | grep -q "http_requests_total" || (echo "Gateway metrics missing http_requests_total" && exit 1)
+          curl -fsS http://localhost:8080/metrics | grep -q "quorum_" || (echo "Gateway metrics missing quorum metrics" && exit 1)
+          curl -fsS http://localhost:8091/metrics | grep -q "witness_attestations_total" || (echo "Witness metrics missing attestations" && exit 1)
+          curl -fsS http://localhost:8091/metrics | grep -q "witness_ledger_size" || (echo "Witness metrics missing ledger size" && exit 1)
+          echo "✅ All metrics endpoints validated successfully"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose -f infra/docker/compose.ci.yml down -v
+
   sec-verify:
     name: Security Verify
     runs-on: ubuntu-latest
