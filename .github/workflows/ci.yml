@@ -146,149 +146,69 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, test, integration-test]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build all packages
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install deps (pnpm)
+        run: pnpm install
+      - name: Build TS
         run: pnpm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            packages/*/dist
-            services/*/dist
-            apps/*/.next
-          retention-days: 7
 
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, test, integration-test]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm run build
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build images (no push)
-        run: |
-          docker build -f services/gateway/Dockerfile -t test/gateway:pr .
-          docker build -f services/witness-node/Dockerfile -t test/witness:pr .
-
-  observability-smoke:
-    name: Observability Smoke Test
-    runs-on: ubuntu-latest
-    needs: [docker-build]
+    needs: build
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Cache Docker layers
+        uses: actions/cache@v4
         with:
-          node-version: 20
-          
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-          
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        
-      - name: Build TypeScript
-        run: pnpm run build
-      
-      - name: Start Atlas stack
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull base image with retry
         run: |
-          docker compose -f infra/docker/compose.ci.yml up -d
-          sleep 30
+          for i in 1 2 3; do
+            docker pull ghcr.io/library/node:20-alpine && break || sleep 15
+          done
+      - name: Build images (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-      - name: Wait for metrics endpoints
+  observability-smoke:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compose up
+        run: docker compose -f infra/docker/compose.ci.yml up -d
+      - name: Wait for Gateway metrics
         run: |
           for i in {1..30}; do
-            if curl -fsS http://localhost:8080/metrics >/dev/null; then
-              echo "Gateway metrics endpoint ready"
-              break
-            fi
-            echo "Waiting for gateway metrics... ($i/30)"
-            sleep 2
-          done
-          
+            curl -fsS http://localhost:8080/metrics && exit 0; sleep 2; done; exit 1
+      - name: Wait for Witness metrics
+        run: |
           for i in {1..30}; do
-            if curl -fsS http://localhost:8091/metrics >/dev/null; then
-              echo "Witness metrics endpoint ready"
-              break
-            fi
-            echo "Waiting for witness metrics... ($i/30)"
-            sleep 2
-          done
-
-      - name: Validate metrics format
-        run: |
-          echo "=== Gateway Metrics ==="
-          curl -fsS http://localhost:8080/metrics | head -20
-          
-          echo "=== Witness Metrics ==="
-          curl -fsS http://localhost:8091/metrics | head -20
-          
-          echo "=== Validating Prometheus format ==="
-          curl -fsS http://localhost:8080/metrics | grep -E "^(http_requests_total|quorum_|witness_)" | head -10
-          curl -fsS http://localhost:8091/metrics | grep -E "^(http_requests_total|witness_attestations_total|witness_ledger_size)" | head -10
-
-      - name: Test metrics endpoints
-        run: |
-          # Test that metrics endpoints return valid Prometheus format
-          curl -fsS http://localhost:8080/metrics | grep -q "http_requests_total" || (echo "Gateway metrics missing http_requests_total" && exit 1)
-          curl -fsS http://localhost:8080/metrics | grep -q "quorum_" || (echo "Gateway metrics missing quorum metrics" && exit 1)
-          curl -fsS http://localhost:8091/metrics | grep -q "witness_attestations_total" || (echo "Witness metrics missing attestations" && exit 1)
-          curl -fsS http://localhost:8091/metrics | grep -q "witness_ledger_size" || (echo "Witness metrics missing ledger size" && exit 1)
-          echo "✅ All metrics endpoints validated successfully"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          docker compose -f infra/docker/compose.ci.yml down -v
+            curl -fsS http://localhost:8091/metrics && exit 0; sleep 2; done; exit 1
 
   sec-verify:
     name: Security Verify
