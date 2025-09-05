@@ -69,8 +69,9 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
-      - name: Resolve digests (gateway & witness)
+      - name: Setup crane
         uses: imjasonh/setup-crane@v0.4
+
       - name: Get digests
         run: |
           echo "gw=$(crane digest ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ github.ref_name }})" >> $GITHUB_OUTPUT
