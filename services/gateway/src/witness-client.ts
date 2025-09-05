@@ -9,12 +9,22 @@ import {
   FabricConfig,
   DEFAULT_FABRIC_CONFIG
 } from '@atlas/fabric-protocol';
+import { recordWitnessRequest } from './metrics';
 
 export class WitnessClient {
   private config: FabricConfig;
 
   constructor(config?: Partial<FabricConfig>) {
     this.config = { ...DEFAULT_FABRIC_CONFIG, ...config };
+  }
+
+  /**
+   * Get witness URLs for tracing
+   */
+  getWitnessUrls(): string[] {
+    return this.config.witnesses
+      .filter(w => w.active)
+      .map(w => w.endpoint);
   }
 
   /**
@@ -62,6 +72,7 @@ export class WitnessClient {
     payload: string,
     meta: Record<string, any>
   ): Promise<WitnessAttestation> {
+    const startTime = Date.now();
     const response = await fetch(`${witness.endpoint}/witness/record`, {
       method: 'POST',
       headers: {
@@ -74,6 +85,9 @@ export class WitnessClient {
         meta,
       }),
     });
+
+    const duration = (Date.now() - startTime) / 1000;
+    recordWitnessRequest(witness.witness_id, '/witness/record', duration, response.ok ? 'success' : 'error');
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -121,10 +135,14 @@ export class WitnessClient {
    * Check health of a specific witness
    */
   private async checkWitnessHealth(witness: WitnessConfig): Promise<void> {
+    const startTime = Date.now();
     const response = await fetch(`${witness.endpoint}/witness/health`, {
       method: 'GET',
       signal: AbortSignal.timeout(5000), // 5 second timeout
     });
+
+    const duration = (Date.now() - startTime) / 1000;
+    recordWitnessRequest(witness.witness_id, '/witness/health', duration, response.ok ? 'success' : 'error');
 
     if (!response.ok) {
       throw new Error(`Health check failed: ${response.status}`);

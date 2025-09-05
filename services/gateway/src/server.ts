@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { QuorumManager } from './quorum';
 import { WitnessClient } from './witness-client';
 import { GatewayAPI, AdminAPI, WebSocketEvents, FabricConfig, WitnessConfig } from '@atlas/fabric-protocol';
+import { metricsMiddleware, exposeMetrics, recordQuorumAttempt, recordQuorumSuccess, recordQuorumFailure } from './metrics';
+import { context, trace } from '@opentelemetry/api';
 
 export class GatewayServer {
   private fastify: FastifyInstance;
@@ -89,6 +91,12 @@ export class GatewayServer {
    * Setup API routes
    */
   private setupRoutes(): void {
+    // Add metrics middleware
+    this.fastify.addHook('preHandler', metricsMiddleware);
+
+    // Metrics endpoint
+    this.fastify.get('/metrics', exposeMetrics);
+
     // Health check
     this.fastify.get('/health', async (request, reply) => {
       return {
@@ -102,43 +110,74 @@ export class GatewayServer {
     this.fastify.post<{
       Body: GatewayAPI['submitRecord']['body'];
     }>('/record', async (request, reply) => {
-      try {
-        const { app, record_id, payload, meta } = request.body;
-        
-        // Submit to all witnesses
-        const attestations = await this.witnessClient.submitToAllWitnesses(
-          app,
-          record_id,
-          payload,
-          meta
-        );
+      const tracer = trace.getTracer('atlas-gateway');
+      const witnessUrls = this.witnessClient.getWitnessUrls();
+      const quorum = this.quorumManager.getRequiredQuorum();
+      
+      return await tracer.startActiveSpan('gateway.record', async (span) => {
+        try {
+          const { app, record_id, payload, meta } = request.body;
+          
+          span.setAttribute('atlas.quorum.required', String(quorum));
+          span.setAttribute('atlas.witness.count', String(witnessUrls.length));
+          span.setAttribute('atlas.record.app', app);
+          span.setAttribute('atlas.record.id', record_id);
+          
+          // Submit to all witnesses
+          const attestations = await this.witnessClient.submitToAllWitnesses(
+            app,
+            record_id,
+            payload,
+            meta
+          );
 
-        // Verify quorum
-        const quorumResult = this.quorumManager.verifyQuorum(attestations);
+          // Verify quorum
+          const quorumResult = this.quorumManager.verifyQuorum(attestations);
 
-        // Broadcast conflict if detected
-        if (quorumResult.conflict_ticket) {
-          this.broadcastConflict(quorumResult.conflict_ticket);
+          // Record quorum metrics
+          recordQuorumAttempt('success');
+          if (quorumResult.ok) {
+            recordQuorumSuccess(quorumResult.quorum_count);
+          } else {
+            recordQuorumFailure(quorumResult.conflict_ticket ? 'conflict' : 'insufficient_quorum');
+          }
+
+          span.setAttribute('atlas.quorum.ok', String(quorumResult.ok));
+          span.setAttribute('atlas.quorum.count', String(quorumResult.quorum_count));
+          span.setAttribute('atlas.attestations.count', String(attestations.length));
+
+          // Broadcast conflict if detected
+          if (quorumResult.conflict_ticket) {
+            this.broadcastConflict(quorumResult.conflict_ticket);
+            span.setAttribute('atlas.conflict.detected', 'true');
+            span.setAttribute('atlas.conflict.id', quorumResult.conflict_ticket.conflict_id);
+          }
+
+          span.end();
+          return {
+            success: quorumResult.ok,
+            record_id,
+            attestations,
+            quorum_result: {
+              ok: quorumResult.ok,
+              quorum_count: quorumResult.quorum_count,
+              max_skew_ms: quorumResult.max_skew_ms,
+              conflict_ticket: quorumResult.conflict_ticket?.conflict_id,
+            },
+          };
+        } catch (error) {
+          recordQuorumAttempt('error');
+          recordQuorumFailure('internal_error');
+          span.recordException(error as Error);
+          span.setStatus({ code: 2, message: String((error as Error)?.message || error) });
+          span.end();
+          reply.code(500);
+          return {
+            error: 'Failed to submit record',
+            message: error instanceof Error ? error.message : 'Unknown error',
+          };
         }
-
-        return {
-          success: quorumResult.ok,
-          record_id,
-          attestations,
-          quorum_result: {
-            ok: quorumResult.ok,
-            quorum_count: quorumResult.quorum_count,
-            max_skew_ms: quorumResult.max_skew_ms,
-            conflict_ticket: quorumResult.conflict_ticket?.conflict_id,
-          },
-        };
-      } catch (error) {
-        reply.code(500);
-        return {
-          error: 'Failed to submit record',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        };
-      }
+      });
     });
 
     // Verify record (primary endpoint)

@@ -2,18 +2,23 @@ services:
   w1:
     build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
     environment: [ WITNESS_ID=w1, PORT=8091 ]
+    ports: ["8091:8091"]
   w2:
     build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
     environment: [ WITNESS_ID=w2, PORT=8092 ]
+    ports: ["8092:8092"]
   w3:
     build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
     environment: [ WITNESS_ID=w3, PORT=8093 ]
+    ports: ["8093:8093"]
   w4:
     build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
     environment: [ WITNESS_ID=w4, PORT=8094 ]
+    ports: ["8094:8094"]
   w5:
     build: { context: ../../, dockerfile: services/witness-node/Dockerfile }
     environment: [ WITNESS_ID=w5, PORT=8095 ]
+    ports: ["8095:8095"]
 
   gateway:
     build: { context: ../../, dockerfile: services/gateway/Dockerfile }

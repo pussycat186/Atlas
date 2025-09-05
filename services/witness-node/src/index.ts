@@ -3,6 +3,9 @@
  * Main entry point for the witness node service
  */
 
+import { initTracing } from './tracing';
+void initTracing();
+
 import { WitnessNode } from './witness';
 import { WitnessServer } from './server';
 import * as path from 'path';

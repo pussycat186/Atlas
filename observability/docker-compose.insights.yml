@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    ports:
+      - "16686:16686"   # UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: services/gateway/Dockerfile
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+      OTEL_SERVICE_NAME: "atlas-gateway"
+      DEPLOYMENT_ENV: "ci"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - jaeger
+
+  w1:
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+      OTEL_SERVICE_NAME: "atlas-w1"
+      DEPLOYMENT_ENV: "ci"
+      WITNESS_PORT: "8091"
+    ports:
+      - "8091:8091"
+    depends_on:
+      - jaeger

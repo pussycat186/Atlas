@@ -3,6 +3,9 @@
  * Main entry point for the gateway service
  */
 
+import { initTracing } from './tracing';
+void initTracing();
+
 import { GatewayServer } from './server';
 
 async function main() {
