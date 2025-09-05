@@ -9,7 +9,7 @@ services:
 
   gateway:
     build:
-      context: .
+      context: ..
       dockerfile: services/gateway/Dockerfile
     environment:
       OTEL_ENABLED: "1"
@@ -23,7 +23,7 @@ services:
 
   w1:
     build:
-      context: .
+      context: ..
       dockerfile: services/witness-node/Dockerfile
     environment:
       OTEL_ENABLED: "1"

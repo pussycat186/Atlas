@@ -2,7 +2,7 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY services/witness-node/package.json ./package.json
-RUN echo '{"dependencies":{"fastify":"^4.24.3","@fastify/cors":"^8.4.0","pino":"^8.17.0","pino-pretty":"^10.3.1","fs-extra":"^11.2.0","uuid":"^9.0.1","prom-client":"^15.1.3"}}' > temp-package.json && \
+RUN echo '{"dependencies":{"fastify":"^4.24.3","@fastify/cors":"^8.4.0","pino":"^8.17.0","pino-pretty":"^10.3.1","fs-extra":"^11.2.0","uuid":"^9.0.1","prom-client":"^15.1.3","@opentelemetry/api":"^1.9.0","@opentelemetry/sdk-node":"^0.204.0","@opentelemetry/resources":"^2.1.0","@opentelemetry/semantic-conventions":"^1.37.0","@opentelemetry/auto-instrumentations-node":"^0.62.2","@opentelemetry/exporter-trace-otlp-http":"^0.204.0","@opentelemetry/instrumentation-http":"^0.204.0","@opentelemetry/instrumentation-fastify":"^0.48.0","@opentelemetry/instrumentation-undici":"^0.14.0"}}' > temp-package.json && \
     mv temp-package.json package.json
 RUN npm install --only=production
 
