@@ -1,30 +1,14 @@
-# ---------- base ----------
-FROM node:20-alpine AS base
-WORKDIR /app
-ENV NODE_ENV=production
-RUN corepack enable
-
-# ---------- deps ----------
-FROM base AS deps
-# copy service package.json for dependency installation
-COPY services/gateway/package.json ./package.json
-# create a simple package.json with only external dependencies (no workspace deps)
-RUN echo '{"dependencies":{"fastify":"^4.24.3","@fastify/cors":"^8.4.0","@fastify/websocket":"^8.3.1","pino":"^8.17.0","pino-pretty":"^10.3.1","uuid":"^9.0.1"}}' > temp-package.json && \
-    mv temp-package.json package.json
-# install only external dependencies with npm (simpler than pnpm for production)
-RUN npm install --only=production
-
-# ---------- runtime ----------
+# ---------- runtime-only (dist-first) ----------
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-# copy external dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-# copy built service files
-COPY services/gateway/package.json ./package.json
+LABEL org.opencontainers.image.source="https://github.com/pussycat186/Atlas" \
+      org.opencontainers.image.title="atlas-gateway" \
+      org.opencontainers.image.description="Atlas Gateway (quorum orchestrator)" \
+      org.opencontainers.image.licenses="MIT"
+COPY services/gateway/package.json ./
 COPY services/gateway/dist ./dist
-# copy workspace packages manually
-RUN mkdir -p ./node_modules/@atlas/fabric-client ./node_modules/@atlas/fabric-protocol
+# workspace deps (compiled output already bundled via dist-first build)
 COPY packages/fabric-client/package.json ./node_modules/@atlas/fabric-client/package.json
 COPY packages/fabric-client/dist ./node_modules/@atlas/fabric-client/dist
 COPY packages/fabric-protocol/package.json ./node_modules/@atlas/fabric-protocol/package.json

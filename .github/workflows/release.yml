@@ -1,0 +1,96 @@
+name: release
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+permissions:
+  contents: write
+  packages: write
+  id-token: write  # for keyless signing
+  actions: read
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_OWNER: ${{ github.repository_owner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node / pnpm build (dist-first)
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'pnpm' }
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+
+      # Enable buildx + provenance
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Multi-arch build & push (linux/amd64, linux/arm64)
+      - name: Build & Push gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/gateway/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: true
+          tags: |
+            ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway:${{ github.ref_name }}
+            ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway:latest
+          labels: |
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build & Push witness
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/witness-node/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: true
+          tags: |
+            ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness:${{ github.ref_name }}
+            ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness:latest
+          labels: |
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      # SBOM (Syft) + attach as artifact
+      - name: Generate SBOM (gateway)
+        uses: anchore/sbom-action@v0
+        with: { image: ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway:${{ github.ref_name }}, format: spdx-json }
+      - name: Generate SBOM (witness)
+        uses: anchore/sbom-action@v0
+        with: { image: ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness:${{ github.ref_name }}, format: spdx-json }
+
+      # Cosign keyless signing (OIDC)
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Cosign sign images (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway@$(crane digest ghcr.io/${{ env.IMAGE_OWNER }}/atlas-gateway:${{ github.ref_name }})
+          cosign sign ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness@$(crane digest ghcr.io/${{ env.IMAGE_OWNER }}/atlas-witness:${{ github.ref_name }})
+
+      # Draft GitHub Release notes
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          draft: false
+          make_latest: true
