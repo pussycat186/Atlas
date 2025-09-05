@@ -3,7 +3,11 @@
 > **Zero-crypto messaging and storage platform with multi-witness quorum consensus**
 
 [![CI](https://github.com/pussycat186/Atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/pussycat186/Atlas/actions/workflows/ci.yml)
-[![Deploy](https://github.com/pussycat186/Atlas/actions/workflows/deploy.yml/badge.svg)](https://github.com/pussycat186/Atlas/actions/workflows/deploy.yml)
+[![Release](https://img.shields.io/github/v/release/pussycat186/Atlas)](https://github.com/pussycat186/Atlas/releases)
+[![Gateway](https://img.shields.io/badge/ghcr-atlas--gateway-blue)](https://github.com/pussycat186/Atlas/pkgs/container/atlas-gateway)
+[![Witness](https://img.shields.io/badge/ghcr-atlas--witness-blue)](https://github.com/pussycat186/Atlas/pkgs/container/atlas-witness)
+[![SBOM](https://img.shields.io/badge/security-SBOM-green)](https://github.com/pussycat186/Atlas/actions/workflows/release.yml)
+[![Provenance](https://img.shields.io/badge/security-provenance-green)](https://github.com/pussycat186/Atlas/actions/workflows/verify-release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🎯 Mission
