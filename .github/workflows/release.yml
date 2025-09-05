@@ -69,29 +69,22 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
-      - name: Setup crane
+      - name: Install crane
         uses: imjasonh/setup-crane@v0.4
 
-      - name: Get digests
-        run: |
-          echo "gw=$(crane digest ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ github.ref_name }})" >> $GITHUB_OUTPUT
-          echo "wt=$(crane digest ghcr.io/${{ github.repository_owner }}/atlas-witness:${{ github.ref_name }})" >> $GITHUB_OUTPUT
+      - name: Resolve digests (gateway & witness)
         id: digests
+        run: |
+          set -euo pipefail
+          echo "gw=$(crane digest ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ github.ref_name }})" >> "$GITHUB_OUTPUT"
+          echo "wt=$(crane digest ghcr.io/${{ github.repository_owner }}/atlas-witness:${{ github.ref_name }})" >> "$GITHUB_OUTPUT"
 
-      - name: Cosign sign (gateway: tag + digest)
+      - name: Cosign sign (tag + digest)
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign sign --yes \
-            ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ github.ref_name }}
-          cosign sign --yes \
-            ghcr.io/${{ github.repository_owner }}/atlas-gateway@${{ steps.digests.outputs.gw }}
-
-      - name: Cosign sign (witness: tag + digest)
-        env:
-          COSIGN_EXPERIMENTAL: 1
-        run: |
-          cosign sign --yes \
-            ghcr.io/${{ github.repository_owner }}/atlas-witness:${{ github.ref_name }}
-          cosign sign --yes \
-            ghcr.io/${{ github.repository_owner }}/atlas-witness@${{ steps.digests.outputs.wt }}
+          set -euo pipefail
+          cosign sign --yes ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ github.ref_name }}
+          cosign sign --yes ghcr.io/${{ github.repository_owner }}/atlas-gateway@${{ steps.digests.outputs.gw }}
+          cosign sign --yes ghcr.io/${{ github.repository_owner }}/atlas-witness:${{ github.ref_name }}
+          cosign sign --yes ghcr.io/${{ github.repository_owner }}/atlas-witness@${{ steps.digests.outputs.wt }}
