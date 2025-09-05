@@ -70,7 +70,6 @@ jobs:
         uses: sigstore/cosign-installer@v3
 
       - name: Resolve digests (gateway & witness)
-        id: dig
         uses: imjasonh/setup-crane@v0.4
       - run: |
           echo "gw=$(crane digest ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ github.ref_name }})" >> $GITHUB_OUTPUT
