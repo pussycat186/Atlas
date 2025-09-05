@@ -3,7 +3,7 @@
  * Zero-crypto messaging and storage platform with multi-witness quorum
  */
 
-export interface Record {
+export interface AtlasRecord {
   /** Unique identifier for this record */
   record_id: string;
   /** Timestamp when record was created (ISO 8601) */
@@ -116,7 +116,7 @@ export interface QuorumResult {
 
 export interface LedgerEntry {
   /** Record data */
-  record: Record;
+  record: AtlasRecord;
   /** Witness attestation */
   attestation: WitnessAttestation;
   /** Timestamp when added to ledger */

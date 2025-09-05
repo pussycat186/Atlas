@@ -11,7 +11,7 @@ async function main() {
   // Get configuration from environment variables
   const witnessId = process.env.WITNESS_ID || 'w1';
   const region = process.env.WITNESS_REGION || 'us-east-1';
-  const port = parseInt(process.env.PORT || '3001');
+  const port = parseInt(process.env.PORT || '8091');
   const securityTrack = (process.env.SECURITY_TRACK as 'Z' | 'L') || 'Z';
   
   // Setup ledger paths
