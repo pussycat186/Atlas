@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: atlas-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - atlas-observability
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: atlas-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/atlas-dashboard.json:/var/lib/grafana/dashboards/atlas-dashboard.json
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - atlas-observability
+
+  # Connect to the main Atlas network
+  gateway:
+    image: ghcr.io/pussycat186/atlas-gateway:latest
+    container_name: atlas-gateway-obs
+    ports:
+      - "8080:8080"
+    environment:
+      - WITNESSES=w1:8091,w2:8092,w3:8093,w4:8094,w5:8095
+      - QUORUM=4
+      - DELTA_MS=2000
+    networks:
+      - atlas-observability
+      - atlas-main
+
+  w1:
+    image: ghcr.io/pussycat186/atlas-witness:latest
+    container_name: atlas-witness-1-obs
+    ports:
+      - "8091:8091"
+    environment:
+      - WITNESS_ID=w1
+      - PORT=8091
+    networks:
+      - atlas-observability
+      - atlas-main
+
+  w2:
+    image: ghcr.io/pussycat186/atlas-witness:latest
+    container_name: atlas-witness-2-obs
+    ports:
+      - "8092:8091"
+    environment:
+      - WITNESS_ID=w2
+      - PORT=8091
+    networks:
+      - atlas-observability
+      - atlas-main
+
+  w3:
+    image: ghcr.io/pussycat186/atlas-witness:latest
+    container_name: atlas-witness-3-obs
+    ports:
+      - "8093:8091"
+    environment:
+      - WITNESS_ID=w3
+      - PORT=8091
+    networks:
+      - atlas-observability
+      - atlas-main
+
+  w4:
+    image: ghcr.io/pussycat186/atlas-witness:latest
+    container_name: atlas-witness-4-obs
+    ports:
+      - "8094:8091"
+    environment:
+      - WITNESS_ID=w4
+      - PORT=8091
+    networks:
+      - atlas-observability
+      - atlas-main
+
+  w5:
+    image: ghcr.io/pussycat186/atlas-witness:latest
+    container_name: atlas-witness-5-obs
+    ports:
+      - "8095:8091"
+    environment:
+      - WITNESS_ID=w5
+      - PORT=8091
+    networks:
+      - atlas-observability
+      - atlas-main
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  atlas-observability:
+    driver: bridge
+  atlas-main:
+    external: true
