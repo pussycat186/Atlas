@@ -1,26 +1,24 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { Resource } from '@opentelemetry/resources';
-import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
-// Enable verbose logs only if needed
-if (process.env.OTEL_DEBUG === '1') {
-  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
-}
+let sdk: NodeSDK | undefined;
 
-const serviceName = process.env.OTEL_SERVICE_NAME || 'atlas-gateway';
-const exporterEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://jaeger:4318';
-
-export const sdk = new NodeSDK({
-  resource: new Resource({ 'service.name': serviceName }),
-  traceExporter: new OTLPTraceExporter({ url: `${exporterEndpoint}/v1/traces` }),
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      // Keep low‑risk defaults; http/undici/fastify auto‑enabled
-      '@opentelemetry/instrumentation-fastify': { enabled: true },
-      '@opentelemetry/instrumentation-http': { enabled: true },
-      '@opentelemetry/instrumentation-undici': { enabled: true },
+export async function initTracing() {
+  if (process.env.OTEL_ENABLED !== '1') return;
+  const endpoint = (process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://jaeger:4318').replace(/\/$/, '');
+  const serviceName = process.env.OTEL_SERVICE_NAME || 'atlas-gateway';
+  sdk = new NodeSDK({
+    resource: resourceFromAttributes({
+      [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+      [SemanticResourceAttributes.SERVICE_VERSION]: process.env.SERVICE_VERSION || 'dev',
+      [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.DEPLOYMENT_ENV || 'local',
     }),
-  ],
-});
+    traceExporter: new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }),
+    instrumentations: [getNodeAutoInstrumentations()],
+  });
+  await sdk.start();
+  process.on('SIGTERM', () => { sdk?.shutdown().catch(() => {}); });
+}

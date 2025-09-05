@@ -237,30 +237,46 @@ jobs:
 
   insights-trace-smoke:
     runs-on: ubuntu-latest
-    needs: docker-build
+    needs: build
     steps:
       - uses: actions/checkout@v4
-      - name: Build TS
-        run: pnpm install && pnpm run build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - uses: pnpm/action-setup@v4
+      - name: Install & build
+        run: |
+          pnpm install
+          pnpm run build
       - name: Compose up (Jaeger + GW + W1)
         run: docker compose -f observability/docker-compose.insights.yml up -d --build
       - name: Wait for services
         run: |
-          for i in {1..40}; do curl -fsS http://localhost:8080/health && break || sleep 3; done
-          for i in {1..40}; do curl -fsS http://localhost:16686 && break || sleep 3; done
-      - name: Generate traffic (record + verify)
+          for i in {1..50}; do curl -fsS http://localhost:8080/health && break || sleep 3; done
+          for i in {1..50}; do curl -fsS http://localhost:16686/api/services && break || sleep 3; done
+      - name: Generate traffic (create a record)
         run: |
           RID=$(date +%s)
-          curl -fsS -X POST http://localhost:8080/record -H 'content-type: application/json' \
-            -d '{"payload":"demo-'"$RID"'"}' || true
-          sleep 2
-      - name: Verify Jaeger lists services
+          curl -fsS -X POST http://localhost:8080/record \
+            -H 'content-type: application/json' \
+            -d "{\"payload\":\"demo-$RID\"}" || true
+          sleep 3
+      - name: Assert services appear in Jaeger
         run: |
-          curl -fsS 'http://localhost:16686/api/services' | tee /tmp/services.json
-          grep -E 'atlas-gateway|atlas-w1' /tmp/services.json
-      - name: Fetch a recent trace sample (best effort)
+          curl -fsS 'http://localhost:16686/api/services' | tee services.json
+          grep -E 'atlas-gateway|atlas-w1' services.json
+      - name: Assert traces exist for atlas-gateway
         run: |
-          curl -fsS 'http://localhost:16686/api/traces?service=atlas-gateway&lookback=1h&limit=5' | head -c 2000 || true
+          curl -fsS 'http://localhost:16686/api/traces?service=atlas-gateway&lookback=1h&limit=5' | tee traces.json
+          grep -E '"spans"|"data"' traces.json
+      - name: Upload artifacts (debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: insights-jaeger-snapshots
+          path: |
+            services.json
+            traces.json
 
   sec-verify:
     name: Security Verify

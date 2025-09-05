@@ -3,13 +3,8 @@
  * Main entry point for the gateway service
  */
 
-// Tracing (enabled by OTEL_ENABLED=1)
-if (process.env.OTEL_ENABLED === '1') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { sdk } = require('./tracing');
-  sdk.start().catch((e: any) => console.error('OTEL start error', e));
-  process.on('SIGTERM', () => sdk.shutdown().catch(()=>{}));
-}
+import { initTracing } from './tracing';
+void initTracing();
 
 import { GatewayServer } from './server';
 
