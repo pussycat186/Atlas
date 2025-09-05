@@ -244,11 +244,12 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
-      - uses: pnpm/action-setup@v4
-      - name: Install & build
-        run: |
-          pnpm install
-          pnpm run build
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install deps (pnpm)
+        run: pnpm install
+      - name: Build TS
+        run: pnpm run build
       - name: Compose up (Jaeger + GW + W1)
         run: docker compose -f observability/docker-compose.insights.yml up -d --build
       - name: Wait for services
