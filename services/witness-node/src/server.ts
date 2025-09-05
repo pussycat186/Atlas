@@ -8,6 +8,7 @@ import cors from '@fastify/cors';
 import { WitnessNode } from './witness';
 import { WitnessAPI } from '@atlas/fabric-protocol';
 import { metricsMiddleware, exposeMetrics, recordAttestation, updateLedgerSize, recordLedgerOperation } from './metrics';
+import { trace } from '@opentelemetry/api';
 
 export class WitnessServer {
   private fastify: FastifyInstance;
@@ -66,33 +67,48 @@ export class WitnessServer {
     this.fastify.post<{
       Body: WitnessAPI['submitRecord']['body'];
     }>('/witness/record', async (request, reply) => {
+      const tracer = trace.getTracer('atlas-witness');
       const startTime = Date.now();
-      try {
-        const { app, record_id, payload, meta } = request.body;
-        
-        const attestation = await this.witness.processRecord(
-          app,
-          record_id,
-          payload,
-          meta
-        );
+      
+      return await tracer.startActiveSpan('witness.attest', async (span) => {
+        try {
+          const { app, record_id, payload, meta } = request.body;
+          
+          span.setAttribute('atlas.attest.app', app);
+          span.setAttribute('atlas.attest.record_id', record_id);
+          span.setAttribute('atlas.witness.id', this.witness.getWitnessId());
+          
+          const attestation = await this.witness.processRecord(
+            app,
+            record_id,
+            payload,
+            meta
+          );
 
-        const duration = (Date.now() - startTime) / 1000;
-        recordAttestation(app, 'success', duration);
-        recordLedgerOperation('add_record');
+          const duration = (Date.now() - startTime) / 1000;
+          recordAttestation(app, 'success', duration);
+          recordLedgerOperation('add_record');
 
-        return attestation;
-      } catch (error) {
-        const duration = (Date.now() - startTime) / 1000;
-        recordAttestation('unknown', 'error', duration);
-        recordLedgerOperation('error');
-        
-        reply.code(500);
-        return {
-          error: 'Failed to process record',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        };
-      }
+          span.setAttribute('atlas.attest.ok', 'true');
+          span.setAttribute('atlas.attest.duration_ms', String(duration * 1000));
+          span.end();
+          return attestation;
+        } catch (error) {
+          const duration = (Date.now() - startTime) / 1000;
+          recordAttestation('unknown', 'error', duration);
+          recordLedgerOperation('error');
+          
+          span.recordException(error as Error);
+          span.setStatus({ code: 2, message: String((error as Error)?.message || error) });
+          span.end();
+          
+          reply.code(500);
+          return {
+            error: 'Failed to process record',
+            message: error instanceof Error ? error.message : 'Unknown error',
+          };
+        }
+      });
     });
 
     // Get ledger

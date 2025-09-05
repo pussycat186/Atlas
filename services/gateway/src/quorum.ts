@@ -21,6 +21,13 @@ export class QuorumManager {
   }
 
   /**
+   * Get required quorum size for tracing
+   */
+  getRequiredQuorum(): number {
+    return this.config.quorum_size;
+  }
+
+  /**
    * Verify quorum consensus from witness attestations
    */
   verifyQuorum(attestations: WitnessAttestation[]): QuorumResult {

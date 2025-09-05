@@ -3,6 +3,13 @@
  * Main entry point for the witness node service
  */
 
+// Tracing (enabled by OTEL_ENABLED=1)
+if (process.env.OTEL_ENABLED === '1') {
+  const { sdk } = require('./tracing');
+  sdk.start().catch((e: any) => console.error('OTEL start error', e));
+  process.on('SIGTERM', () => sdk.shutdown().catch(()=>{}));
+}
+
 import { WitnessNode } from './witness';
 import { WitnessServer } from './server';
 import * as path from 'path';

@@ -235,6 +235,33 @@ jobs:
           for i in {1..30}; do
             curl -fsS http://localhost:8091/metrics && exit 0; sleep 2; done; exit 1
 
+  insights-trace-smoke:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build TS
+        run: pnpm install && pnpm run build
+      - name: Compose up (Jaeger + GW + W1)
+        run: docker compose -f observability/docker-compose.insights.yml up -d --build
+      - name: Wait for services
+        run: |
+          for i in {1..40}; do curl -fsS http://localhost:8080/health && break || sleep 3; done
+          for i in {1..40}; do curl -fsS http://localhost:16686 && break || sleep 3; done
+      - name: Generate traffic (record + verify)
+        run: |
+          RID=$(date +%s)
+          curl -fsS -X POST http://localhost:8080/record -H 'content-type: application/json' \
+            -d '{"payload":"demo-'"$RID"'"}' || true
+          sleep 2
+      - name: Verify Jaeger lists services
+        run: |
+          curl -fsS 'http://localhost:16686/api/services' | tee /tmp/services.json
+          grep -E 'atlas-gateway|atlas-w1' /tmp/services.json
+      - name: Fetch a recent trace sample (best effort)
+        run: |
+          curl -fsS 'http://localhost:16686/api/traces?service=atlas-gateway&lookback=1h&limit=5' | head -c 2000 || true
+
   sec-verify:
     name: Security Verify
     runs-on: ubuntu-latest

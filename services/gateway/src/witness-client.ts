@@ -19,6 +19,15 @@ export class WitnessClient {
   }
 
   /**
+   * Get witness URLs for tracing
+   */
+  getWitnessUrls(): string[] {
+    return this.config.witnesses
+      .filter(w => w.active)
+      .map(w => w.endpoint);
+  }
+
+  /**
    * Submit a record to all witness nodes
    */
   async submitToAllWitnesses(
