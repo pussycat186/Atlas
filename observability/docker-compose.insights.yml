@@ -1,11 +1,21 @@
 version: '3.8'
 services:
   jaeger:
-    image: jaegertracing/all-in-one:1.55
+    image: jaegertracing/all-in-one:1.57
     ports:
-      - "16686:16686"   # UI
-      - "4317:4317"     # OTLP gRPC
-      - "4318:4318"     # OTLP HTTP
+      - "16686:16686"   # UI only (disable OTLP 4317/4318 here)
+
+  otelcol:
+    image: otel/opentelemetry-collector:0.104.0
+    command: ["--config=/etc/otelcol/config.yml"]
+    volumes:
+      - ./otel-collector.yml:/etc/otelcol/config.yml:ro
+    ports:
+      - "8889:8889"   # Prometheus metrics from Collector
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - jaeger
 
   gateway:
     build:
@@ -13,13 +23,12 @@ services:
       dockerfile: services/gateway/Dockerfile
     environment:
       OTEL_ENABLED: "1"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-      OTEL_SERVICE_NAME: "atlas-gateway"
-      DEPLOYMENT_ENV: "ci"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
+      PORT: "8080"
     ports:
       - "8080:8080"
     depends_on:
-      - jaeger
+      - otelcol
 
   w1:
     build:
@@ -27,11 +36,69 @@ services:
       dockerfile: services/witness-node/Dockerfile
     environment:
       OTEL_ENABLED: "1"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
-      OTEL_SERVICE_NAME: "atlas-w1"
-      DEPLOYMENT_ENV: "ci"
-      WITNESS_PORT: "8091"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
+      PORT: "8091"
     ports:
       - "8091:8091"
     depends_on:
-      - jaeger
+      - otelcol
+
+  w2:
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
+      PORT: "8092"
+    ports:
+      - "8092:8092"
+    depends_on:
+      - otelcol
+  w3:
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
+      PORT: "8093"
+    ports:
+      - "8093:8093"
+    depends_on:
+      - otelcol
+  w4:
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
+      PORT: "8094"
+    ports:
+      - "8094:8094"
+    depends_on:
+      - otelcol
+  w5:
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
+      PORT: "8095"
+    ports:
+      - "8095:8095"
+    depends_on:
+      - otelcol
+
+  grafana:
+    image: grafana/grafana:10.4.5
+    ports:
+      - "3007:3000"
+    volumes:
+      - ./grafana/provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - otelcol

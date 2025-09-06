@@ -1,4 +1,10 @@
 import client from 'prom-client';
+import { trace, context } from '@opentelemetry/api';
+
+function getTraceId(): string | undefined {
+  const span = trace.getSpan(context.active());
+  return span?.spanContext().traceId;
+}
 
 export const registry = new client.Registry();
 
@@ -76,7 +82,8 @@ export const exposeMetrics = async (request: any, reply: any) => {
 // Witness metrics helpers
 export const recordAttestation = (app: string, status: string, duration: number) => {
   attestationCount.inc({ app, status });
-  attestationLatency.observe({ app }, duration);
+  const traceId = getTraceId();
+  attestationLatency.observe({ app }, duration, traceId ? { trace_id: traceId } : undefined);
 };
 
 export const updateLedgerSize = (size: number) => {
