@@ -27,7 +27,7 @@ groups:
       description: "Witness instance unavailable for >2m."
 
   - alert: QuorumFailure
-    expr: clamp_min(job:quorum:success_ratio:5m, job:http:success_ratio:5m{service="gateway"}) < 0.95
+    expr: job:quorum:success_ratio:5m < 0.95
     for: 10m
     labels: {severity: page}
     annotations:

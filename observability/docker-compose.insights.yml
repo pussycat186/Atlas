@@ -35,7 +35,7 @@ services:
       - otelcol
 
   alertmanager:
-    image: prom/alertmanager:v0.27.1
+    image: prom/alertmanager:v0.27.0
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
@@ -52,10 +52,9 @@ services:
     ports:
       - "3007:3000"
     volumes:
-      - ./grafana/provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
-      - ./grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./grafana/alerting:/etc/grafana/provisioning/alerting:ro
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
