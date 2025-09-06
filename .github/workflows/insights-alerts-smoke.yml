@@ -1,0 +1,25 @@
+name: insights-alerts-smoke
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: ["main","feat/**","feature/**"]
+
+jobs:
+  alerts-smoke:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Prometheus rules
+        run: |
+          docker run --rm -v "${{ github.workspace }}/observability/prometheus:/etc/prometheus" prom/prometheus:v2.54.1 \
+          promtool check rules /etc/prometheus/rules/*.yml
+
+      - name: Boot insights stack
+        run: |
+          docker compose -f observability/docker-compose.insights.yml up -d --build prometheus alertmanager grafana otelcol
+
+      - name: Verify rules
+        run: |
+          curl -fsS "http://localhost:9090/api/v1/rules" | jq '.data.groups[].name' | grep -E 'atlas-sli|atlas-alerts|atlas-slo-burn'
