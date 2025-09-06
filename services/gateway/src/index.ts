@@ -1,52 +1,17 @@
-/**
- * Atlas Gateway Entry Point
- * Main entry point for the gateway service
- */
+import './tracing';               // MUST BE FIRST
+import express from 'express';
+import { emitOneSpan } from './manual-span';
 
-import { GatewayServer } from './server';
+const app = express();
 
-async function main() {
-  // Get configuration from environment variables
-  const port = parseInt(process.env.PORT || '8080');
-  const host = process.env.HOST || '0.0.0.0';
+app.get('/healthz', (_req, res) => res.send('ok'));
 
-  console.log(`Starting Atlas Gateway:`);
-  console.log(`  Host: ${host}`);
-  console.log(`  Port: ${port}`);
-
-  // Create and start server
-  const server = new GatewayServer(port);
-  
-  // Handle graceful shutdown
-  process.on('SIGINT', async () => {
-    console.log('Received SIGINT, shutting down gracefully...');
-    await server.stop();
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', async () => {
-    console.log('Received SIGTERM, shutting down gracefully...');
-    await server.stop();
-    process.exit(0);
-  });
-
-  // Start the server
-  await server.start(port, host);
-}
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
-});
-
-// Start the application
-main().catch((error) => {
-  console.error('Failed to start gateway:', error);
-  process.exit(1);
+app.listen(8080, async () => {
+  console.log('gateway up');
+  try { 
+    await emitOneSpan(); 
+    console.log('manual span emitted'); 
+  } catch (e) { 
+    console.error('manual span error:', e); 
+  }
 });

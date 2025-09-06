@@ -1,9 +1,7 @@
 # ---------- deps ----------
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY services/gateway/package.json ./package.json
-RUN echo '{"dependencies":{"fastify":"^4.24.3","@fastify/cors":"^8.4.0","@fastify/websocket":"^8.3.1","pino":"^8.17.0","pino-pretty":"^10.3.1","uuid":"^9.0.1"}}' > temp-package.json && \
-    mv temp-package.json package.json
+COPY services/gateway/package-docker.json ./package.json
 RUN npm install --only=production
 
 # ---------- runtime ----------
