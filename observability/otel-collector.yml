@@ -1,0 +1,48 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch: {}
+  tail_sampling:
+    decision_wait: 3s
+    num_traces: 50000
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code: { status_codes: [ERROR] }
+      - name: slow-traces
+        type: latency
+        latency: { threshold_ms: 800 }
+      - name: always-sample-gateway
+        type: string_attribute
+        string_attribute: { key: service.name, values: ["atlas-gateway","gateway"] }
+      - name: always-sample-witnesses
+        type: string_attribute
+        string_attribute: { key: service.name, values: ["atlas-w1","atlas-w2","atlas-w3","atlas-w4","atlas-w5"] }
+      - name: fallback-10pct
+        type: probabilistic
+        probabilistic: { sampling_percentage: 10 }
+
+exporters:
+  otlphttp/jaeger:
+    endpoint: http://jaeger:4318
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  telemetry:
+    logs: { level: "debug" }
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, tail_sampling]
+      exporters: [otlphttp/jaeger]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]

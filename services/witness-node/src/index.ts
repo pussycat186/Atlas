@@ -3,6 +3,8 @@
  * Main entry point for the witness node service
  */
 
+import './tracing'; // MUST be first
+import { emitOneSpan } from './manual-span';
 import { WitnessNode } from './witness';
 import { WitnessServer } from './server';
 import * as path from 'path';
@@ -37,6 +39,14 @@ async function main() {
     mirrorPath,
     securityTrack
   );
+
+  // Emit manual span for tracing verification
+  try {
+    await emitOneSpan();
+    console.log('manual span emitted');
+  } catch(e) {
+    console.error('manual span error', e);
+  }
 
   // Create and start server
   const server = new WitnessServer(witness, port);
