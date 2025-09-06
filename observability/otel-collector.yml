@@ -1,0 +1,73 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'atlas'
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - gateway:8080
+                - w1:8091
+                - w2:8092
+                - w3:8093
+                - w4:8094
+                - w5:8095
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+
+  tail_sampling:
+    decision_wait: 3s
+    num_traces: 50000
+    policies:
+      - name: error-traces
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: slow-traces
+        type: latency
+        latency:
+          threshold_ms: 800
+      - name: always-sample-gateway
+        type: string_attribute
+        string_attribute:
+          key: service.name
+          values: ["atlas-gateway","gateway"]
+      - name: fallback-sample-10pct
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
+  batch: {}
+  resource:
+    attributes:
+      - key: deployment.environment
+        action: upsert
+        value: ci
+
+exporters:
+  otlphttp/jaeger:
+    endpoint: http://jaeger:4318
+  prometheus:
+    endpoint: 0.0.0.0:8889
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, tail_sampling, batch, resource]
+      exporters: [otlphttp/jaeger]
+    metrics:
+      receivers: [prometheus]
+      processors: [memory_limiter, batch, resource]
+      exporters: [prometheus]
