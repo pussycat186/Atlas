@@ -1,0 +1,9 @@
+apiVersion: 1
+contactPoints:
+  - name: atlas-default
+    type: webhook
+    settings:
+      url: "http://dummy-webhook:9999/alerts"
+      httpMethod: "POST"
+      title: "Atlas Alert: {{ .GroupLabels.alertname }}"
+      text: "{{ range .Alerts }}{{ .Annotations.description }}{{ end }}"
