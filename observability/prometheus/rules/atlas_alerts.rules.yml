@@ -1,0 +1,49 @@
+groups:
+- name: atlas-alerts
+  interval: 30s
+  rules:
+  - alert: HighErrorRate
+    expr: (1 - job:http:success_ratio:5m) > 0.02
+    for: 10m
+    labels: {severity: page}
+    annotations:
+      summary: "High error rate on {{ $labels.service }}"
+      description: "Error ratio > 2% (5m)."
+
+  - alert: HighLatencyP95
+    expr: job:http:latency_p95:5m > 0.8
+    for: 10m
+    labels: {severity: ticket}
+    annotations:
+      summary: "High p95 latency on {{ $labels.service }}"
+      description: "p95 > 800ms over 5m window."
+
+  - alert: WitnessDown
+    expr: min_over_time(job:witness:up[2m]) < 1
+    for: 2m
+    labels: {severity: page}
+    annotations:
+      summary: "Witness down {{ $labels.instance }}"
+      description: "Witness instance unavailable for >2m."
+
+  - alert: QuorumFailure
+    expr: clamp_min(job:quorum:success_ratio:5m, job:http:success_ratio:5m{service="gateway"}) < 0.95
+    for: 10m
+    labels: {severity: page}
+    annotations:
+      summary: "Quorum success < 95%"
+      description: "Consensus degraded."
+
+- name: atlas-slo-burn
+  interval: 30s
+  rules:
+  - record: slo:availability:burn:5m
+    expr: (1 - job:http:success_ratio:5m) / (1 - 0.999)
+
+  - alert: SLOAvailabilityBurnFast
+    expr: slo:availability:burn:5m > 14
+    for: 10m
+    labels: {severity: page}
+    annotations:
+      summary: "SLO burn fast > 14x"
+      description: "SLO 99.9%/30d fast window breach."
