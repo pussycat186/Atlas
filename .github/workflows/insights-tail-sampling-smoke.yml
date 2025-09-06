@@ -1,0 +1,45 @@
+name: insights-tail-sampling-smoke
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: ["main","feat/**","feature/**"]
+
+jobs:
+  tail-sampling-smoke:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Boot stack
+        run: |
+          docker compose -f observability/docker-compose.insights.yml up -d --build \
+            prometheus alertmanager grafana otel-collector gateway w1 w2 w3 w4 w5
+
+      - name: Wait collector ready
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8889/metrics >/dev/null; then
+              echo "Collector ready ✅"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Collector NOT ready ❌"; docker logs otel-collector; exit 1
+
+      - name: Generate synthetic traces
+        run: |
+          for i in {1..5}; do
+            curl -fsS -X POST http://localhost:8080/record \
+              -H 'content-type: application/json' \
+              -d '{"payload":"tail-sample-test","force_error":true,"sleep_ms":1000}' || true
+          done
+          sleep 10
+
+      - name: Verify Jaeger traces
+        run: |
+          for i in {1..15}; do
+            curl -fsS "http://localhost:16686/api/traces?service=atlas-gateway&limit=5" \
+              | jq -r '.data | length' | grep -q '[1-9]' && exit 0
+            sleep 3
+          done
+          echo "No sampled traces found ❌"; exit 1
