@@ -1,0 +1,19 @@
+groups:
+- name: atlas-sli
+  interval: 30s
+  rules:
+  - record: job:http:request_total:rate5m
+    expr: sum by (service) (rate(http_requests_total[5m]))
+
+  - record: job:http:success_ratio:5m
+    expr: sum by (service) (rate(http_requests_total{code=~"2..|3.."}[5m]))
+      / ignoring() (job:http:request_total:rate5m)
+
+  - record: job:http:latency_p95:5m
+    expr: histogram_quantile(0.95, sum by (service, le)(rate(http_request_duration_seconds_bucket[5m])))
+
+  - record: job:witness:up
+    expr: max by (instance) (coalesce(witness_up, up{job=~"witness|w[1-9]"}))
+
+  - record: job:quorum:success_ratio:5m
+    expr: clamp_min(avg_over_time(quorum_success_ratio[5m]), 0)
