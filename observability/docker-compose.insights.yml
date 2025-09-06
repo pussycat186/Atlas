@@ -44,37 +44,53 @@ services:
       - otelcol
 
   w2:
-    extends: w1
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
     environment:
       OTEL_ENABLED: "1"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
       PORT: "8092"
     ports:
       - "8092:8092"
+    depends_on:
+      - otelcol
   w3:
-    extends: w1
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
     environment:
       OTEL_ENABLED: "1"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
       PORT: "8093"
     ports:
       - "8093:8093"
+    depends_on:
+      - otelcol
   w4:
-    extends: w1
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
     environment:
       OTEL_ENABLED: "1"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
       PORT: "8094"
     ports:
       - "8094:8094"
+    depends_on:
+      - otelcol
   w5:
-    extends: w1
+    build:
+      context: ..
+      dockerfile: services/witness-node/Dockerfile
     environment:
       OTEL_ENABLED: "1"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
       PORT: "8095"
     ports:
       - "8095:8095"
+    depends_on:
+      - otelcol
 
   grafana:
     image: grafana/grafana:10.4.5
