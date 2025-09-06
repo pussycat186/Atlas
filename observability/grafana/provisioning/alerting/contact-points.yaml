@@ -1,0 +1,10 @@
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: atlas-default
+    receivers:
+      - uid: atlas-webhook
+        type: webhook
+        settings:
+          url: http://dummy-webhook:9999/alerts
+          httpMethod: POST

@@ -3,9 +3,14 @@
  * Main entry point for the witness node service
  */
 
+// Initialize tracing first - must be before any other imports
+import { initTracing } from './tracing';
 import { WitnessNode } from './witness';
 import { WitnessServer } from './server';
 import * as path from 'path';
+
+// Initialize tracing immediately
+void initTracing();
 
 async function main() {
   // Get configuration from environment variables

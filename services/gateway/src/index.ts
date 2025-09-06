@@ -3,7 +3,12 @@
  * Main entry point for the gateway service
  */
 
+// Initialize tracing first - must be before any other imports
+import { initTracing } from './tracing';
 import { GatewayServer } from './server';
+
+// Initialize tracing immediately
+void initTracing();
 
 async function main() {
   // Get configuration from environment variables
