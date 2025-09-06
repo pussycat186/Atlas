@@ -1,0 +1,56 @@
+name: insights-alerts-smoke
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: ["main","feat/**","feature/**"]
+
+jobs:
+  alerts-smoke:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Prometheus rules
+        run: |
+          docker run --rm -v "${{ github.workspace }}/observability/prometheus:/etc/prometheus" \
+            prom/prometheus:v2.54.1 \
+            promtool check rules /etc/prometheus/rules/*.yml
+
+      - name: Boot insights stack
+        run: |
+          docker compose -f observability/docker-compose.insights.yml up -d --build \
+            prometheus alertmanager grafana otel-collector
+
+      - name: Wait Prometheus ready (with retries)
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:9090/-/ready >/dev/null; then
+              echo "Prometheus ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Prometheus NOT ready"; exit 1
+
+      - name: Verify rule groups loaded (retry)
+        run: |
+          for i in {1..15}; do
+            curl -fsS "http://localhost:9090/api/v1/rules" \
+            | jq -r '.data.groups[].name' > /tmp/groups.txt || true
+            if grep -E 'atlas-sli|atlas-alerts|atlas-slo-burn' /tmp/groups.txt; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Expected rule groups not found"; cat /tmp/groups.txt || true; exit 1
+
+      - name: (Optional) Generate probe traffic
+        run: |
+          curl -fsS -X POST http://localhost:8080/record \
+            -H 'content-type: application/json' -d '{"payload":"alerts-probe"}' || true
+          sleep 10
+
+      - name: (Optional) Assert SLI query returns success
+        run: |
+          curl -fsS "http://localhost:9090/api/v1/query?query=job:http:success_ratio:5m" \
+          | jq -r '.status' | grep success
