@@ -1,0 +1,11 @@
+apiVersion: 1
+policies:
+  - orgId: 1
+    receiver: atlas-default
+    routes:
+      - receiver: atlas-default
+        object_matchers:
+          - ["severity","=","page"]
+      - receiver: atlas-default
+        object_matchers:
+          - ["severity","=","ticket"]
