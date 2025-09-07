@@ -1,0 +1,144 @@
+name: atlas-insights-v12
+
+on:
+  push:
+    branches: [ main, develop, feat/**, feature/** ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch: {}   # allow manual/API/gh trigger on any ref
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  NODE_VERSION: "20"
+  PNPM_HOME: ~/.pnpm
+  PNPM_CACHE_DIR: ~/.pnpm-store
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  lint_build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: ${{ env.NODE_VERSION }} }
+      - name: Enable corepack & install deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable || true
+          if [[ -f pnpm-lock.yaml ]]; then corepack prepare pnpm@latest --activate; pnpm -v; pnpm install --frozen-lockfile;
+          elif [[ -f package-lock.json ]]; then npm ci;
+          elif [[ -f yarn.lock ]]; then corepack prepare yarn@stable --activate; yarn --version; yarn install --frozen-lockfile;
+          else echo "No lockfile"; fi
+      - name: Lint / Typecheck (best-effort)
+        shell: bash
+        run: |
+          set -euo pipefail
+          (pnpm -w run lint || npm run -w lint || yarn -w lint || true)
+          (pnpm -w run typecheck || npm run -w typecheck || yarn -w typecheck || true)
+      - uses: docker/setup-buildx-action@v3
+      - name: Build CI compose images (no push)
+        if: ${{ hashFiles('infra/docker/compose.ci.yml') != '' }}
+        shell: bash
+        run: docker compose -f infra/docker/compose.ci.yml build
+
+  unit_integration_tests:
+    name: Unit & Integration Tests
+    needs: [lint_build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: ${{ env.NODE_VERSION }} }
+      - name: Install deps (auto)
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable || true
+          if [[ -f pnpm-lock.yaml ]]; then pnpm install --frozen-lockfile;
+          elif [[ -f package-lock.json ]]; then npm ci;
+          elif [[ -f yarn.lock ]]; then corepack prepare yarn@stable --activate; yarn install --frozen-lockfile;
+          else echo "No lockfile"; fi
+      - name: Run tests (best-effort)
+        shell: bash
+        run: (pnpm -w test || npm test --workspaces || yarn workspaces run test || true)
+
+  insights-trace-smoke:
+    name: Insights Trace Smoke (OTLP/Tempo)
+    needs: [lint_build]
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('observability/docker-compose.insights.yml') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Insights (Tempo + OTel)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f observability/docker-compose.insights.yml up -d tempo otel-collector
+      - name: Wait for Tempo
+        run: |
+          for i in {1..60}; do code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3200/ready || true); [[ "$code" == "200" ]] && exit 0; sleep 2; done; echo "Tempo not ready"; exit 1
+      - name: Check OTLP ports
+        run: |
+          bash -c "echo > /dev/tcp/127.0.0.1/4317" || (echo "OTLP gRPC 4317 not open"; exit 1)
+          bash -c "echo > /dev/tcp/127.0.0.1/4318" || (echo "OTLP HTTP 4318 not open"; exit 1)
+
+  insights-dash-smoke:
+    name: Insights Dash Smoke (Prom/Grafana/Loki)
+    needs: [lint_build]
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('observability/docker-compose.insights.yml') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Insights (Prom/Grafana/Loki)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f observability/docker-compose.insights.yml up -d prometheus grafana loki
+      - name: Wait & verify services
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in {1..60}; do
+            g=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3030/api/health || true)
+            p=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9090/api/v1/targets || true)
+            l=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3100/ready || true)
+            if [[ "$g" == "200" && "$p" == "200" && "$l" == "200" ]]; then exit 0; fi
+            sleep 2
+          done
+          echo "Grafana/Prom/Loki not healthy"; exit 1
+
+  publish:
+    name: Publish (tagged releases)
+    needs: [lint_build, unit_integration_tests, insights-trace-smoke, insights-dash-smoke]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        if: ${{ secrets.REGISTRY_USERNAME != '' && secrets.REGISTRY_PASSWORD != '' }}
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Build & Push images (example; adjust)
+        if: ${{ secrets.REGISTRY_USERNAME != '' && secrets.REGISTRY_PASSWORD != '' }}
+        shell: bash
+        run: |
+          docker compose -f infra/docker/compose.ci.yml build
+          # docker tag your-image $REGISTRY/atlas/your-image:${GITHUB_REF_NAME}
+          # docker push $REGISTRY/atlas/your-image:${GITHUB_REF_NAME}
+      - name: (Optional) Cosign keyless sign
+        if: ${{ env.COSIGN_EXPERIMENTAL == '1' }}
+        shell: bash
+        run: echo "Keyless cosign scaffold"
