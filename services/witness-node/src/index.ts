@@ -1,3 +1,4 @@
+import './tracing';
 /**
  * Atlas Witness Node Entry Point
  * Main entry point for the witness node service
@@ -74,3 +75,5 @@ main().catch((error) => {
   console.error('Failed to start witness node:', error);
   process.exit(1);
 });
+import { emitOneSpan } from './manual-span';
+(async () => { try { await emitOneSpan(); console.log('manual span emitted'); } catch (e) { console.error('manual span error', e);} })();
