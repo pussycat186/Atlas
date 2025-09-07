@@ -1,24 +1,15 @@
-# ---------- deps ----------
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY services/witness-node/package.json ./package.json
-RUN echo '{"dependencies":{"fastify":"^4.24.3","@fastify/cors":"^8.4.0","pino":"^8.17.0","pino-pretty":"^10.3.1","fs-extra":"^11.2.0","uuid":"^9.0.1"}}' > temp-package.json && \
-    mv temp-package.json package.json
-RUN npm install --only=production
+COPY services/witness-node/package-docker.json ./package.json
+RUN npm install --omit=dev
 
-# ---------- runtime ----------
 FROM node:20-alpine AS runtime
 WORKDIR /app
-ENV NODE_ENV=production
-LABEL org.opencontainers.image.source="https://github.com/pussycat186/Atlas" \
-      org.opencontainers.image.title="atlas-witness" \
-      org.opencontainers.image.description="Atlas Witness Node (append-only ledger)" \
-      org.opencontainers.image.licenses="MIT"
 COPY --from=deps /app/node_modules ./node_modules
 COPY services/witness-node/package.json ./
 COPY services/witness-node/dist ./dist
+# Copy fabric-protocol if needed
 RUN mkdir -p ./node_modules/@atlas/fabric-protocol
 COPY packages/fabric-protocol/package.json ./node_modules/@atlas/fabric-protocol/package.json
 COPY packages/fabric-protocol/dist ./node_modules/@atlas/fabric-protocol/dist
-EXPOSE 8091
 CMD ["node", "dist/index.js"]
