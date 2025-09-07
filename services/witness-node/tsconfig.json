@@ -3,10 +3,26 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "baseUrl": "../../",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "@atlas/fabric-protocol": [
+        "packages/fabric-protocol/src/index.ts"
+      ]
+    }
   },
   "references": [
-    { "path": "../../packages/fabric-protocol" }
+    {
+      "path": "../../packages/fabric-protocol"
+    }
   ],
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
