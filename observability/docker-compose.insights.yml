@@ -1,0 +1,44 @@
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    ports: ["16686:16686"]
+
+  otelcol:
+    image: otel/opentelemetry-collector:0.104.0
+    command: ["--config=/etc/otelcol/config.yml"]
+    volumes:
+      - ./otel-collector.yml:/etc/otelcol/config.yml:ro
+    ports: ["8889:8889","4317:4317","4318:4318"]
+    depends_on: [jaeger]
+
+  gateway:
+    build: { context: .., dockerfile: services/gateway/Dockerfile }
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
+      PORT: "8080"
+    ports: ["8080:8080"]
+    depends_on: [otelcol]
+
+  w1:
+    build: { context: .., dockerfile: services/witness-node/Dockerfile }
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318"
+      PORT: "8091"
+    ports: ["8091:8091"]
+    depends_on: [otelcol]
+
+  w2: { extends: w1, environment: { OTEL_ENABLED: "1", OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318", PORT: "8092" }, ports: ["8092:8092"] }
+  w3: { extends: w1, environment: { OTEL_ENABLED: "1", OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318", PORT: "8093" }, ports: ["8093:8093"] }
+  w4: { extends: w1, environment: { OTEL_ENABLED: "1", OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318", PORT: "8094" }, ports: ["8094:8094"] }
+  w5: { extends: w1, environment: { OTEL_ENABLED: "1", OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4318", PORT: "8095" }, ports: ["8095:8095"] }
+
+  grafana:
+    image: grafana/grafana:10.4.5
+    ports: ["3007:3000"]
+    volumes:
+      - ./grafana/provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [otelcol]

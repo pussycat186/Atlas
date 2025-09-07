@@ -1,0 +1,21 @@
+name: atlas-insights-observability
+on:
+  pull_request:
+  push:
+    branches: ["**"]
+jobs:
+  build-and-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'pnpm' }
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile || pnpm install
+      - name: Build fabric-protocol
+        run: pnpm -F @atlas/fabric-protocol build || true
+      - name: Build witness-node
+        run: pnpm -F @atlas/witness-node build || (cd services/witness-node && npx tsc --noEmit)

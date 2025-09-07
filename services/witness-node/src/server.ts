@@ -5,7 +5,7 @@
 
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
-import { WitnessNode } from './witness';
+import { WitnessNode } from './witness.js';
 import { WitnessAPI } from '@atlas/fabric-protocol';
 
 export class WitnessServer {
