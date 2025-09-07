@@ -1,21 +1,45 @@
 name: atlas-insights-observability
 on:
-  pull_request:
   push:
-    branches: ["**"]
+    branches: [ main, feat/** ]
+  pull_request:
+    branches: [ main, feat/** ]
+
 jobs:
   build-and-typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_NO_UPDATE_NOTIFIER: "1"
+      GH_PROMPT_DISABLED: "true"
+      CI: "1"
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
       - name: Enable corepack
         run: corepack enable
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: 'pnpm' }
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install
+        run: |
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
       - name: Build fabric-protocol
         run: pnpm -F @atlas/fabric-protocol build || true
+
       - name: Build witness-node
         run: pnpm -F @atlas/witness-node build || (cd services/witness-node && npx tsc --noEmit)
+
+      - name: Analyze CI failures
+        run: |
+          mkdir -p scripts/ci
+          : > scripts/ci/last.log
+          timeout 30s node scripts/ci/parse_ci_log.mjs || echo "[WARN] parser timeout"
+          timeout 60s node scripts/ci/apply_fixes.mjs || echo "[WARN] fixer timeout"
