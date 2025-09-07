@@ -1,22 +1,26 @@
 #!/usr/bin/env node
-import fs from 'node:fs';
-const log = fs.existsSync('scripts/ci/last.log') ? fs.readFileSync('scripts/ci/last.log','utf8') : '';
-const plan = [];
+import fs from "fs";
 
-// TS2835: add .js to relative imports
-if (/TS2835: Relative import paths need explicit file extensions/i.test(log) || /error TS2835:/i.test(log)) {
-  plan.push({kind: 'ts2835', where: 'services/witness-node/src'});
+const LOG = process.argv[2] || "scripts/ci/last.log";
+const text = fs.existsSync(LOG) ? fs.readFileSync(LOG, "utf8") : "";
+const plan = { issues: [] };
+
+// TS2835 – NodeNext requires explicit file extensions for relative imports
+const ts2835Re = /TS2835:[\s\S]*?Relative import paths need explicit file extensions[\s\S]*?\n/g;
+if (ts2835Re.test(text)) {
+  plan.issues.push({ kind: "TS2835", note: "Missing .js extension in relative imports under NodeNext" });
 }
 
-// pnpm not found
-if (/Unable to locate executable file: pnpm/i.test(log)) {
-  plan.push({kind: 'ci_corepack'});
+// pnpm/lockfile drift
+if (/ERR_PNPM_OUTDATED_LOCKFILE/.test(text)) {
+  plan.issues.push({ kind: "LOCK_DRIFT", note: "pnpm-lock.yaml not in sync" });
 }
 
-// lockfile mismatch
-if (/ERR_PNPM_OUTDATED_LOCKFILE|not up to date with .*package\.json/i.test(log)) {
-  plan.push({kind: 'lock_unsync'});
+// corepack/pnpm unavailable
+if (/Unable to locate executable file: pnpm/.test(text)) {
+  plan.issues.push({ kind: "PNPM_MISSING", note: "corepack enable needed before pnpm usage" });
 }
 
-console.log(`[PLAN] ${plan.length} issue(s)`);
-fs.writeFileSync('scripts/ci/plan.json', JSON.stringify(plan, null, 2));
+console.log("[PLAN]", plan.issues.length, "issues");
+fs.mkdirSync("scripts/ci", { recursive: true });
+fs.writeFileSync("scripts/ci/plan.json", JSON.stringify(plan, null, 2));

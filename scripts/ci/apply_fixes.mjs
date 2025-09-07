@@ -1,58 +1,57 @@
 #!/usr/bin/env node
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "fs";
+import path from "path";
 
-const planPath = 'scripts/ci/plan.json';
-const plan = fs.existsSync(planPath) ? JSON.parse(fs.readFileSync(planPath,'utf8')) : [];
+const planPath = "scripts/ci/plan.json";
+const plan = fs.existsSync(planPath) ? JSON.parse(fs.readFileSync(planPath, "utf8")) : { issues: [] };
 
-function patchFile(filename) {
-  const src = fs.readFileSync(filename, 'utf8');
-  // Only patch inside import/export specifiers; avoid running multiple times.
-  const patched = src.replace(/(from\s*['"])(\.\.?\/[^'"\n]+?)(['"])/g, (m, a, p, z) => {
-    // Already has an extension? leave it.
-    if (/\.[a-zA-Z0-9]+$/.test(p)) return a + p.replace(/(\.js){2,}$/,'\.js') + z;
-    // Otherwise append .js
-    return a + (p + '.js') + z;
-  });
-  if (patched !== src) {
-    fs.writeFileSync(filename, patched, 'utf8');
-    console.log(`[PATCH] ${filename}`);
+function listFiles(dir, acc=[]) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (e.name === "node_modules" || e.name.startsWith(".")) continue;
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) listFiles(p, acc); else acc.push(p);
   }
+  return acc;
 }
 
-function globTs(dir) {
-  const out = [];
-  for (const entry of fs.readdirSync(dir)) {
-    const p = path.join(dir, entry);
-    const st = fs.statSync(p);
-    if (st.isDirectory()) out.push(...globTs(p));
-    else if (/\.(ts|tsx|mts|cts)$/.test(entry)) out.push(p);
-  }
-  return out;
-}
-
-function ensureTsConfig() {
-  const file = 'services/witness-node/tsconfig.json';
-  const base = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file,'utf8')) : {};
-  base.compilerOptions = base.compilerOptions || {};
-  base.compilerOptions.module = base.compilerOptions.module || 'NodeNext';
-  base.compilerOptions.moduleResolution = base.compilerOptions.moduleResolution || 'NodeNext';
-  base.compilerOptions.skipLibCheck = base.compilerOptions.skipLibCheck ?? true;
-  fs.writeFileSync(file, JSON.stringify(base, null, 2));
-  console.log(`[WRITE] ${file}`);
-}
-
-function runTs2835() {
-  ensureTsConfig();
-  const root = 'services/witness-node/src';
+function patchTS2835(root="services/witness-node/src") {
   if (!fs.existsSync(root)) return;
-  for (const f of globTs(root)) patchFile(f);
+  const files = listFiles(root).filter(f => /\.(ts|tsx|mts|cts)$/.test(f));
+  const importLike = /(import\s+[^'"\n]+from\s*|export\s*\{[^}]*\}\s*from\s*|export\s+\*\s+from\s*)(["'])(\.\.?:?\/[^"']+?)(\2)/g;
+  for (const f of files) {
+    let s = fs.readFileSync(f, "utf8");
+    const orig = s;
+    s = s.replace(importLike, (m, head, quote, rel, q2) => {
+      // Skip if already has an extension
+      if (/\.(js|cjs|mjs|ts|tsx)$/.test(rel)) return m;
+      // Only relative paths
+      if (!rel.startsWith("./") && !rel.startsWith("../")) return m;
+      const fixed = rel + ".js"; // NodeNext expects runtime .js
+      return `${head}${quote}${fixed}${quote}`;
+    });
+    // Normalize accidental repeated .js (bounded to import/export strings)
+    s = s.replace(/(from\s*["'][^"']*?)((?:\.js){2,})(["'])/g, (_, a, many, z) => a + ".js" + z);
+    if (s !== orig) {
+      fs.writeFileSync(f, s);
+      console.log("[PATCH]", f);
+    }
+  }
 }
 
-for (const step of plan) {
-  if (step.kind === 'ts2835') runTs2835();
-  if (step.kind === 'ci_corepack') console.log('[HINT] Add `corepack enable` before pnpm in CI.');
-  if (step.kind === 'lock_unsync') console.log('[HINT] Update pnpm-lock.yaml.');
+function ensureCorepackNote() {
+  const wf = ".github/workflows/atlas-insights-observability.yml";
+  if (!fs.existsSync(wf)) return;
+  let y = fs.readFileSync(wf, "utf8");
+  if (!/corepack enable/.test(y)) {
+    y = y.replace(/(uses: actions\/setup-node@v4[\s\S]*?\n)/, `$1    - name: Enable corepack\n      run: corepack enable\n`);
+    fs.writeFileSync(wf, y);
+    console.log("[PATCH] workflow corepack enable");
+  }
 }
 
-if (plan.length === 0) console.log('[APPLY] nothing to do');
+for (const i of plan.issues) {
+  if (i.kind === "TS2835") patchTS2835();
+  if (i.kind === "PNPM_MISSING") ensureCorepackNote();
+}
+
+console.log("[APPLY] done");
