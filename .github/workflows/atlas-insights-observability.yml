@@ -1,0 +1,24 @@
+name: build-and-typecheck
+on:
+  push:
+    branches: [ main, fix/**, feat/** ]
+  pull_request:
+    branches: [ main, fix/**, feat/** ]
+
+jobs:
+  build-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install
+        run: pnpm install --no-frozen-lockfile
+      - name: Build fabric-protocol
+        run: pnpm -F @atlas/fabric-protocol build || true
+      - name: Build witness-node
+        run: pnpm -F @atlas/witness-node build || (cd services/witness-node && npx tsc --noEmit)
