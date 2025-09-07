@@ -3,8 +3,8 @@
  * Main entry point for the witness node service
  */
 
-import { WitnessNode } from './witness';
-import { WitnessServer } from './server';
+import { WitnessNode } from './witness.js';
+import { WitnessServer } from './server.js';
 import * as path from 'path';
 
 async function main() {

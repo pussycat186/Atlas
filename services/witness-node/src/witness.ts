@@ -11,7 +11,7 @@ import {
   RecordMeta,
   DEFAULT_FABRIC_CONFIG
 } from '@atlas/fabric-protocol';
-import { WitnessLedger } from './ledger';
+import { WitnessLedger } from './ledger.js';
 
 export class WitnessNode {
   private witnessId: string;
