@@ -1,0 +1,44 @@
+name: atlas-insights-observability
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install deps (root)
+        run: pnpm install --frozen-lockfile || pnpm install
+      - name: Build witness-node
+        run: pnpm -F @atlas/witness-node build || (cd services/witness-node && npx tsc)
+      - name: Docker Compose up minimal
+        run: |
+          cd observability
+          docker compose -f docker-compose.insights.yml up -d --build jaeger otel-collector w1 w2 w3 w4 w5
+          sleep 8
+      - name: Generate synthetic traffic
+        run: |
+          for p in 8091 8092 8093 8094 8095; do
+            curl -fsS -X POST "http://localhost:$p/witness/record" \
+              -H 'content-type: application/json' \
+              -d '{"app":"ci","record_id":"ci-'$p'","payload":"ok","meta":{"ci":true}}' || true
+          done
+          sleep 5
+      - name: Assert traces in Jaeger per witness
+        run: |
+          set -e
+          ok=0; fail=0
+          for s in atlas-w1 atlas-w2 atlas-w3 atlas-w4 atlas-w5; do
+            n=$(curl -fsS "http://localhost:16686/api/traces?service=$s&limit=1" | jq -r '.data | length' || echo 0)
+            echo "$s traces: $n"
+            if [ "$n" -ge 1 ]; then ok=$((ok+1)); else fail=$((fail+1)); fi
+          done
+          [ "$fail" -eq 0 ]

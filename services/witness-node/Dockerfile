@@ -1,24 +1,22 @@
-# ---------- deps ----------
+# v11.5 fix: two-stage build for witness with OTel deps
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY services/witness-node/package.json ./package.json
-RUN echo '{"dependencies":{"fastify":"^4.24.3","@fastify/cors":"^8.4.0","pino":"^8.17.0","pino-pretty":"^10.3.1","fs-extra":"^11.2.0","uuid":"^9.0.1"}}' > temp-package.json && \
-    mv temp-package.json package.json
+# Use container-friendly dependency manifest (must include OTel deps)
+COPY services/witness-node/package-docker.json ./package.json
 RUN npm install --only=production
 
-# ---------- runtime ----------
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-LABEL org.opencontainers.image.source="https://github.com/pussycat186/Atlas" \
-      org.opencontainers.image.title="atlas-witness" \
-      org.opencontainers.image.description="Atlas Witness Node (append-only ledger)" \
-      org.opencontainers.image.licenses="MIT"
+# bring node_modules
 COPY --from=deps /app/node_modules ./node_modules
+# app bits
 COPY services/witness-node/package.json ./
 COPY services/witness-node/dist ./dist
+# inline copy of fabric-protocol (no workspace in container)
 RUN mkdir -p ./node_modules/@atlas/fabric-protocol
 COPY packages/fabric-protocol/package.json ./node_modules/@atlas/fabric-protocol/package.json
 COPY packages/fabric-protocol/dist ./node_modules/@atlas/fabric-protocol/dist
+# runtime
 EXPOSE 8091
-CMD ["node", "dist/index.js"]
+CMD ["node","dist/index.js"]

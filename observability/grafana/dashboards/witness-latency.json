@@ -1,0 +1,15 @@
+{
+  "uid": "witness-latency",
+  "title": "Witness p95/p99 Latency & Error",
+  "tags": ["atlas", "witness"],
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP Error Rate (%)",
+      "targets": [
+        {"expr": "0", "legendFormat": "placeholder"}
+      ]
+    }
+  ]
+}
