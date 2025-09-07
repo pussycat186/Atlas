@@ -2,34 +2,29 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:1.57
     ports: ["16686:16686"]
-
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.104.0
-    command: ["--config=/etc/otel/otel-collector.yml"]
+    command: ["--config=/etc/otelcol/otel-collector.yml"]
     volumes:
-      - ./otel-collector.yml:/etc/otel/otel-collector.yml:ro
+      - ./otel-collector.yml:/etc/otelcol/otel-collector.yml:ro
     ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
-      - "8889:8889"   # Prometheus metrics
-      - "13133:13133" # health check
-
-  prometheus:
-    image: prom/prometheus:v2.54.1
-    ports: ["9090:9090"]
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-
+      - "4317:4317"
+      - "4318:4318"
   grafana:
     image: grafana/grafana:10.4.5
-    container_name: observability-grafana-1
-    ports: ["3007:3000"]
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports: ["3007:3000"]
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards/Atlas
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
 
   w1:
     build:
@@ -42,7 +37,7 @@ services:
       - OTEL_SERVICE_NAME=atlas-w1
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     ports: ["8091:8091"]
-    depends_on: []
+    depends_on: { otel-collector: { condition: service_started } }
 
   w2:
     build:
@@ -55,7 +50,7 @@ services:
       - OTEL_SERVICE_NAME=atlas-w2
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     ports: ["8092:8092"]
-    depends_on: []
+    depends_on: { otel-collector: { condition: service_started } }
 
   w3:
     build:
@@ -68,7 +63,7 @@ services:
       - OTEL_SERVICE_NAME=atlas-w3
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     ports: ["8093:8093"]
-    depends_on: []
+    depends_on: { otel-collector: { condition: service_started } }
 
   w4:
     build:
@@ -81,7 +76,7 @@ services:
       - OTEL_SERVICE_NAME=atlas-w4
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     ports: ["8094:8094"]
-    depends_on: []
+    depends_on: { otel-collector: { condition: service_started } }
 
   w5:
     build:
@@ -94,4 +89,4 @@ services:
       - OTEL_SERVICE_NAME=atlas-w5
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     ports: ["8095:8095"]
-    depends_on: []
+    depends_on: { otel-collector: { condition: service_started } }

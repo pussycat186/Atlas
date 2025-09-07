@@ -75,5 +75,8 @@ main().catch((error) => {
   console.error('Failed to start witness node:', error);
   process.exit(1);
 });
-import { emitOneSpan } from './manual-span';
-(async () => { try { await emitOneSpan(); console.log('manual span emitted'); } catch (e) { console.error('manual span error', e);} })();
+
+
+// v11.5 fix: emit a startup span
+import { emitOneSpan } from "./manual-span";
+(async () => { try { await emitOneSpan(); console.log("manual span emitted"); } catch(e){ console.error(e);} })();
