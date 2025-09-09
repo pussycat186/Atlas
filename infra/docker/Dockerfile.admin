@@ -29,9 +29,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build packages
-RUN pnpm build --filter=@atlas/fabric-protocol
-RUN pnpm build --filter=@atlas/fabric-client
-RUN pnpm build --filter=@atlas/admin
+RUN pnpm -r --filter=@atlas/fabric-protocol build
+RUN pnpm -r --filter=@atlas/fabric-client build
+RUN pnpm -r --filter=@atlas/admin build
 
 # Production image
 FROM base AS runner

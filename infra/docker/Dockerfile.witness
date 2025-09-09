@@ -28,8 +28,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build packages
-RUN pnpm build --filter=@atlas/fabric-protocol
-RUN pnpm build --filter=@atlas/witness-node
+RUN pnpm -r --filter=@atlas/fabric-protocol build
+RUN pnpm -r --filter=@atlas/witness-node build
 
 # Production image
 FROM base AS runner
