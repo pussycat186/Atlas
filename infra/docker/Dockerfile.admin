@@ -28,10 +28,8 @@ RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build packages
-RUN pnpm -r --filter=@atlas/fabric-protocol build
-RUN pnpm -r --filter=@atlas/fabric-client build
-RUN pnpm -r --filter=@atlas/admin build
+# Build all packages
+RUN pnpm build
 
 # Production image
 FROM base AS runner
