@@ -10,12 +10,13 @@ services:
     restart: unless-stopped
 
   loki:
-    image: grafana/loki:2.9.4
+    image: grafana/loki:2.8.0
     command: ["-config.file=/etc/loki/config.yml"]
     ports: ["3100:3100"]
     volumes:
       - ./loki/loki-config.yml:/etc/loki/config.yml:ro
       - loki-data:/loki                 # named volume → /loki
+    user: "0:0"  # Run as root to avoid permission issues
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]

@@ -17,3 +17,12 @@ schema_config:
       index:
         prefix: index_
         period: 24h
+
+# Disable ring/consul dependencies for single-instance mode
+ring:
+  kvstore:
+    store: inmemory
+
+# Disable analytics and other complex modules
+analytics:
+  reporting_enabled: false
