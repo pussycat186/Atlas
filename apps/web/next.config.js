@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   transpilePackages: ['@atlas/fabric-client', '@atlas/fabric-protocol'],
   experimental: {
     appDir: true,
