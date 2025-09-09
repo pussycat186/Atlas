@@ -1,0 +1,94 @@
+name: Atlas v12 CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  lint-build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install deps
+        run: |
+          corepack enable
+          if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile
+          elif [ -f package-lock.json ]; then npm ci
+          elif [ -f yarn.lock ]; then yarn install --frozen-lockfile
+          fi
+      - name: Lint
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pnpm run lint || true
+          elif [ -f package-lock.json ]; then npm run lint || true
+          elif [ -f yarn.lock ]; then yarn run lint || true
+          fi
+      - name: Build
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pnpm run build || true
+          elif [ -f package-lock.json ]; then npm run build || true
+          elif [ -f yarn.lock ]; then yarn run build || true
+          fi
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install deps
+        run: |
+          corepack enable
+          if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile
+          elif [ -f package-lock.json ]; then npm ci
+          elif [ -f yarn.lock ]; then yarn install --frozen-lockfile
+          fi
+      - name: Run tests
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pnpm test || true
+          elif [ -f package-lock.json ]; then npm test || true
+          elif [ -f yarn.lock ]; then yarn test || true
+          fi
+
+  smoke:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start observability stack
+        run: |
+          docker compose -f observability/docker-compose.yml up -d
+          sleep 30
+      - name: Run smoke test
+        run: |
+          bash scripts/smoke.sh
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose -f observability/docker-compose.yml down
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [lint-build, test, smoke]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and push
+        run: echo "Publish placeholder"

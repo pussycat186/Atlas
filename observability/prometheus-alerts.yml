@@ -1,0 +1,20 @@
+groups:
+  - name: atlas-v12
+    rules:
+      - alert: PrometheusTargetsDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus target is down"
+          description: "Target {{ $labels.instance }} is down for more than 1 minute"
+      
+      - alert: OTLPExporterDown
+        expr: up{job="otel-collector"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "OTLP Exporter is down"
+          description: "OTLP Collector exporter is down for more than 1 minute"

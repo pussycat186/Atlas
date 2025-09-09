@@ -1,8 +1,9 @@
 apiVersion: 1
+
 providers:
-  - name: atlas-v12
+  - name: 'atlas-v12'
     type: file
-    folder: Atlas
     disableDeletion: false
     allowUiUpdates: true
-    options: { path: /etc/grafana/provisioning/dashboards, foldersFromFilesStructure: true }
+    options:
+      path: /etc/grafana/provisioning/dashboards
