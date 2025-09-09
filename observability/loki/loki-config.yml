@@ -1,0 +1,28 @@
+server:
+  http_listen_port: 3100
+  log_level: warn
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem: {}
+  replication_factor: 1
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+# Disable ring/consul dependencies for single-instance mode
+ring:
+  kvstore:
+    store: inmemory
+
+# Disable analytics and other complex modules
+analytics:
+  reporting_enabled: false
