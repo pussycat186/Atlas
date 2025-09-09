@@ -1,0 +1,127 @@
+name: Atlas v12 Public Demo
+
+on:
+  push:
+    branches: [ demo-public/** ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  public-demo:
+    name: Public Demo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      
+      - name: Build services
+        run: |
+          pnpm run build
+      
+      - name: Start Atlas v12 stack
+        run: |
+          docker compose -f docker-compose.yml up -d
+          docker compose -f observability/docker-compose.yml up -d
+          sleep 30
+      
+      - name: Setup tunnel (ngrok alternative)
+        id: tunnel
+        run: |
+          # Use localtunnel as free tunnel service
+          npm install -g localtunnel
+          lt --port 3000 --subdomain atlas-api-demo &
+          lt --port 3006 --subdomain atlas-web-demo &
+          lt --port 3007 --subdomain atlas-admin-demo &
+          lt --port 3030 --subdomain atlas-grafana-demo &
+          sleep 10
+          
+          echo "api_url=https://atlas-api-demo.loca.lt" >> $GITHUB_OUTPUT
+          echo "web_url=https://atlas-web-demo.loca.lt" >> $GITHUB_OUTPUT
+          echo "admin_url=https://atlas-admin-demo.loca.lt" >> $GITHUB_OUTPUT
+          echo "grafana_url=https://atlas-grafana-demo.loca.lt" >> $GITHUB_OUTPUT
+      
+      - name: Generate URLs artifact
+        run: |
+          cat > urls.json << EOF
+          {
+            "api": "${{ steps.tunnel.outputs.api_url }}",
+            "web": "${{ steps.tunnel.outputs.web_url }}",
+            "admin": "${{ steps.tunnel.outputs.admin_url }}",
+            "grafana": "${{ steps.tunnel.outputs.grafana_url }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+      
+      - name: Domain smoke test
+        run: |
+          # Test all public URLs
+          API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.tunnel.outputs.api_url }}/health" || echo "000")
+          WEB_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.tunnel.outputs.web_url }}" || echo "000")
+          ADMIN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.tunnel.outputs.admin_url }}" || echo "000")
+          GRAFANA_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.tunnel.outputs.grafana_url }}/api/health" || echo "000")
+          
+          # Determine overall status
+          if [[ "$API_STATUS" == "200" && "$WEB_STATUS" == "200" && "$ADMIN_STATUS" == "200" && "$GRAFANA_STATUS" == "200" ]]; then
+            STATUS="success"
+          else
+            STATUS="partial"
+          fi
+          
+          cat > smoke.json << EOF
+          {
+            "status": "$STATUS",
+            "domains": {
+              "api": "$API_STATUS",
+              "web": "$WEB_STATUS", 
+              "admin": "$ADMIN_STATUS",
+              "grafana": "$GRAFANA_STATUS"
+            },
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-demo-artifacts
+          path: |
+            urls.json
+            smoke.json
+      
+      - name: Display public URLs
+        run: |
+          echo "## 🌐 Atlas v12 Public Demo URLs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | URL | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API Gateway | ${{ steps.tunnel.outputs.api_url }} | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web App | ${{ steps.tunnel.outputs.web_url }} | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Admin Dashboard | ${{ steps.tunnel.outputs.admin_url }} | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Grafana | ${{ steps.tunnel.outputs.grafana_url }} | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          cat smoke.json >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose -f docker-compose.yml down
+          docker compose -f observability/docker-compose.yml down
