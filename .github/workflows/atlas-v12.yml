@@ -69,7 +69,6 @@ jobs:
   smoke:
     name: Smoke Test
     runs-on: ubuntu-latest
-    if: hashFiles('observability/docker-compose.yml') != ''
     steps:
       - uses: actions/checkout@v4
       - name: Start observability stack
