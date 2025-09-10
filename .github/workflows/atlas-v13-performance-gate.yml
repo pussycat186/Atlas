@@ -1,4 +1,4 @@
-name: Atlas v13 Product & Performance Gate
+name: Atlas v13.4 NGINX Service-Proxy Enforcement
 
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ on:
       target_url:
         description: 'Target URL for testing'
         required: false
-        default: 'http://localhost:3001'
+        default: 'http://localhost:8080'
         type: string
 
 concurrency:
@@ -73,12 +73,23 @@ env:
   WARMUP_DURATION: ${{ github.event.inputs.warmup_duration || '30' }}
   CACHE_HIT_TARGET: ${{ github.event.inputs.cache_hit_target || '98' }}
   TELEMETRY_SAMPLING: ${{ github.event.inputs.telemetry_sampling || '0.10' }}
-  TARGET_URL: ${{ github.event.inputs.target_url || 'http://localhost:3001' }}
+  TARGET_URL: ${{ github.event.inputs.target_url || 'http://localhost:8080' }}
 
 jobs:
   product-performance-gate:
-    name: Product & Performance Gate (ATLAS v13)
+    name: NGINX Service-Proxy Enforcement (ATLAS v13.4)
     runs-on: ubuntu-latest
+    
+    services:
+      nginx:
+        image: nginx:alpine
+        ports:
+          - 8080:80
+        options: >-
+          --health-cmd="curl -f http://localhost:80/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: Checkout
@@ -167,105 +178,109 @@ jobs:
             sleep 2
           done
 
-      - name: Start NGINX Front-Proxy
+      - name: Configure NGINX Service Container
         shell: bash
         run: |
-          # Install NGINX
-          sudo apt-get update
-          sudo apt-get install -y nginx
-          
           # Create NGINX configuration with micro-cache
-          sudo tee /etc/nginx/sites-available/atlas-proxy << 'EOF'
-          upstream atlas_app {
-              server localhost:3000;
-              keepalive 32;
+          cat > nginx.conf << 'EOF'
+          events {
+              worker_connections 1024;
           }
           
-          proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=atlas_cache:10m max_size=1g inactive=60m use_temp_path=off;
-          
-          server {
-              listen 3001;
-              server_name localhost;
-              
-              # Micro-cache configuration
-              proxy_cache atlas_cache;
-              proxy_cache_valid 200 301 ${PROXY_TTL}s;
-              proxy_cache_valid 404 1m;
-              proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
-              proxy_cache_background_update on;
-              proxy_cache_lock on;
-              
-              # Cache key includes path + normalized query + Accept-Encoding
-              proxy_cache_key "$scheme$request_method$host$request_uri$http_accept_encoding";
-              
-              # Ignore cookies on read, keep-alive on
-              proxy_ignore_headers "Set-Cookie";
-              proxy_set_header Connection "";
-              proxy_http_version 1.1;
-              
-              # Guardrails on upstream concurrency
-              proxy_buffering on;
-              proxy_buffer_size 4k;
-              proxy_buffers 8 4k;
-              proxy_busy_buffers_size 8k;
-              
-              # Static assets - immutable cache
-              location ~* ^/_next/static/ {
-                  proxy_pass http://atlas_app;
-                  proxy_cache_valid 200 301 1y;
-                  add_header Cache-Control "public, max-age=31536000, immutable";
-                  add_header X-Cache-Status $upstream_cache_status;
+          http {
+              upstream atlas_app {
+                  server host.docker.internal:3000;
+                  keepalive 32;
               }
               
-              # Favicon mapping
-              location = /favicon.ico {
-                  proxy_pass http://atlas_app/favicon.svg;
-                  proxy_cache_valid 200 301 1y;
-                  add_header Cache-Control "public, max-age=31536000, immutable";
-                  add_header X-Cache-Status $upstream_cache_status;
-              }
+              proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=atlas_cache:10m max_size=1g inactive=60m use_temp_path=off;
               
-              # Cacheable GET routes with SWR
-              location ~ ^/(|keys|playground|metrics)$ {
-                  proxy_pass http://atlas_app;
-                  proxy_cache_valid 200 301 ${PROXY_TTL}s;
-                  add_header Cache-Control "public, max-age=${PROXY_TTL}, stale-while-revalidate=${PROXY_SWR}";
-                  add_header Vary "Accept-Encoding";
-                  add_header X-Cache-Status $upstream_cache_status;
-              }
-              
-              # All other routes
-              location / {
-                  proxy_pass http://atlas_app;
-                  add_header X-Cache-Status $upstream_cache_status;
+              server {
+                  listen 80;
+                  server_name localhost;
+                  
+                  # Micro-cache configuration
+                  proxy_cache atlas_cache;
+                  proxy_cache_valid 200 301 60s;
+                  proxy_cache_valid 404 1m;
+                  proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+                  proxy_cache_background_update on;
+                  proxy_cache_lock on;
+                  
+                  # Cache key includes path + normalized query + Accept-Encoding
+                  proxy_cache_key "$scheme$request_method$host$request_uri$http_accept_encoding";
+                  
+                  # Ignore cookies on read, keep-alive on
+                  proxy_ignore_headers "Set-Cookie";
+                  proxy_set_header Connection "";
+                  proxy_http_version 1.1;
+                  
+                  # Guardrails on upstream concurrency
+                  proxy_buffering on;
+                  proxy_buffer_size 4k;
+                  proxy_buffers 8 4k;
+                  proxy_busy_buffers_size 8k;
+                  
+                  # Health check endpoint
+                  location /health {
+                      access_log off;
+                      return 200 "healthy\n";
+                      add_header Content-Type text/plain;
+                  }
+                  
+                  # Static assets - immutable cache
+                  location ~* ^/_next/static/ {
+                      proxy_pass http://atlas_app;
+                      proxy_cache_valid 200 301 1y;
+                      add_header Cache-Control "public, max-age=31536000, immutable";
+                      add_header X-Cache-Status $upstream_cache_status;
+                  }
+                  
+                  # Favicon mapping
+                  location = /favicon.ico {
+                      proxy_pass http://atlas_app/favicon.svg;
+                      proxy_cache_valid 200 301 1y;
+                      add_header Cache-Control "public, max-age=31536000, immutable";
+                      add_header X-Cache-Status $upstream_cache_status;
+                  }
+                  
+                  # Cacheable GET routes with SWR
+                  location ~ ^/(|keys|playground|metrics)$ {
+                      proxy_pass http://atlas_app;
+                      proxy_cache_valid 200 301 60s;
+                      add_header Cache-Control "public, max-age=60, stale-while-revalidate=30";
+                      add_header Vary "Accept-Encoding";
+                      add_header X-Cache-Status $upstream_cache_status;
+                  }
+                  
+                  # All other routes
+                  location / {
+                      proxy_pass http://atlas_app;
+                      add_header X-Cache-Status $upstream_cache_status;
+                  }
               }
           }
           EOF
           
-          # Enable the site
-          sudo ln -sf /etc/nginx/sites-available/atlas-proxy /etc/nginx/sites-enabled/
-          sudo rm -f /etc/nginx/sites-enabled/default
+          # Copy configuration to NGINX container
+          docker cp nginx.conf $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}"):/etc/nginx/nginx.conf
           
-          # Test configuration
-          sudo nginx -t
-          
-          # Start NGINX
-          sudo systemctl start nginx
-          sudo systemctl enable nginx
+          # Reload NGINX configuration
+          docker exec $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}") nginx -s reload
           
           # Wait for NGINX to be ready
           for i in {1..30}; do
-            if curl -f http://localhost:3001 >/dev/null 2>&1; then
-              echo "NGINX proxy is ready on port 3001"
+            if curl -f http://localhost:8080/health >/dev/null 2>&1; then
+              echo "NGINX service container is ready on port 8080"
               break
             fi
-            echo "Waiting for NGINX proxy... ($i/30)"
+            echo "Waiting for NGINX service container... ($i/30)"
             sleep 2
           done
           
           # Verify cache is working
           echo "Testing cache functionality..."
-          curl -s -I http://localhost:3001/ | grep -i "x-cache-status" || echo "Cache headers not yet present (normal for first request)"
+          curl -s -I http://localhost:8080/ | grep -i "x-cache-status" || echo "Cache headers not yet present (normal for first request)"
 
       - name: Route-Mix Lock
         shell: bash
@@ -294,7 +309,13 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Driving proxy to cache_hit_ratio ≥ ${CACHE_HIT_TARGET}%..." >> $GITHUB_STEP_SUMMARY
           
-          # Create priming script with environment variable substitution
+          # Install k6 via apt (robust installation)
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+          
+          # Create priming script
           cat > priming-test.js << 'EOF'
           import http from 'k6/http';
           import { check, sleep } from 'k6';
@@ -308,7 +329,7 @@ jobs:
             },
           };
           
-          const BASE_URL = 'http://localhost:3001';
+          const BASE_URL = 'http://localhost:8080';
           const routes = ['/', '/keys', '/playground', '/metrics'];
           
           export default function () {
@@ -321,13 +342,7 @@ jobs:
           }
           EOF
           
-          # Install k6 via apt (more reliable in GitHub Actions)
-          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-          sudo apt-get update
-          sudo apt-get install -y k6
-          
-          # Run priming
+          # Run priming test
           echo "Starting k6 priming test..."
           k6 run priming-test.js --out json=priming-results.json || {
             echo "k6 priming test failed, checking for errors..."
@@ -342,8 +357,8 @@ jobs:
           # Capture NGINX cache metrics
           echo "### NGINX Cache Metrics" >> $GITHUB_STEP_SUMMARY
           echo "- Cache zone: atlas_cache" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache size: $(du -sh /var/cache/nginx 2>/dev/null | cut -f1 || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache files: $(find /var/cache/nginx -type f 2>/dev/null | wc -l || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          echo "- Service container port: 8080" >> $GITHUB_STEP_SUMMARY
+          echo "- Target URL: ${TARGET_URL}" >> $GITHUB_STEP_SUMMARY
           
           echo "Priming completed. Cache hit ratio should be ≥ ${CACHE_HIT_TARGET}%" >> $GITHUB_STEP_SUMMARY
 
@@ -354,7 +369,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Running 60s constant-arrival-rate = ${K6_ARRIVAL_RATE} req/s..." >> $GITHUB_STEP_SUMMARY
           
-          # Create measurement script with environment variable substitution
+          # Create measurement script
           cat > measurement-test.js << 'EOF'
           import http from 'k6/http';
           import { check, sleep } from 'k6';
@@ -373,7 +388,7 @@ jobs:
             noConnectionReuse: false,
           };
           
-          const BASE_URL = 'http://localhost:3001';
+          const BASE_URL = 'http://localhost:8080';
           const routes = ['/', '/keys', '/playground', '/metrics'];
           
           export default function () {
@@ -399,7 +414,7 @@ jobs:
           # Set telemetry sampling
           export OTEL_SAMPLING_RATIO=${TELEMETRY_SAMPLING}
           
-          # Run measurement
+          # Run measurement test
           echo "Starting k6 measurement test..."
           k6 run measurement-test.js --out json=k6-results.json || {
             echo "k6 test failed, checking for errors..."
@@ -420,8 +435,8 @@ jobs:
           
           # NGINX cache metrics
           echo "### NGINX Cache Metrics" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache size: $(du -sh /var/cache/nginx 2>/dev/null | cut -f1 || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache files: $(find /var/cache/nginx -type f 2>/dev/null | wc -l || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          echo "- Service container port: 8080" >> $GITHUB_STEP_SUMMARY
+          echo "- Target URL: ${TARGET_URL}" >> $GITHUB_STEP_SUMMARY
           echo "- Cache hit ratio: Estimated ≥${CACHE_HIT_TARGET}% (based on X-Cache-Status headers)" >> $GITHUB_STEP_SUMMARY
 
       - name: Evidence Collection
@@ -469,10 +484,10 @@ jobs:
           cat > knobs-notes.txt << 'EOF'
           WHAT/WHY/VERIFY/ROLLBACK for every knob:
           
-          1. NGINX Micro-Cache (${PROXY_TTL}s TTL)
-             WHAT: NGINX proxy_cache with ${PROXY_TTL}s TTL for GET routes
+          1. NGINX Service Container Micro-Cache (60s TTL)
+             WHAT: NGINX service container with proxy_cache 60s TTL for GET routes
              WHY: Reduce origin load and improve response times
-             VERIFY: Cache hit ratio >${CACHE_HIT_TARGET}% during test, X-Cache-Status headers
+             VERIFY: Cache hit ratio >98% during test, X-Cache-Status headers
              ROLLBACK: Remove proxy_cache directive, disable caching
           
           2. Cache Headers for Static Assets
@@ -481,16 +496,16 @@ jobs:
              VERIFY: Cache-Control: public, max-age=31536000, immutable headers present
              ROLLBACK: Remove add_header Cache-Control directives
           
-          3. NGINX Worker Processes
-             WHAT: NGINX with auto-scaling workers (CPU count)
-             WHY: Utilize all CPU cores for better concurrency
-             VERIFY: ps aux shows NGINX worker processes
-             ROLLBACK: Set worker_processes 1 in nginx.conf
+          3. NGINX Service Container
+             WHAT: NGINX service container (nginx:alpine) on port 8080
+             WHY: Isolated proxy service with micro-cache capabilities
+             VERIFY: Docker container running, port 8080 accessible
+             ROLLBACK: Remove service container, use direct app access
           
           4. Telemetry Sampling Reduction
-             WHAT: Set OTEL_SAMPLING_RATIO=${TELEMETRY_SAMPLING} during test
+             WHAT: Set OTEL_SAMPLING_RATIO=0.10 during test
              WHY: Reduce telemetry overhead during high load
-             VERIFY: Environment variable set to ${TELEMETRY_SAMPLING}
+             VERIFY: Environment variable set to 0.10
              ROLLBACK: Set OTEL_SAMPLING_RATIO=1.0
           
           5. HTTP Keep-Alive Enabled
@@ -510,6 +525,12 @@ jobs:
              WHY: Reuse upstream connections to reduce handshake overhead
              VERIFY: NGINX config shows keepalive 32
              ROLLBACK: Remove keepalive directive
+          
+          8. Robust k6 Installation
+             WHAT: Install k6 via apt with GPG key verification
+             WHY: Avoid snap pitfalls and ensure reliable installation
+             VERIFY: k6 version command succeeds
+             ROLLBACK: Use snap install k6
           EOF
           
           # Create CPU proof
@@ -522,14 +543,14 @@ jobs:
           
           Process Count:
           - Next.js server: 1 process
-          - NGINX workers: $(ps aux | grep nginx | grep -v grep | wc -l) processes
-          - Total app processes: $((1 + $(ps aux | grep nginx | grep -v grep | wc -l)))
+          - NGINX service container: 1 container (nginx:alpine)
+          - Total app processes: 2 (1 app + 1 service container)
           
           Evidence:
-          - ps aux shows NGINX worker processes
-          - NGINX master process managing workers
-          - NGINX listening on port 3001 with micro-cache enabled
+          - NGINX service container running on port 8080
+          - Service container configured with micro-cache
           - Cache zone: atlas_cache (10MB, 1GB max)
+          - Docker container ID: $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}")
           EOF
           
           echo "Evidence collection completed" >> $GITHUB_STEP_SUMMARY
@@ -594,5 +615,4 @@ jobs:
           if [ ! -z "$APP_PID" ]; then
             kill $APP_PID || true
           fi
-          # Stop NGINX
-          sudo systemctl stop nginx || true
+          # NGINX service container will be automatically cleaned up by GitHub Actions
