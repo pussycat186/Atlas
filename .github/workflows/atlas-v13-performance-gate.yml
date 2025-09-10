@@ -117,7 +117,7 @@ jobs:
           # Production build proof
           echo "### Production Build Proof" >> $GITHUB_STEP_SUMMARY
           echo "- Building production application..." >> $GITHUB_STEP_SUMMARY
-          cd apps/web && pnpm build
+          pnpm build
           echo "- Production build completed" >> $GITHUB_STEP_SUMMARY
           echo "- No dev flags detected" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
