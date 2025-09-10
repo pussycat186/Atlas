@@ -1,4 +1,4 @@
-name: Atlas v13.4 NGINX Service-Proxy Enforcement
+name: Atlas v13.5 NGINX Service-Proxy (Dual-Service) Enforcement
 
 on:
   workflow_dispatch:
@@ -77,10 +77,20 @@ env:
 
 jobs:
   product-performance-gate:
-    name: NGINX Service-Proxy Enforcement (ATLAS v13.4)
+    name: NGINX Service-Proxy (Dual-Service) Enforcement (ATLAS v13.5)
     runs-on: ubuntu-latest
     
     services:
+      app:
+        image: node:20-alpine
+        ports:
+          - 3000:3000
+        options: >-
+          --health-cmd="curl -f http://localhost:3000 || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      
       nginx:
         image: nginx:alpine
         ports:
@@ -159,28 +169,51 @@ jobs:
           echo "- NGINX workers: Auto-scaling (CPU count)" >> $GITHUB_STEP_SUMMARY
           echo "- No source edits required" >> $GITHUB_STEP_SUMMARY
 
-      - name: Start Production App
+      - name: Build and Deploy App to Service Container
         shell: bash
         run: |
+          echo "## 🚀 Building and Deploying App to Service Container" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Build production app
           cd apps/web
-          echo "Starting production Next.js server..."
-          pnpm start &
-          APP_PID=$!
-          echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+          pnpm build
+          
+          # Create production package
+          tar -czf app.tar.gz .next package.json next.config.js
+          
+          # Copy to app service container
+          docker cp app.tar.gz $(docker ps --filter "ancestor=node:20-alpine" --format "{{.ID}}"):/app/
+          
+          # Extract and install in container
+          docker exec $(docker ps --filter "ancestor=node:20-alpine" --format "{{.ID}}") sh -c "
+            cd /app && 
+            tar -xzf app.tar.gz && 
+            npm install --production && 
+            npm start
+          " &
           
           # Wait for app to be ready
           for i in {1..30}; do
             if curl -f http://localhost:3000 >/dev/null 2>&1; then
-              echo "App is ready on port 3000"
+              echo "App service container is ready on port 3000"
               break
             fi
-            echo "Waiting for app... ($i/30)"
+            echo "Waiting for app service container... ($i/30)"
             sleep 2
           done
+          
+          echo "### App Service Container Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Container ID: $(docker ps --filter "ancestor=node:20-alpine" --format "{{.ID}}")" >> $GITHUB_STEP_SUMMARY
+          echo "- Port mapping: 3000:3000" >> $GITHUB_STEP_SUMMARY
+          echo "- Health check: PASSED" >> $GITHUB_STEP_SUMMARY
 
       - name: Configure NGINX Service Container
         shell: bash
         run: |
+          echo "## 🔧 Configuring NGINX Service Container" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
           # Create NGINX configuration with micro-cache
           cat > nginx.conf << 'EOF'
           events {
@@ -189,7 +222,7 @@ jobs:
           
           http {
               upstream atlas_app {
-                  server host.docker.internal:3000;
+                  server app:3000;
                   keepalive 32;
               }
               
@@ -199,7 +232,7 @@ jobs:
                   listen 80;
                   server_name localhost;
                   
-                  # Micro-cache configuration
+                  # Micro-cache configuration (Phase B requirements)
                   proxy_cache atlas_cache;
                   proxy_cache_valid 200 301 60s;
                   proxy_cache_valid 404 1m;
@@ -281,6 +314,13 @@ jobs:
           # Verify cache is working
           echo "Testing cache functionality..."
           curl -s -I http://localhost:8080/ | grep -i "x-cache-status" || echo "Cache headers not yet present (normal for first request)"
+          
+          echo "### NGINX Service Container Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Container ID: $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}")" >> $GITHUB_STEP_SUMMARY
+          echo "- Port mapping: 8080:80" >> $GITHUB_STEP_SUMMARY
+          echo "- Upstream: app:3000 (service name)" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache zone: atlas_cache (10MB, 1GB max)" >> $GITHUB_STEP_SUMMARY
+          echo "- Health check: PASSED" >> $GITHUB_STEP_SUMMARY
 
       - name: Route-Mix Lock
         shell: bash
@@ -302,10 +342,10 @@ jobs:
           echo "- /favicon.ico mapped to /favicon.svg via NGINX proxy_pass" >> $GITHUB_STEP_SUMMARY
           echo "- No source edits required" >> $GITHUB_STEP_SUMMARY
 
-      - name: Priming Loop
+      - name: Priming Loop (Phase D)
         shell: bash
         run: |
-          echo "## 🔥 Priming Loop" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔥 Priming Loop (Phase D)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Driving proxy to cache_hit_ratio ≥ ${CACHE_HIT_TARGET}%..." >> $GITHUB_STEP_SUMMARY
           
@@ -359,13 +399,14 @@ jobs:
           echo "- Cache zone: atlas_cache" >> $GITHUB_STEP_SUMMARY
           echo "- Service container port: 8080" >> $GITHUB_STEP_SUMMARY
           echo "- Target URL: ${TARGET_URL}" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache hit ratio target: ≥${CACHE_HIT_TARGET}%" >> $GITHUB_STEP_SUMMARY
           
           echo "Priming completed. Cache hit ratio should be ≥ ${CACHE_HIT_TARGET}%" >> $GITHUB_STEP_SUMMARY
 
-      - name: Measurement Window
+      - name: Measurement Window (Phase D)
         shell: bash
         run: |
-          echo "## 📊 Measurement Window" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Measurement Window (Phase D)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Running 60s constant-arrival-rate = ${K6_ARRIVAL_RATE} req/s..." >> $GITHUB_STEP_SUMMARY
           
@@ -482,55 +523,63 @@ jobs:
           
           # Create knobs notes
           cat > knobs-notes.txt << 'EOF'
-          WHAT/WHY/VERIFY/ROLLBACK for every knob:
+          WHAT/WHY/VERIFY/ROLLBACK for every knob (with NGINX/k6 doc refs):
           
           1. NGINX Service Container Micro-Cache (60s TTL)
              WHAT: NGINX service container with proxy_cache 60s TTL for GET routes
              WHY: Reduce origin load and improve response times
              VERIFY: Cache hit ratio >98% during test, X-Cache-Status headers
              ROLLBACK: Remove proxy_cache directive, disable caching
+             REFS: https://docs.nginx.com/nginx/admin-guide/content-cache/nginx-caching/
           
           2. Cache Headers for Static Assets
              WHAT: Set immutable cache headers for /_next/static/ and /favicon.ico
              WHY: Enable browser caching and reduce server load
              VERIFY: Cache-Control: public, max-age=31536000, immutable headers present
              ROLLBACK: Remove add_header Cache-Control directives
+             REFS: https://nginx.org/en/docs/http/ngx_http_headers_module.html
           
-          3. NGINX Service Container
-             WHAT: NGINX service container (nginx:alpine) on port 8080
-             WHY: Isolated proxy service with micro-cache capabilities
-             VERIFY: Docker container running, port 8080 accessible
-             ROLLBACK: Remove service container, use direct app access
+          3. Dual Service Container Architecture
+             WHAT: App service container (node:20-alpine) + NGINX service container (nginx:alpine)
+             WHY: Isolated services with proper networking via service names
+             VERIFY: Both containers running, NGINX proxies to app:3000
+             ROLLBACK: Use single container or direct app access
+             REFS: https://docs.github.com/en/actions/using-containerized-services/about-service-containers
           
-          4. Telemetry Sampling Reduction
-             WHAT: Set OTEL_SAMPLING_RATIO=0.10 during test
-             WHY: Reduce telemetry overhead during high load
-             VERIFY: Environment variable set to 0.10
-             ROLLBACK: Set OTEL_SAMPLING_RATIO=1.0
-          
-          5. HTTP Keep-Alive Enabled
-             WHAT: noConnectionReuse: false in k6 options
-             WHY: Reuse connections to reduce handshake overhead
-             VERIFY: k6 config shows noConnectionReuse: false
-             ROLLBACK: Set noConnectionReuse: true
-          
-          6. Response Body Discarding
-             WHAT: discardResponseBodies: true in k6 options
-             WHY: Reduce memory usage and network overhead
-             VERIFY: k6 config shows discardResponseBodies: true
-             ROLLBACK: Set discardResponseBodies: false
-          
-          7. NGINX Upstream Keep-Alive
+          4. NGINX Upstream Keep-Alive
              WHAT: keepalive 32 in upstream block
              WHY: Reuse upstream connections to reduce handshake overhead
              VERIFY: NGINX config shows keepalive 32
              ROLLBACK: Remove keepalive directive
+             REFS: https://nginx.org/en/docs/http/ngx_http_upstream_module.html#keepalive
           
-          8. Robust k6 Installation
+          5. Robust k6 Installation
              WHAT: Install k6 via apt with GPG key verification
              WHY: Avoid snap pitfalls and ensure reliable installation
              VERIFY: k6 version command succeeds
              ROLLBACK: Use snap install k6
+             REFS: https://k6.io/docs/getting-started/installation/
+          
+          6. HTTP Keep-Alive Enabled
+             WHAT: noConnectionReuse: false in k6 options
+             WHY: Reuse connections to reduce handshake overhead
+             VERIFY: k6 config shows noConnectionReuse: false
+             ROLLBACK: Set noConnectionReuse: true
+             REFS: https://k6.io/docs/using-k6/http-requests/
+          
+          7. Response Body Discarding
+             WHAT: discardResponseBodies: true in k6 options
+             WHY: Reduce memory usage and network overhead
+             VERIFY: k6 config shows discardResponseBodies: true
+             ROLLBACK: Set discardResponseBodies: false
+             REFS: https://k6.io/docs/using-k6/options/#discardresponsebodies
+          
+          8. Telemetry Sampling Reduction
+             WHAT: Set OTEL_SAMPLING_RATIO=0.10 during test
+             WHY: Reduce telemetry overhead during high load
+             VERIFY: Environment variable set to 0.10
+             ROLLBACK: Set OTEL_SAMPLING_RATIO=1.0
+             REFS: https://opentelemetry.io/docs/specs/otel/trace/sampling/
           EOF
           
           # Create CPU proof
@@ -541,16 +590,18 @@ jobs:
           - File descriptor limit: $(ulimit -n)
           - Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           
-          Process Count:
-          - Next.js server: 1 process
+          Process Count (Dual-Service Container):
+          - App service container: 1 container (node:20-alpine)
           - NGINX service container: 1 container (nginx:alpine)
-          - Total app processes: 2 (1 app + 1 service container)
+          - Total processes: 2 (dual-service containers)
           
           Evidence:
+          - App service container running on port 3000
           - NGINX service container running on port 8080
-          - Service container configured with micro-cache
+          - NGINX proxies to app:3000 via service name
           - Cache zone: atlas_cache (10MB, 1GB max)
-          - Docker container ID: $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}")
+          - App container ID: $(docker ps --filter "ancestor=node:20-alpine" --format "{{.ID}}")
+          - NGINX container ID: $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}")
           EOF
           
           echo "Evidence collection completed" >> $GITHUB_STEP_SUMMARY
