@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "clean": "rimraf packages/**/dist services/**/dist apps/**/dist || true",
-    "build": "tsc -b",
+    "build": "pnpm -r --filter='@atlas/fabric-protocol' build && pnpm -r --filter='@atlas/fabric-client' build && pnpm -r --filter='./services/*' build && pnpm -r --filter='./apps/*' build",
     "test": "pnpm -r test",
     "test:unit": "pnpm -r test:unit",
     "test:integration": "pnpm -r test:integration",
