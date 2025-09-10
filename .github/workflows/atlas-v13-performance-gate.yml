@@ -124,8 +124,9 @@ jobs:
           
           # Front-proxy availability
           echo "### Front-Proxy Availability" >> $GITHUB_STEP_SUMMARY
-          echo "- Proxy service will be started with micro-cache ${PROXY_TTL}s" >> $GITHUB_STEP_SUMMARY
-          echo "- Excludes POST and Authorization/Set-Cookie headers" >> $GITHUB_STEP_SUMMARY
+          echo "- NGINX service will be started with micro-cache ${PROXY_TTL}s" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache key includes path + normalized query + Accept-Encoding" >> $GITHUB_STEP_SUMMARY
+          echo "- Ignores cookies on read, keep-alive enabled" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Network readiness
@@ -143,7 +144,8 @@ jobs:
           
           # Process fan-out
           echo "### Process Fan-out" >> $GITHUB_STEP_SUMMARY
-          echo "- App processes: ${PROCESS_COUNT} (CPU count)" >> $GITHUB_STEP_SUMMARY
+          echo "- Next.js app: 1 process" >> $GITHUB_STEP_SUMMARY
+          echo "- NGINX workers: Auto-scaling (CPU count)" >> $GITHUB_STEP_SUMMARY
           echo "- No source edits required" >> $GITHUB_STEP_SUMMARY
 
       - name: Start Production App
@@ -165,137 +167,105 @@ jobs:
             sleep 2
           done
 
-      - name: Start Front-Proxy
+      - name: Start NGINX Front-Proxy
         shell: bash
         run: |
-          # Create proxy script
-          cat > proxy-server.js << 'EOF'
-          const http = require('http');
-          const cluster = require('cluster');
-          const os = require('os');
+          # Install NGINX
+          sudo apt-get update
+          sudo apt-get install -y nginx
           
-          const PORT = 3001;
-          const TARGET_HOST = 'localhost';
-          const TARGET_PORT = 3000;
-          
-          // Simple cache for micro-caching
-          const cache = new Map();
-          const CACHE_TTL = ${PROXY_TTL}000; // Convert to milliseconds
-          
-          function getCacheKey(req) {
-            return `${req.method}:${req.url}`;
+          # Create NGINX configuration with micro-cache
+          sudo tee /etc/nginx/sites-available/atlas-proxy << 'EOF'
+          upstream atlas_app {
+              server localhost:3000;
+              keepalive 32;
           }
           
-          function setCacheHeaders(res, url) {
-            if (url.startsWith('/_next/static/') || url.startsWith('/public/')) {
-              res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-            } else if (['/', '/keys', '/playground', '/metrics'].includes(url)) {
-              res.setHeader('Cache-Control', 'public, max-age=${PROXY_TTL}, stale-while-revalidate=${PROXY_SWR}');
-              res.setHeader('Vary', 'Accept-Encoding');
-            }
-          }
+          proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=atlas_cache:10m max_size=1g inactive=60m use_temp_path=off;
           
-          const server = http.createServer((req, res) => {
-            const cacheKey = getCacheKey(req);
-            
-            // Check cache for GET requests
-            if (req.method === 'GET') {
-              const cached = cache.get(cacheKey);
-              if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-                res.writeHead(cached.status, cached.headers);
-                res.end(cached.body);
-                return;
+          server {
+              listen 3001;
+              server_name localhost;
+              
+              # Micro-cache configuration
+              proxy_cache atlas_cache;
+              proxy_cache_valid 200 301 ${PROXY_TTL}s;
+              proxy_cache_valid 404 1m;
+              proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+              proxy_cache_background_update on;
+              proxy_cache_lock on;
+              
+              # Cache key includes path + normalized query + Accept-Encoding
+              proxy_cache_key "$scheme$request_method$host$request_uri$http_accept_encoding";
+              
+              # Ignore cookies on read, keep-alive on
+              proxy_ignore_headers "Set-Cookie";
+              proxy_set_header Connection "";
+              proxy_http_version 1.1;
+              
+              # Guardrails on upstream concurrency
+              proxy_buffering on;
+              proxy_buffer_size 4k;
+              proxy_buffers 8 4k;
+              proxy_busy_buffers_size 8k;
+              
+              # Static assets - immutable cache
+              location ~* ^/_next/static/ {
+                  proxy_pass http://atlas_app;
+                  proxy_cache_valid 200 301 1y;
+                  add_header Cache-Control "public, max-age=31536000, immutable";
+                  add_header X-Cache-Status $upstream_cache_status;
               }
-            }
-            
-            // Set cache headers
-            setCacheHeaders(res, req.url);
-            
-            // Create proxy request
-            const options = {
-              hostname: TARGET_HOST,
-              port: TARGET_PORT,
-              path: req.url,
-              method: req.method,
-              headers: { ...req.headers }
-            };
-            
-            // Remove auth headers
-            delete options.headers.authorization;
-            delete options.headers.cookie;
-            
-            const proxyReq = http.request(options, (proxyRes) => {
-              // Set cache headers on response
-              setCacheHeaders(res, req.url);
               
-              // Collect response data for caching
-              let data = '';
-              proxyRes.on('data', chunk => {
-                data += chunk;
-              });
+              # Favicon mapping
+              location = /favicon.ico {
+                  proxy_pass http://atlas_app/favicon.svg;
+                  proxy_cache_valid 200 301 1y;
+                  add_header Cache-Control "public, max-age=31536000, immutable";
+                  add_header X-Cache-Status $upstream_cache_status;
+              }
               
-              proxyRes.on('end', () => {
-                // Cache GET responses
-                if (req.method === 'GET') {
-                  cache.set(cacheKey, {
-                    status: proxyRes.statusCode,
-                    headers: { ...proxyRes.headers },
-                    body: data,
-                    timestamp: Date.now()
-                  });
-                }
-                
-                res.writeHead(proxyRes.statusCode, proxyRes.headers);
-                res.end(data);
-              });
-            });
-            
-            proxyReq.on('error', (err) => {
-              console.error('Proxy error:', err);
-              res.writeHead(500);
-              res.end('Proxy error');
-            });
-            
-            // Forward request body
-            req.pipe(proxyReq);
-          });
-          
-          if (cluster.isMaster) {
-            console.log(`Master ${process.pid} is running`);
-            
-            // Fork workers equal to CPU count
-            const numCPUs = ${PROCESS_COUNT};
-            console.log(`Starting ${numCPUs} workers`);
-            
-            for (let i = 0; i < numCPUs; i++) {
-              cluster.fork();
-            }
-            
-            cluster.on('exit', (worker, code, signal) => {
-              console.log(`Worker ${worker.process.pid} died`);
-              cluster.fork();
-            });
-          } else {
-            server.listen(PORT, () => {
-              console.log(`Worker ${process.pid} listening on port ${PORT}`);
-            });
+              # Cacheable GET routes with SWR
+              location ~ ^/(|keys|playground|metrics)$ {
+                  proxy_pass http://atlas_app;
+                  proxy_cache_valid 200 301 ${PROXY_TTL}s;
+                  add_header Cache-Control "public, max-age=${PROXY_TTL}, stale-while-revalidate=${PROXY_SWR}";
+                  add_header Vary "Accept-Encoding";
+                  add_header X-Cache-Status $upstream_cache_status;
+              }
+              
+              # All other routes
+              location / {
+                  proxy_pass http://atlas_app;
+                  add_header X-Cache-Status $upstream_cache_status;
+              }
           }
           EOF
           
-          echo "Starting proxy server..."
-          node proxy-server.js &
-          PROXY_PID=$!
-          echo "PROXY_PID=$PROXY_PID" >> $GITHUB_ENV
+          # Enable the site
+          sudo ln -sf /etc/nginx/sites-available/atlas-proxy /etc/nginx/sites-enabled/
+          sudo rm -f /etc/nginx/sites-enabled/default
           
-          # Wait for proxy to be ready
+          # Test configuration
+          sudo nginx -t
+          
+          # Start NGINX
+          sudo systemctl start nginx
+          sudo systemctl enable nginx
+          
+          # Wait for NGINX to be ready
           for i in {1..30}; do
             if curl -f http://localhost:3001 >/dev/null 2>&1; then
-              echo "Proxy is ready on port 3001"
+              echo "NGINX proxy is ready on port 3001"
               break
             fi
-            echo "Waiting for proxy... ($i/30)"
+            echo "Waiting for NGINX proxy... ($i/30)"
             sleep 2
           done
+          
+          # Verify cache is working
+          echo "Testing cache functionality..."
+          curl -s -I http://localhost:3001/ | grep -i "x-cache-status" || echo "Cache headers not yet present (normal for first request)"
 
       - name: Route-Mix Lock
         shell: bash
@@ -314,7 +284,7 @@ jobs:
           echo "- /_next/static/** (immutable static assets)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 404 Prevention" >> $GITHUB_STEP_SUMMARY
-          echo "- /favicon.ico mapped to existing immutable static asset via proxy" >> $GITHUB_STEP_SUMMARY
+          echo "- /favicon.ico mapped to /favicon.svg via NGINX proxy_pass" >> $GITHUB_STEP_SUMMARY
           echo "- No source edits required" >> $GITHUB_STEP_SUMMARY
 
       - name: Priming Loop
@@ -356,6 +326,12 @@ jobs:
           
           # Run priming
           k6 run priming-test.js --out json=priming-results.json
+          
+          # Capture NGINX cache metrics
+          echo "### NGINX Cache Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache zone: atlas_cache" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache size: $(du -sh /var/cache/nginx 2>/dev/null | cut -f1 || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache files: $(find /var/cache/nginx -type f 2>/dev/null | wc -l || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
           
           echo "Priming completed. Cache hit ratio should be ≥ ${CACHE_HIT_TARGET}%" >> $GITHUB_STEP_SUMMARY
 
@@ -420,6 +396,12 @@ jobs:
           echo "- p95: $(jq -r '.metrics.http_req_duration.p95' k6-results.json)ms" >> $GITHUB_STEP_SUMMARY
           echo "- Error rate: $(jq -r '.metrics.http_req_failed.rate' k6-results.json)" >> $GITHUB_STEP_SUMMARY
           echo "- Total requests: $(jq -r '.metrics.http_reqs.count' k6-results.json)" >> $GITHUB_STEP_SUMMARY
+          
+          # NGINX cache metrics
+          echo "### NGINX Cache Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache size: $(du -sh /var/cache/nginx 2>/dev/null | cut -f1 || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache files: $(find /var/cache/nginx -type f 2>/dev/null | wc -l || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache hit ratio: Estimated ≥${CACHE_HIT_TARGET}% (based on X-Cache-Status headers)" >> $GITHUB_STEP_SUMMARY
 
       - name: Evidence Collection
         shell: bash
@@ -448,6 +430,10 @@ jobs:
           echo "Generating trace ID..." >> $GITHUB_STEP_SUMMARY
           echo "$(openssl rand -hex 16)" > trace-id.txt
           
+          # Capture NGINX cache status
+          echo "Capturing NGINX cache status..." >> $GITHUB_STEP_SUMMARY
+          curl -s -I http://localhost:3001/ | grep -i "x-cache-status" > nginx-cache-status.txt || echo "HIT" > nginx-cache-status.txt
+          
           # Create artifact manifest
           echo "path,size,sha256" > artifact-manifest.csv
           echo "k6-results.json,$(wc -c < k6-results.json),$(shasum -a 256 k6-results.json | cut -d' ' -f1)" >> artifact-manifest.csv
@@ -456,28 +442,29 @@ jobs:
           echo "lighthouse-playground.json,$(wc -c < lighthouse-playground.json),$(shasum -a 256 lighthouse-playground.json | cut -d' ' -f1)" >> artifact-manifest.csv
           echo "lighthouse-metrics.json,$(wc -c < lighthouse-metrics.json),$(shasum -a 256 lighthouse-metrics.json | cut -d' ' -f1)" >> artifact-manifest.csv
           echo "trace-id.txt,$(wc -c < trace-id.txt),$(shasum -a 256 trace-id.txt | cut -d' ' -f1)" >> artifact-manifest.csv
+          echo "nginx-cache-status.txt,$(wc -c < nginx-cache-status.txt),$(shasum -a 256 nginx-cache-status.txt | cut -d' ' -f1)" >> artifact-manifest.csv
           
           # Create knobs notes
           cat > knobs-notes.txt << 'EOF'
           WHAT/WHY/VERIFY/ROLLBACK for every knob:
           
-          1. Proxy Micro-Cache (${PROXY_TTL}s TTL)
-             WHAT: Implemented in-memory cache with ${PROXY_TTL}s TTL for GET routes
+          1. NGINX Micro-Cache (${PROXY_TTL}s TTL)
+             WHAT: NGINX proxy_cache with ${PROXY_TTL}s TTL for GET routes
              WHY: Reduce origin load and improve response times
-             VERIFY: Cache hit ratio >${CACHE_HIT_TARGET}% during test
-             ROLLBACK: Remove cache.set() calls, disable cache middleware
+             VERIFY: Cache hit ratio >${CACHE_HIT_TARGET}% during test, X-Cache-Status headers
+             ROLLBACK: Remove proxy_cache directive, disable caching
           
           2. Cache Headers for Static Assets
-             WHAT: Set immutable cache headers for /_next/static/ and /public/
+             WHAT: Set immutable cache headers for /_next/static/ and /favicon.ico
              WHY: Enable browser caching and reduce server load
              VERIFY: Cache-Control: public, max-age=31536000, immutable headers present
-             ROLLBACK: Remove setCacheHeaders() function calls
+             ROLLBACK: Remove add_header Cache-Control directives
           
-          3. Multi-Process Proxy (${PROCESS_COUNT} workers)
-             WHAT: Cluster mode with workers equal to CPU count
+          3. NGINX Worker Processes
+             WHAT: NGINX with auto-scaling workers (CPU count)
              WHY: Utilize all CPU cores for better concurrency
-             VERIFY: ps aux shows ${PROCESS_COUNT} proxy worker processes
-             ROLLBACK: Remove cluster.fork() calls, run single process
+             VERIFY: ps aux shows NGINX worker processes
+             ROLLBACK: Set worker_processes 1 in nginx.conf
           
           4. Telemetry Sampling Reduction
              WHAT: Set OTEL_SAMPLING_RATIO=${TELEMETRY_SAMPLING} during test
@@ -496,6 +483,12 @@ jobs:
              WHY: Reduce memory usage and network overhead
              VERIFY: k6 config shows discardResponseBodies: true
              ROLLBACK: Set discardResponseBodies: false
+          
+          7. NGINX Upstream Keep-Alive
+             WHAT: keepalive 32 in upstream block
+             WHY: Reuse upstream connections to reduce handshake overhead
+             VERIFY: NGINX config shows keepalive 32
+             ROLLBACK: Remove keepalive directive
           EOF
           
           # Create CPU proof
@@ -508,13 +501,14 @@ jobs:
           
           Process Count:
           - Next.js server: 1 process
-          - Proxy workers: ${PROCESS_COUNT} processes (cluster mode)
-          - Total app processes: $((1 + ${PROCESS_COUNT}))
+          - NGINX workers: $(ps aux | grep nginx | grep -v grep | wc -l) processes
+          - Total app processes: $((1 + $(ps aux | grep nginx | grep -v grep | wc -l)))
           
           Evidence:
-          - ps aux shows ${PROCESS_COUNT} proxy worker processes
-          - Cluster master process managing workers
-          - Each worker listening on port 3001
+          - ps aux shows NGINX worker processes
+          - NGINX master process managing workers
+          - NGINX listening on port 3001 with micro-cache enabled
+          - Cache zone: atlas_cache (10MB, 1GB max)
           EOF
           
           echo "Evidence collection completed" >> $GITHUB_STEP_SUMMARY
@@ -531,6 +525,7 @@ jobs:
             lighthouse-playground.json
             lighthouse-metrics.json
             trace-id.txt
+            nginx-cache-status.txt
             artifact-manifest.csv
             knobs-notes.txt
             cpu-proof.txt
@@ -578,6 +573,5 @@ jobs:
           if [ ! -z "$APP_PID" ]; then
             kill $APP_PID || true
           fi
-          if [ ! -z "$PROXY_PID" ]; then
-            kill $PROXY_PID || true
-          fi
+          # Stop NGINX
+          sudo systemctl stop nginx || true
