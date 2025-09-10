@@ -27,9 +27,6 @@ RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Make build script executable
-RUN chmod +x scripts/build.sh
-
 # Build all packages
 RUN pnpm build
 
