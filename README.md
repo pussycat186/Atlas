@@ -1,327 +1,293 @@
-# Atlas Secure Fabric
+# Atlas v12 FutureTech Infrastructure
 
-> **Zero-crypto messaging and storage platform with multi-witness quorum consensus**
+[![CI Status](https://github.com/your-org/Atlas/workflows/Atlas%20v12%20Quality%20Gates/badge.svg)](https://github.com/your-org/Atlas/actions/workflows/atlas-v12-quality-gates.yml)
+[![Public Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://atlas-grafana-demo.loca.lt)
 
-[![CI](https://github.com/pussycat186/Atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/pussycat186/Atlas/actions/workflows/ci.yml)
-[![Atlas v12](https://github.com/pussycat186/Atlas/actions/workflows/atlas-v12.yml/badge.svg)](https://github.com/pussycat186/Atlas/actions/workflows/atlas-v12.yml)
-[![Release](https://img.shields.io/github/v/release/pussycat186/Atlas)](https://github.com/pussycat186/Atlas/releases)
-[![Gateway](https://img.shields.io/badge/ghcr-atlas--gateway-blue)](https://github.com/pussycat186/Atlas/pkgs/container/atlas-gateway)
-[![Witness](https://img.shields.io/badge/ghcr-atlas--witness-blue)](https://github.com/pussycat186/Atlas/pkgs/container/atlas-witness)
-[![SBOM](https://img.shields.io/badge/security-SBOM-green)](https://github.com/pussycat186/Atlas/actions/workflows/release.yml)
-[![Provenance](https://img.shields.io/badge/security-provenance-green)](https://github.com/pussycat186/Atlas/actions/workflows/verify-release.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+> **Next-generation secure, multi-witness data integrity platform with breakthrough innovations**
 
-## 🎯 Mission
-
-Atlas is a revolutionary messaging and storage platform that provides cryptographic-grade security **without traditional cryptography**. Instead, it uses:
-
-- **Multi-witness quorum consensus** (4-of-5 witnesses)
-- **Time diversity** (timestamp skew ≤ 2000ms)
-- **Distributed audit** (public append-only ledgers)
-
-## 🏗️ Architecture
-
-### Core Components
-
-```
-Atlas/
-├── apps/
-│   ├── web/                # Next.js chat & drive UI
-│   └── admin/              # Admin dashboard & monitoring
-├── services/
-│   ├── gateway/            # API orchestrator
-│   ├── witness-node/       # Core witness service
-│   ├── chat/               # Messaging service
-│   └── drive/              # Storage service
-├── packages/
-│   ├── fabric-client/      # SDK for quorum verification
-│   └── fabric-protocol/    # Protocol schemas & types
-└── infra/
-    ├── docker/             # Containerization
-    ├── k8s/                # Kubernetes deployment
-    └── ci/                 # CI/CD workflows
-```
-
-### Security Model
-
-- **Track-Z (Zero-Crypto)**: Default mode with no traditional cryptography
-- **Track-L (Crypto-lite)**: Optional internal hashing + MACs between witnesses
-- **Quorum Parameters**: N=5 witnesses, q=4 quorum, Δ=2000ms max skew
+Atlas v12 delivers enterprise-grade data integrity with a distributed witness network, comprehensive observability, and breakthrough features like self-healing infrastructure and AI-native operations.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- pnpm 8+
-- Docker & Docker Compose
+- **Node.js 20 LTS** (`corepack enable`)
+- **Docker & Docker Compose v2**
+- **pnpm** (preferred) or npm/yarn
 
-### Local Development
+### 1. Clone & Install
 
-1. **Clone and install dependencies:**
-   ```bash
-   git clone https://github.com/pussycat186/Atlas.git
-   cd Atlas
-   pnpm install
-   ```
-
-2. **Start the development environment:**
-   ```bash
-   # Start all services with Docker Compose
-   docker-compose up -d
-   
-   # Or start individual services for development
-   pnpm dev
-   ```
-
-3. **Access the applications:**
-   - **Web App**: http://localhost:3006
-   - **Admin Dashboard**: http://localhost:3007
-   - **Gateway API**: http://localhost:3000
-   - **Witness Nodes**: http://localhost:3001-3005
-
-### Using the SDK
-
-```typescript
-import { AtlasFabricClient } from '@atlas/fabric-client';
-
-const client = new AtlasFabricClient('http://localhost:3000');
-
-// Submit a record
-const result = await client.submitRecord('chat', 'msg_123', 'Hello World!', {
-  room_id: 'general',
-  user_id: 'alice'
-});
-
-// Verify integrity
-if (result.ok) {
-  console.log(`Integrity: VERIFIED q=${result.quorum_count}/4 Δ=${result.max_skew_ms}ms`);
-} else {
-  console.log('Integrity: CONFLICT');
-}
+```bash
+git clone https://github.com/your-org/Atlas.git
+cd Atlas
+corepack enable
+pnpm install
 ```
 
-## 📡 API Reference
+### 2. Start the Stack
 
-### Gateway API
+```bash
+# Start observability stack (Prometheus, Grafana, Tempo, OTel Collector)
+docker compose -f observability/docker-compose.yml up -d
 
-#### Submit Record
-```http
-POST /api/records
-Content-Type: application/json
-
-{
-  "app": "chat|drive",
-  "record_id": "uuid",
-  "payload": "data",
-  "meta": { "room_id": "123" }
-}
+# Start web application
+cd apps/web
+pnpm run dev
 ```
 
-#### Verify Record
-```http
-GET /api/records/{record_id}/verify
+### 3. Access Services
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| **Web App** | http://localhost:3006 | Main Atlas v12 interface |
+| **Grafana** | http://localhost:3030 | Metrics & dashboards |
+| **Prometheus** | http://localhost:9090 | Metrics collection |
+| **Tempo** | http://localhost:3200 | Distributed tracing |
+
+### 4. Run Quality Checks
+
+```bash
+# Run smoke tests
+bash scripts/smoke.sh
+
+# Run E2E tests
+pnpm exec playwright test
+
+# Run performance tests
+k6 run tests/performance/atlas-load-test.js
+
+# Run accessibility tests
+lhci autorun
 ```
 
-#### Get Conflicts
-```http
-GET /api/conflicts?since=2025-01-01&status=open
+## 🏗️ Architecture
+
+```mermaid
+graph TB
+    subgraph "Atlas v12 Stack"
+        Web[Web App :3006]
+        Admin[Admin Dashboard :3007]
+        Gateway[Gateway :3000]
+        Witness[Witness Nodes :3001-3005]
+    end
+    
+    subgraph "Observability"
+        OTel[OTel Collector :4317/4318]
+        Prometheus[Prometheus :9090]
+        Grafana[Grafana :3030]
+        Tempo[Tempo :3200]
+    end
+    
+    subgraph "CI/CD"
+        GitHub[GitHub Actions]
+        Quality[Quality Gates]
+        E2E[E2E Tests]
+        Perf[Performance Tests]
+        A11y[Accessibility Tests]
+    end
+    
+    Web --> Gateway
+    Admin --> Gateway
+    Gateway --> Witness
+    Gateway --> OTel
+    OTel --> Prometheus
+    OTel --> Tempo
+    Prometheus --> Grafana
+    Tempo --> Grafana
+    
+    GitHub --> Quality
+    Quality --> E2E
+    Quality --> Perf
+    Quality --> A11y
 ```
 
-### Witness API
+## 🎯 Core Features
 
-#### Submit to Witness
-```http
-POST /witness/record
-Content-Type: application/json
+### P0 Product Surface
+- **Auth Demo**: Secure authentication with demo mode
+- **API Keys**: Manage access keys with rotation & revocation
+- **Ingest Playground**: Real-time data ingestion testing
+- **Witness Status**: Monitor distributed witness network health
+- **Metrics View**: Performance dashboards and KPIs
+- **Docs Pane**: Interactive documentation and examples
+- **Settings**: Comprehensive configuration management
+- **Admin Dashboard**: System administration and monitoring
 
-{
-  "app": "chat|drive",
-  "record_id": "uuid",
-  "payload": "data",
-  "meta": {}
-}
+### Breakthrough Innovations (Feature Flags)
+- **Self-Healing Infra 2.0**: Automatic failure detection and recovery
+- **Zero-Friction Onboarding**: One-click setup and configuration
+- **AI-Native Ops Console**: Intelligent operations and recommendations
+- **Edge-Aware Ingestion**: Optimized data routing and processing
+- **Local-First Dev Mode**: Offline-capable development environment
+- **Policy-as-Config**: Declarative security and compliance policies
+- **Chaos-as-a-Feature**: Built-in resilience testing
+- **Cost & Perf Lens**: Real-time cost and performance optimization
+- **Plugin Surface**: Extensible architecture for custom integrations
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+Atlas/
+├── apps/
+│   ├── web/                 # Next.js web application
+│   └── admin/               # Admin dashboard
+├── services/
+│   ├── gateway/             # Atlas Gateway service
+│   └── witness-node/        # Witness node implementation
+├── packages/
+│   ├── fabric-client/       # Client SDK
+│   └── fabric-protocol/     # Protocol definitions
+├── observability/           # Observability stack
+├── tests/
+│   ├── e2e/                 # Playwright E2E tests
+│   └── performance/         # k6 performance tests
+├── .github/workflows/       # CI/CD pipelines
+└── scripts/                 # Utility scripts
 ```
 
-#### Get Ledger
-```http
-GET /witness/ledger?since=2025-01-01&limit=100
+### Available Scripts
+
+```bash
+# Development
+pnpm run dev                 # Start development server
+pnpm run build              # Build all applications
+pnpm run lint               # Run ESLint
+pnpm run type-check         # Run TypeScript checks
+
+# Testing
+pnpm run test               # Run unit tests
+pnpm exec playwright test   # Run E2E tests
+k6 run tests/performance/atlas-load-test.js  # Performance tests
+lhci autorun                # Accessibility tests
+
+# Quality Gates
+bash scripts/smoke.sh       # Smoke tests
+pnpm run storybook          # Component library
 ```
+
+## 📊 Quality Gates
+
+Atlas v12 implements comprehensive quality gates:
+
+| Gate | Tool | Threshold | Purpose |
+|------|------|-----------|---------|
+| **Lint & Security** | ESLint, Trivy, SBOM | Zero critical issues | Code quality & security |
+| **Build & Test** | Jest, TypeScript | All tests pass | Functionality verification |
+| **E2E Tests** | Playwright | 100% pass rate | User journey validation |
+| **Performance** | k6 | P95 < 2s, Error rate < 10% | Load testing |
+| **Accessibility** | Lighthouse | A11y score ≥ 90 | WCAG AA compliance |
+| **Smoke Tests** | Custom scripts | All services healthy | System health |
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-#### Gateway
-- `PORT`: Gateway port (default: 3000)
-- `HOST`: Gateway host (default: 0.0.0.0)
+```bash
+# Core Configuration
+ATLAS_NODE_ENV=development
+ATLAS_LOG_LEVEL=info
+ATLAS_DEMO_MODE=true
 
-#### Witness Node
-- `WITNESS_ID`: Unique witness identifier (e.g., w1, w2)
-- `WITNESS_REGION`: Geographic region (e.g., us-east-1)
-- `PORT`: Witness port (default: 3001)
-- `SECURITY_TRACK`: Security mode Z or L (default: Z)
-- `DATA_DIR`: Ledger storage directory (default: ./data)
+# Observability
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+PROMETHEUS_ENDPOINT=http://localhost:9090
+GRAFANA_ENDPOINT=http://localhost:3030
 
-#### Web Applications
-- `NEXT_PUBLIC_GATEWAY_URL`: Gateway endpoint URL
-
-### Fabric Configuration
-
-```typescript
-const config = {
-  total_witnesses: 5,
-  quorum_size: 4,
-  max_timestamp_skew_ms: 2000,
-  witnesses: [
-    { witness_id: 'w1', endpoint: 'http://witness-1:3001', region: 'us-east-1' },
-    { witness_id: 'w2', endpoint: 'http://witness-2:3001', region: 'us-west-2' },
-    // ... more witnesses
-  ],
-  security_track: 'Z'
-};
+# Security
+ATLAS_API_KEY_PREFIX=sk_live_
+ATLAS_JWT_SECRET=your-secret-key
 ```
 
-## 🧪 Testing
+### Docker Compose
 
-### Unit Tests
 ```bash
-pnpm test
-```
-
-### Integration Tests
-```bash
-pnpm test:integration
-```
-
-### Chaos Tests
-```bash
-pnpm test:chaos
-```
-
-### Load Testing
-```bash
-# Test quorum under load
-pnpm test:load --witnesses=5 --quorum=4 --duration=300s
-```
-
-### Atlas v12 Infrastructure Smoke Test
-```bash
-# Bring up observability stack
+# Start full stack
 docker compose -f observability/docker-compose.yml up -d
 
-# Run smoke test
-bash scripts/smoke.sh
+# View logs
+docker compose -f observability/docker-compose.yml logs -f
 
-# Clean up
+# Stop stack
 docker compose -f observability/docker-compose.yml down
 ```
 
+## 📈 Monitoring & Observability
 
-## 🚢 Deployment
+### Grafana Dashboards
+- **System Overview**: CPU, memory, disk usage
+- **Application Metrics**: Request rates, latency, error rates
+- **Witness Network**: Node health, quorum status, attestations
+- **Business Metrics**: User activity, data ingestion rates
 
-### Docker Compose
+### Prometheus Alerts
+- **Service Down**: Immediate notification of service failures
+- **High Error Rate**: Alert when error rate exceeds threshold
+- **Performance Degradation**: Latency and throughput alerts
+- **Resource Exhaustion**: CPU, memory, disk usage alerts
+
+### Distributed Tracing
+- **Request Flow**: End-to-end request tracing
+- **Performance Analysis**: Identify bottlenecks and slow queries
+- **Error Debugging**: Detailed error context and stack traces
+- **Dependency Mapping**: Service interaction visualization
+
+## 🚀 Deployment
+
+### Production Deployment
+
 ```bash
-# Production deployment
-docker-compose -f docker-compose.prod.yml up -d
-```
+# Build production images
+docker compose -f infra/docker/compose.prod.yml build
 
-### Kubernetes
-```bash
 # Deploy with Helm
 helm install atlas ./infra/k8s/atlas
 
-# Deploy witness nodes across regions
-helm install atlas-witnesses ./infra/k8s/witness-nodes
+# Or deploy with Docker Compose
+docker compose -f infra/docker/compose.prod.yml up -d
 ```
 
-### Multi-Region Setup
+### CI/CD Pipeline
 
-1. **Deploy witness nodes in 5 regions:**
-   - US East (us-east-1)
-   - US West (us-west-2)
-   - EU West (eu-west-1)
-   - AP Southeast (ap-southeast-1)
-   - AP Northeast (ap-northeast-1)
-
-2. **Configure gateway to connect to all witnesses**
-
-3. **Set up ledger mirroring to S3/IPFS**
-
-## 📊 Monitoring
-
-### Admin Dashboard
-
-Access the admin dashboard at `/admin-dashboard` to monitor:
-
-- **System Metrics**: Latency, quorum rate, conflict rate
-- **Witness Health**: Status, performance, region distribution
-- **Conflicts**: Real-time conflict detection and resolution
-- **Timestamp Skew**: Heatmap of witness timing differences
-
-### Key Metrics
-
-- **Quorum Rate**: Percentage of successful quorum consensus
-- **Conflict Rate**: Rate of witness disagreements
-- **Latency**: P50, P95, P99 response times
-- **Witness Health**: Individual witness status and performance
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-#### Witness Node Not Responding
-```bash
-# Check witness health
-curl http://witness-1:3001/witness/health
-
-# Check logs
-docker logs atlas-witness-1
-```
-
-#### Quorum Failures
-```bash
-# Check witness status
-curl http://gateway:3000/api/witnesses/status
-
-# Verify timestamp skew
-curl http://gateway:3000/admin/metrics
-```
-
-#### Conflict Resolution
-```bash
-# List open conflicts
-curl http://gateway:3000/api/conflicts?status=open
-
-# Resolve conflict
-curl -X POST http://gateway:3000/admin/conflicts/{id}/resolve \
-  -H "Content-Type: application/json" \
-  -d '{"method": "manual", "chosen_attestation_id": "w1", "reason": "Manual resolution"}'
-```
-
-### Debug Mode
-
-Enable debug logging:
-```bash
-export DEBUG=atlas:*
-pnpm dev
-```
+The CI/CD pipeline automatically:
+1. **Lints** code and runs security scans
+2. **Builds** applications and Docker images
+3. **Tests** functionality with unit and E2E tests
+4. **Validates** performance and accessibility
+5. **Deploys** to staging/production environments
+6. **Monitors** system health and alerts
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
 
 ### Development Guidelines
 
-- Use conventional commits
+- Follow [Conventional Commits](https://conventionalcommits.org/)
 - Write tests for new features
-- Update documentation
-- Follow the existing code style
-- Ensure all CI checks pass
+- Ensure all quality gates pass
+- Update documentation as needed
+- Follow the [Code of Conduct](CODE_OF_CONDUCT.md)
+
+## 📚 Documentation
+
+- **[API Reference](docs/api.md)** - Complete API documentation
+- **[Operations Guide](OPERATIONS.md)** - Deployment and operations
+- **[Runbook](RUNBOOK.md)** - Troubleshooting and maintenance
+- **[Security Guide](SECURITY.md)** - Security best practices
+- **[Changelog](CHANGELOG.md)** - Release notes and updates
+
+## 🆘 Support
+
+- **Documentation**: [docs.atlas.dev](https://docs.atlas.dev)
+- **Community**: [Discord Server](https://discord.gg/atlas)
+- **Issues**: [GitHub Issues](https://github.com/your-org/Atlas/issues)
+- **Email**: support@atlas.dev
 
 ## 📄 License
 
@@ -329,18 +295,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Inspired by distributed systems research
-- Built with modern web technologies
-- Designed for zero-trust environments
-
-## 📞 Support
-
-- **Documentation**: [docs.atlas.dev](https://docs.atlas.dev)
-- **Issues**: [GitHub Issues](https://github.com/pussycat186/Atlas/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/pussycat186/Atlas/discussions)
-- **Discord**: [Atlas Community](https://discord.gg/atlas)
+- Built with [Next.js](https://nextjs.org/)
+- Observability powered by [Grafana](https://grafana.com/), [Prometheus](https://prometheus.io/), and [OpenTelemetry](https://opentelemetry.io/)
+- Testing with [Playwright](https://playwright.dev/) and [k6](https://k6.io/)
+- UI components with [Radix UI](https://www.radix-ui.com/) and [Tailwind CSS](https://tailwindcss.com/)
 
 ---
 
-**Atlas Secure Fabric** - *Security through consensus, not cryptography*
-# Atlas v12 Infrastructure
+**Atlas v12** - Secure, scalable, and intelligent data integrity for the modern world.

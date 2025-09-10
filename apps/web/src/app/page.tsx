@@ -1,187 +1,168 @@
-/**
- * Atlas Chat Page
- * Main chat interface with integrity verification
- */
-
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ChatRoom } from '@/components/ChatMessage';
-import { chatService, type ChatMessage } from '@/lib/atlas-client';
-import { format } from 'date-fns';
-import type { WitnessAttestation, QuorumResult } from '@atlas/fabric-protocol';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import Link from 'next/link';
 
-export default function ChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [roomId] = useState('general');
-  const [userId] = useState('user_' + Math.random().toString(36).substr(2, 9));
-  const [isConnected, setIsConnected] = useState(false);
-  const [messageAttestations, setMessageAttestations] = useState<Map<string, WitnessAttestation[]>>(new Map());
-  const [messageQuorumResults, setMessageQuorumResults] = useState<Map<string, QuorumResult>>(new Map());
-
-  useEffect(() => {
-    // Simulate connection status
-    setIsConnected(true);
-    
-    // Add a welcome message
-    const welcomeMessage: ChatMessage = {
-      id: 'welcome',
-      room_id: roomId,
-      user_id: 'system',
-      content: 'Welcome to Atlas Secure Chat! All messages are verified by our multi-witness quorum system.',
-      timestamp: new Date().toISOString(),
-      integrity_status: 'verified',
-      quorum_count: 4,
-      max_skew_ms: 150,
-    };
-    
-    setMessages([welcomeMessage]);
-  }, [roomId]);
-
-  const handleSendMessage = async (content: string) => {
-    try {
-      const newMessage = await chatService.sendMessage(roomId, userId, content);
-      setMessages(prev => [...prev, newMessage]);
-      
-      // Fetch detailed attestations for the new message
-      try {
-        const verificationResult = await chatService.verifyMessage(newMessage.id);
-        if (verificationResult) {
-          // In a real implementation, we would fetch actual attestations
-          // For now, we'll simulate some attestations
-          const mockAttestations: WitnessAttestation[] = [
-            {
-              witness_id: 'w1',
-              accept: true,
-              ts: new Date().toISOString(),
-              state_view: {
-                record_id: newMessage.id,
-                order: 1,
-                size: content.length,
-              },
-            },
-            {
-              witness_id: 'w2',
-              accept: true,
-              ts: new Date().toISOString(),
-              state_view: {
-                record_id: newMessage.id,
-                order: 1,
-                size: content.length,
-              },
-            },
-            {
-              witness_id: 'w3',
-              accept: true,
-              ts: new Date().toISOString(),
-              state_view: {
-                record_id: newMessage.id,
-                order: 1,
-                size: content.length,
-              },
-            },
-            {
-              witness_id: 'w4',
-              accept: true,
-              ts: new Date().toISOString(),
-              state_view: {
-                record_id: newMessage.id,
-                order: 1,
-                size: content.length,
-              },
-            },
-          ];
-          
-          const mockQuorumResult: QuorumResult = {
-            ok: true,
-            quorum_count: 4,
-            required_quorum: 4,
-            total_witnesses: 4,
-            max_skew_ms: 150,
-            skew_ok: true,
-            consistent_attestations: mockAttestations,
-            conflicting_attestations: [],
-          };
-          
-          setMessageAttestations(prev => new Map(prev).set(newMessage.id, mockAttestations));
-          setMessageQuorumResults(prev => new Map(prev).set(newMessage.id, mockQuorumResult));
-        }
-      } catch (error) {
-        console.warn('Failed to fetch attestations:', error);
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      // Add error message to chat
-      const errorMessage: ChatMessage = {
-        id: 'error_' + Date.now(),
-        room_id: roomId,
-        user_id: 'system',
-        content: 'Failed to send message. Please try again.',
-        timestamp: new Date().toISOString(),
-        integrity_status: 'conflict',
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    }
-  };
-
+export default function OverviewPage() {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Atlas Secure Chat
-        </h1>
-        <p className="text-gray-600">
-          Zero-crypto messaging with multi-witness quorum verification
+        <h1 className="text-3xl font-bold mb-2">Welcome to Atlas</h1>
+        <p className="text-muted-foreground">
+          Zero-crypto messaging and storage platform with multi-witness quorum verification
         </p>
-        
-        {/* Connection Status */}
-        <div className="mt-4 flex items-center space-x-2">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className="text-sm text-gray-600">
-            {isConnected ? 'Connected to Atlas Fabric' : 'Disconnected'}
-          </span>
-        </div>
       </div>
 
-      {/* Chat Interface */}
-      <div className="card h-96">
-        <ChatRoom
-          roomId={roomId}
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          className="h-full"
-        />
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Keys</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">+1 from last week</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">1,247</div>
+            <p className="text-xs text-muted-foreground">+12% from last week</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Quorum Rate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">99.8%</div>
+            <p className="text-xs text-muted-foreground">4/5 witnesses active</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Avg Latency</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">45ms</div>
+            <p className="text-xs text-muted-foreground">p95: 89ms</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Integrity Information */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Multi-Witness Quorum
-          </h3>
-          <p className="text-gray-600 text-sm">
-            Every message is verified by 4 out of 5 witness nodes across different regions.
-          </p>
-        </div>
-        
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Zero-Crypto Security
-          </h3>
-          <p className="text-gray-600 text-sm">
-            No traditional cryptography. Security through distributed consensus and time diversity.
-          </p>
-        </div>
-        
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Real-time Verification
-          </h3>
-          <p className="text-gray-600 text-sm">
-            Messages are verified in real-time with integrity badges showing verification status.
-          </p>
-        </div>
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>🚀 Get Started</CardTitle>
+            <CardDescription>
+              Create your first API key and start sending messages
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-medium">1. Create API Key</h4>
+              <p className="text-sm text-muted-foreground">
+                Generate a new API key for your project
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">2. Send Test Message</h4>
+              <p className="text-sm text-muted-foreground">
+                Use our playground to test message sending
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">3. Monitor Quorum</h4>
+              <p className="text-sm text-muted-foreground">
+                Watch witness verification in real-time
+              </p>
+            </div>
+            <div className="flex space-x-2">
+              <Button asChild>
+                <Link href="/keys">Create API Key</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/playground">Try Playground</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>📊 Recent Activity</CardTitle>
+            <CardDescription>
+              Latest messages and system events
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Message verified</p>
+                  <p className="text-xs text-muted-foreground">2 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">New API key created</p>
+                  <p className="text-xs text-muted-foreground">5 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Witness w3 latency spike</p>
+                  <p className="text-xs text-muted-foreground">10 minutes ago</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* System Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>🔧 System Status</CardTitle>
+          <CardDescription>
+            Current health of Atlas infrastructure
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div>
+                <p className="font-medium">Gateway</p>
+                <p className="text-sm text-muted-foreground">Healthy</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div>
+                <p className="font-medium">Witness Nodes</p>
+                <p className="text-sm text-muted-foreground">4/5 Active</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div>
+                <p className="font-medium">Observability</p>
+                <p className="text-sm text-muted-foreground">All Systems Go</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

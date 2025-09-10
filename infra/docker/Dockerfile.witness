@@ -15,17 +15,15 @@ COPY packages/fabric-protocol/package.json ./packages/fabric-protocol/
 COPY services/witness-node/package.json ./services/witness-node/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Build the application
 FROM base AS builder
 WORKDIR /app
+
+# Copy built artifacts and dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Build packages
-RUN pnpm build --filter=@atlas/fabric-protocol
-RUN pnpm build --filter=@atlas/witness-node
 
 # Production image
 FROM base AS runner

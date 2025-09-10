@@ -21,13 +21,15 @@ RUN pnpm install --frozen-lockfile
 # Build the application
 FROM base AS builder
 WORKDIR /app
+
+# Install pnpm in builder stage
+RUN npm install -g pnpm
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build packages
-RUN pnpm build --filter=@atlas/fabric-protocol
-RUN pnpm build --filter=@atlas/fabric-client
-RUN pnpm build --filter=@atlas/admin
+# Build Next.js app
+RUN cd apps/admin && pnpm build
 
 # Production image
 FROM base AS runner

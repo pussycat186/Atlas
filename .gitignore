@@ -77,7 +77,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public (commented out - conflicts with Next.js)
 
 # Storybook build outputs
 .out
@@ -134,3 +134,6 @@ coverage/
 
 # Local development
 .local/
+
+*storybook.log
+storybook-static

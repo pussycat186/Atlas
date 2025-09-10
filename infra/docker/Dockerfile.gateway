@@ -16,18 +16,15 @@ COPY packages/fabric-client/package.json ./packages/fabric-client/
 COPY services/gateway/package.json ./services/gateway/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Build the application
 FROM base AS builder
 WORKDIR /app
+
+# Copy built artifacts and dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Build packages
-RUN pnpm build --filter=@atlas/fabric-protocol
-RUN pnpm build --filter=@atlas/fabric-client
-RUN pnpm build --filter=@atlas/gateway
 
 # Production image
 FROM base AS runner

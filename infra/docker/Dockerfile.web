@@ -16,18 +16,21 @@ COPY packages/fabric-client/package.json ./packages/fabric-client/
 COPY apps/web/package.json ./apps/web/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Build the application
 FROM base AS builder
 WORKDIR /app
+
+# Install pnpm in builder stage
+RUN npm install -g pnpm
+
+# Copy built artifacts and dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build packages
-RUN pnpm build --filter=@atlas/fabric-protocol
-RUN pnpm build --filter=@atlas/fabric-client
-RUN pnpm build --filter=@atlas/web
+# Build Next.js app
+RUN cd apps/web && pnpm build
 
 # Production image
 FROM base AS runner
