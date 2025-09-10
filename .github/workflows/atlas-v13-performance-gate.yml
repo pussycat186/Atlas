@@ -79,26 +79,6 @@ jobs:
   product-performance-gate:
     name: Product & Performance Gate (ATLAS v13)
     runs-on: ubuntu-latest
-    services:
-      app:
-        image: node:20-alpine
-        ports:
-          - 3000:3000
-        options: >-
-          --health-cmd="curl -f http://localhost:3000 || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-      
-      proxy:
-        image: node:20-alpine
-        ports:
-          - 3001:3001
-        options: >-
-          --health-cmd="curl -f http://localhost:3001 || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
 
     steps:
       - name: Checkout
