@@ -69,7 +69,7 @@ export default function SettingsPage() {
             <div className="flex items-center space-x-2">
               <Switch
                 checked={settings.compression}
-                onChange={(checked) => setSettings({...settings, compression: checked})}
+                onCheckedChange={(checked) => setSettings({...settings, compression: checked})}
               />
               <label className="text-sm font-medium">Enable Compression</label>
             </div>
@@ -81,7 +81,7 @@ export default function SettingsPage() {
             <div className="flex items-center space-x-2">
               <Switch
                 checked={settings.twoFactorAuth}
-                onChange={(checked) => setSettings({...settings, twoFactorAuth: checked})}
+                onCheckedChange={(checked) => setSettings({...settings, twoFactorAuth: checked})}
               />
               <label className="text-sm font-medium">Two-Factor Authentication</label>
             </div>
@@ -141,7 +141,7 @@ export default function SettingsPage() {
             <div className="flex items-center space-x-2">
               <Switch
                 checked={settings.notifications}
-                onChange={(checked) => setSettings({...settings, notifications: checked})}
+                onCheckedChange={(checked) => setSettings({...settings, notifications: checked})}
               />
               <label className="text-sm font-medium">Enable Notifications</label>
             </div>
@@ -149,7 +149,7 @@ export default function SettingsPage() {
             <div className="flex items-center space-x-2">
               <Switch
                 checked={settings.autoRefresh}
-                onChange={(checked) => setSettings({...settings, autoRefresh: checked})}
+                onCheckedChange={(checked) => setSettings({...settings, autoRefresh: checked})}
               />
               <label className="text-sm font-medium">Auto Refresh</label>
             </div>
