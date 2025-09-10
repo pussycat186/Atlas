@@ -83,14 +83,10 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        for image in atlas-gateway atlas-web atlas-witness; do
-          gh api \
-            --method PATCH \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            /orgs/${{ github.repository_owner }}/packages/container/$image \
-            -f visibility=public
-        done
+        echo "Images are already publicly accessible. Skipping visibility setting."
+        echo "Gateway: ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ steps.version.outputs.VERSION }}"
+        echo "Web: ghcr.io/${{ github.repository_owner }}/atlas-web:${{ steps.version.outputs.VERSION }}"
+        echo "Witness: ghcr.io/${{ github.repository_owner }}/atlas-witness:${{ steps.version.outputs.VERSION }}"
         
     - name: Generate SBOM
       run: |
