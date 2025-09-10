@@ -32,6 +32,20 @@ jobs:
       id: version
       run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install pnpm
+      run: npm install -g pnpm
+      
+    - name: Build workspace
+      run: |
+        pnpm install --frozen-lockfile
+        pnpm build
+        echo "Built packages:" && find . -name "dist" -type d | head -10
+        
     - name: Build and push Gateway
       uses: docker/build-push-action@v5
       with:

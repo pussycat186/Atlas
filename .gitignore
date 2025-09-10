@@ -134,3 +134,6 @@ coverage/
 
 # Local development
 .local/
+
+*storybook.log
+storybook-static
