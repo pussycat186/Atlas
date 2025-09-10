@@ -321,11 +321,23 @@ jobs:
           }
           EOF
           
-          # Install k6 via snap (more reliable in GitHub Actions)
-          sudo snap install k6
+          # Install k6 via apt (more reliable in GitHub Actions)
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
           
           # Run priming
-          k6 run priming-test.js --out json=priming-results.json
+          echo "Starting k6 priming test..."
+          k6 run priming-test.js --out json=priming-results.json || {
+            echo "k6 priming test failed, checking for errors..."
+            echo "k6 version: $(k6 version)"
+            echo "Test file contents:"
+            cat priming-test.js
+            echo "Checking if target URL is reachable..."
+            curl -f ${TARGET_URL} || echo "Target URL not reachable"
+            exit 1
+          }
           
           # Capture NGINX cache metrics
           echo "### NGINX Cache Metrics" >> $GITHUB_STEP_SUMMARY
@@ -388,7 +400,16 @@ jobs:
           export OTEL_SAMPLING_RATIO=${TELEMETRY_SAMPLING}
           
           # Run measurement
-          k6 run measurement-test.js --out json=k6-results.json
+          echo "Starting k6 measurement test..."
+          k6 run measurement-test.js --out json=k6-results.json || {
+            echo "k6 test failed, checking for errors..."
+            echo "k6 version: $(k6 version)"
+            echo "Test file contents:"
+            cat measurement-test.js
+            echo "Checking if target URL is reachable..."
+            curl -f ${TARGET_URL} || echo "Target URL not reachable"
+            exit 1
+          }
           
           # Extract results
           echo "### k6 Results" >> $GITHUB_STEP_SUMMARY
