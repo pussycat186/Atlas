@@ -22,9 +22,15 @@ RUN pnpm install --no-frozen-lockfile
 FROM base AS builder
 WORKDIR /app
 
+# Install pnpm in builder stage
+RUN npm install -g pnpm
+
 # Copy built artifacts and dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Build Next.js app
+RUN cd apps/web && pnpm build
 
 # Production image
 FROM base AS runner

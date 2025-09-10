@@ -28,8 +28,8 @@ RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build all packages
-RUN pnpm build
+# Build Next.js app
+RUN cd apps/admin && pnpm build
 
 # Production image
 FROM base AS runner
