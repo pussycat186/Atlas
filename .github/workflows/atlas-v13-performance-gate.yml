@@ -324,8 +324,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Driving proxy to cache_hit_ratio ≥ ${CACHE_HIT_TARGET}%..." >> $GITHUB_STEP_SUMMARY
           
-          # Create priming script
-          cat > priming-test.js << 'EOF'
+          # Create priming script with environment variable substitution
+          cat > priming-test.js << EOF
           import http from 'k6/http';
           import { check, sleep } from 'k6';
           
@@ -343,7 +343,7 @@ jobs:
           
           export default function () {
             const route = routes[Math.floor(Math.random() * routes.length)];
-            let res = http.get(`${BASE_URL}${route}`);
+            let res = http.get(\`\${BASE_URL}\${route}\`);
             check(res, {
               'status is 200': (r) => r.status === 200,
             });
@@ -366,8 +366,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Running 60s constant-arrival-rate = ${K6_ARRIVAL_RATE} req/s..." >> $GITHUB_STEP_SUMMARY
           
-          # Create measurement script
-          cat > measurement-test.js << 'EOF'
+          # Create measurement script with environment variable substitution
+          cat > measurement-test.js << EOF
           import http from 'k6/http';
           import { check, sleep } from 'k6';
           
@@ -392,14 +392,14 @@ jobs:
             // 90% cacheable GET routes
             if (Math.random() < 0.9) {
               const route = routes[Math.floor(Math.random() * routes.length)];
-              let res = http.get(`${BASE_URL}${route}`);
+              let res = http.get(\`\${BASE_URL}\${route}\`);
               check(res, {
                 'status is 200': (r) => r.status === 200,
                 'response time < 200ms': (r) => r.timings.duration < 200,
               });
             } else {
               // 10% static assets
-              let res = http.get(`${BASE_URL}/favicon.ico`);
+              let res = http.get(\`\${BASE_URL}/favicon.ico\`);
               check(res, {
                 'static status is 200': (r) => r.status === 200,
                 'static response time < 200ms': (r) => r.timings.duration < 200,
