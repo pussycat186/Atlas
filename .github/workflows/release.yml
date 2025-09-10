@@ -1,0 +1,157 @@
+name: Release & Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract version
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+    - name: Build and push Gateway
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: infra/docker/Dockerfile.gateway
+        push: true
+        tags: ghcr.io/${{ github.repository_owner }}/atlas-gateway:${{ steps.version.outputs.VERSION }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Build and push Web
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: infra/docker/Dockerfile.web
+        push: true
+        tags: ghcr.io/${{ github.repository_owner }}/atlas-web:${{ steps.version.outputs.VERSION }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Build and push Witness
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: infra/docker/Dockerfile.witness
+        push: true
+        tags: ghcr.io/${{ github.repository_owner }}/atlas-witness:${{ steps.version.outputs.VERSION }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Set package visibility to public
+      run: |
+        for image in atlas-gateway atlas-web atlas-witness; do
+          gh api \
+            --method PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /orgs/${{ github.repository_owner }}/packages/container/$image \
+            -f visibility=public
+        done
+        
+    - name: Generate SBOM
+      run: |
+        # Install Syft
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+        
+        # Generate SBOM for each image
+        for image in atlas-gateway atlas-web atlas-witness; do
+          syft ghcr.io/${{ github.repository_owner }}/$image:${{ steps.version.outputs.VERSION }} -o spdx-json > ${image}-sbom.json
+        done
+        
+    - name: Security scan with Trivy
+      run: |
+        # Install Trivy
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        
+        # Scan each image
+        for image in atlas-gateway atlas-web atlas-witness; do
+          trivy image --format json --output ${image}-trivy.json ghcr.io/${{ github.repository_owner }}/$image:${{ steps.version.outputs.VERSION }}
+        done
+        
+    - name: Check for critical vulnerabilities
+      run: |
+        for image in atlas-gateway atlas-web atlas-witness; do
+          critical_count=$(jq '.Results[] | select(.Class == "vuln") | .Vulnerabilities[] | select(.Severity == "CRITICAL")' ${image}-trivy.json | jq -s 'length')
+          echo "Critical vulnerabilities in $image: $critical_count"
+          if [ "$critical_count" -gt 0 ]; then
+            echo "CRITICAL vulnerabilities found in $image:"
+            jq '.Results[] | select(.Class == "vuln") | .Vulnerabilities[] | select(.Severity == "CRITICAL")' ${image}-trivy.json
+            exit 1
+          fi
+        done
+        
+    - name: Test anonymous pull
+      run: |
+        docker logout ghcr.io
+        for image in atlas-gateway atlas-web atlas-witness; do
+          echo "Testing anonymous pull of $image:${{ steps.version.outputs.VERSION }}"
+          docker pull ghcr.io/${{ github.repository_owner }}/$image:${{ steps.version.outputs.VERSION }}
+          echo "✅ Successfully pulled $image:${{ steps.version.outputs.VERSION }}"
+        done
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts-${{ steps.version.outputs.VERSION }}
+        path: |
+          *-sbom.json
+          *-trivy.json
+        retention-days: 30
+        
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        release_name: Atlas v12 ${{ steps.version.outputs.VERSION }}
+        body_path: RELEASE_NOTES_v1.0.0.md
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: |
+          atlas-gateway-sbom.json
+          atlas-web-sbom.json
+          atlas-witness-sbom.json
+          atlas-gateway-trivy.json
+          atlas-web-trivy.json
+          atlas-witness-trivy.json
+        asset_name: |
+          atlas-gateway-sbom.json
+          atlas-web-sbom.json
+          atlas-witness-sbom.json
+          atlas-gateway-trivy.json
+          atlas-web-trivy.json
+          atlas-witness-trivy.json
+        asset_content_type: application/json
