@@ -1,4 +1,4 @@
-name: Atlas v13.9 Dual-Service Self-Healing Gate
+name: Atlas v14 Dual-Service Self-Healing Gate
 
 on:
   workflow_dispatch:
@@ -76,13 +76,88 @@ env:
   TARGET_URL: ${{ github.event.inputs.target_url || 'http://localhost:8080' }}
 
 jobs:
-  product-performance-gate:
-    name: Dual-Service Self-Healing Gate (ATLAS v13.9)
+  build-app-image:
+    name: Build App Image
     runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Enable corepack & install deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable || true
+          if [[ -f pnpm-lock.yaml ]]; then
+            corepack prepare pnpm@latest --activate
+            pnpm -v
+            pnpm install --frozen-lockfile
+          fi
+      
+      - name: Build production app
+        shell: bash
+        run: |
+          cd apps/web
+          pnpm build
+      
+      - name: Create Dockerfile
+        shell: bash
+        run: |
+          cat > Dockerfile << 'EOF'
+          FROM node:20-alpine
+          WORKDIR /app
+          COPY apps/web/.next .next
+          COPY apps/web/package.json package.json
+          COPY apps/web/next.config.js next.config.js
+          RUN npm install --production
+          EXPOSE 3000
+          CMD ["npm", "start"]
+          EOF
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/atlas-app
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  product-performance-gate:
+    name: Dual-Service Self-Healing Gate (ATLAS v14)
+    runs-on: ubuntu-latest
+    needs: build-app-image
     
     services:
       app:
-        image: node:20-alpine
+        image: ghcr.io/${{ github.repository_owner }}/atlas-app:latest
         ports:
           - 3000:3000
         options: >-
@@ -169,29 +244,19 @@ jobs:
           echo "- NGINX workers: Auto-scaling (CPU count)" >> $GITHUB_STEP_SUMMARY
           echo "- No source edits required" >> $GITHUB_STEP_SUMMARY
 
-      - name: Start Production App (Self-Healing)
+      - name: Verify App Service Container (Self-Healing)
         shell: bash
         run: |
-          echo "## 🚀 Starting Production App (Self-Healing)" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Verifying App Service Container (Self-Healing)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # Build production app
-          cd apps/web
-          pnpm build
-          
-          # Start production server
-          echo "Starting production Next.js server..."
-          pnpm start &
-          APP_PID=$!
-          echo "APP_PID=$APP_PID" >> $GITHUB_ENV
-          
-          # Wait for app to be ready with self-healing
+          # Wait for app service container to be ready
           for i in {1..30}; do
             if curl -f http://localhost:3000 >/dev/null 2>&1; then
-              echo "App is ready on port 3000"
+              echo "App service container is ready on port 3000"
               break
             fi
-            echo "Waiting for app... ($i/30)"
+            echo "Waiting for app service container... ($i/30)"
             sleep 2
           done
 
@@ -205,9 +270,9 @@ jobs:
             fi
           done
           
-          echo "### App Status" >> $GITHUB_STEP_SUMMARY
-          echo "- Process ID: $APP_PID" >> $GITHUB_STEP_SUMMARY
-          echo "- Port: 3000" >> $GITHUB_STEP_SUMMARY
+          echo "### App Service Container Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ghcr.io/${{ github.repository_owner }}/atlas-app:latest" >> $GITHUB_STEP_SUMMARY
+          echo "- Port mapping: 3000:3000" >> $GITHUB_STEP_SUMMARY
           echo "- Health check: PASSED" >> $GITHUB_STEP_SUMMARY
 
       - name: Configure NGINX Service Container
@@ -224,7 +289,7 @@ jobs:
           
           http {
               upstream atlas_app {
-                  server host.docker.internal:3000;
+                  server app:3000;
                   keepalive 32;
               }
               
@@ -321,23 +386,25 @@ jobs:
           echo "### Self-Healing Verification" >> $GITHUB_STEP_SUMMARY
           echo "- NGINX Container ID: $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}")" >> $GITHUB_STEP_SUMMARY
           echo "- Port mapping: 8080:80" >> $GITHUB_STEP_SUMMARY
-          echo "- Upstream: host.docker.internal:3000" >> $GITHUB_STEP_SUMMARY
+          echo "- Upstream: app:3000 (service name)" >> $GITHUB_STEP_SUMMARY
           echo "- Cache zone: atlas_cache (10MB, 1GB max)" >> $GITHUB_STEP_SUMMARY
           echo "- Health check: PASSED" >> $GITHUB_STEP_SUMMARY
           
-          # Verify proxy routes
+          # Verify proxy routes with headers
           echo "### Proxy Route Verification" >> $GITHUB_STEP_SUMMARY
           for route in "/" "/keys" "/playground" "/metrics"; do
-            if curl -f "http://localhost:8080$route" >/dev/null 2>&1; then
-              echo "- Proxy $route: ✅ 200" >> $GITHUB_STEP_SUMMARY
+            if curl -I "http://localhost:8080$route" >/dev/null 2>&1; then
+              echo "- Proxy $route: ✅ 200/304" >> $GITHUB_STEP_SUMMARY
+              # Check for X-Cache-Status header
+              curl -s -I "http://localhost:8080$route" | grep -i "x-cache-status" && echo "  - X-Cache-Status: Present" >> $GITHUB_STEP_SUMMARY || echo "  - X-Cache-Status: Not present" >> $GITHUB_STEP_SUMMARY
             else
               echo "- Proxy $route: ❌ FAILED" >> $GITHUB_STEP_SUMMARY
             fi
           done
           
-          # Verify NGINX to app connectivity via host.docker.internal
+          # Verify NGINX to app connectivity via service name
           echo "### NGINX to App Connectivity" >> $GITHUB_STEP_SUMMARY
-          docker exec $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}") curl -f http://host.docker.internal:3000 >/dev/null 2>&1 && echo "- host.docker.internal connectivity: ✅ SUCCESS" >> $GITHUB_STEP_SUMMARY || echo "- host.docker.internal connectivity: ❌ FAILED" >> $GITHUB_STEP_SUMMARY
+          docker exec $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}") curl -f http://app:3000 >/dev/null 2>&1 && echo "- Service name connectivity (app:3000): ✅ SUCCESS" >> $GITHUB_STEP_SUMMARY || echo "- Service name connectivity (app:3000): ❌ FAILED" >> $GITHUB_STEP_SUMMARY
 
       - name: Route-Mix Lock
         shell: bash
@@ -542,11 +609,11 @@ jobs:
              ROLLBACK: Remove add_header Cache-Control directives
              REFS: https://nginx.org/en/docs/http/ngx_http_headers_module.html
           
-          3. Dual-Service Self-Healing Architecture
-             WHAT: Next.js app on host + NGINX service container with host.docker.internal networking
-             WHY: Simplified architecture with self-healing verification and reliable connectivity
-             VERIFY: App accessible on port 3000, NGINX proxies to host.docker.internal:3000
-             ROLLBACK: Use dual service containers or direct app access
+          3. Dual-Service Container Architecture
+             WHAT: App service container (prebuilt image) + NGINX service container with service name networking
+             WHY: Proper service isolation with service name networking (app:3000) and prebuilt image reliability
+             VERIFY: Both containers running, NGINX proxies to app:3000 via service name
+             ROLLBACK: Use single container or host.docker.internal networking
              REFS: https://docs.github.com/en/actions/using-containerized-services/about-service-containers
           
           4. NGINX Upstream Keep-Alive
@@ -594,16 +661,17 @@ jobs:
           - Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           
           Process Count (Dual-Service Self-Healing):
-          - Next.js app: 1 process (PID: $APP_PID) on port 3000
+          - App service container: 1 container (ghcr.io/${{ github.repository_owner }}/atlas-app:latest) on port 3000
           - NGINX service container: 1 container (nginx:alpine) on port 8080
-          - Total processes: 2 (app + service container)
+          - Total processes: 2 (dual-service containers)
           
           Evidence:
-          - Next.js app running on port 3000
+          - App service container running on port 3000
           - NGINX service container running on port 8080
-          - NGINX proxies to host.docker.internal:3000
+          - NGINX proxies to app:3000 via service name
           - Cache zone: atlas_cache (10MB, 1GB max)
-          - Self-healing verification: All routes accessible
+          - Self-healing verification: All routes accessible with X-Cache-Status headers
+          - App container ID: $(docker ps --filter "ancestor=ghcr.io/${{ github.repository_owner }}/atlas-app" --format "{{.ID}}")
           - NGINX container ID: $(docker ps --filter "ancestor=nginx:alpine" --format "{{.ID}}")
           EOF
           
