@@ -1,0 +1,308 @@
+name: CI Release & Supply Chain
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag'
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest-xl
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+    
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+        run_install: false
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    
+    - name: Build services
+      run: pnpm build
+    
+    - name: Run tests
+      run: pnpm test:unit
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ghcr.io/${{ github.repository }}/atlas-gateway
+          ghcr.io/${{ github.repository }}/atlas-witness
+          ghcr.io/${{ github.repository }}/atlas-web
+          ghcr.io/${{ github.repository }}/atlas-admin
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.app
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}/atlas-gateway:${{ github.ref_name }}
+          ghcr.io/${{ github.repository }}/atlas-gateway:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        labels: |
+          org.opencontainers.image.title=Atlas Gateway
+          org.opencontainers.image.description=Atlas Secure Fabric Gateway Service
+          org.opencontainers.image.version=${{ github.ref_name }}
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+    
+    - name: Install syft
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+        syft version
+    
+    - name: Generate SBOM
+      run: |
+        mkdir -p _reports/sbom
+        
+        # Generate SBOM for the repository
+        syft . -o spdx-json > _reports/sbom/atlas-sbom.json
+        syft . -o cyclonedx-json > _reports/sbom/atlas-sbom-cyclonedx.json
+        syft . -o table > _reports/sbom/atlas-sbom.txt
+        
+        echo "SBOM generated successfully"
+    
+    - name: Install cosign
+      run: |
+        curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
+        chmod +x cosign-linux-amd64
+        sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+        cosign version
+    
+    - name: Sign container images with cosign
+      run: |
+        # Sign the gateway image
+        cosign sign --yes ghcr.io/${{ github.repository }}/atlas-gateway:${{ github.ref_name }}
+        cosign sign --yes ghcr.io/${{ github.repository }}/atlas-gateway:latest
+        
+        echo "Container images signed successfully"
+    
+    - name: Generate SLSA provenance
+      run: |
+        # Create SLSA provenance for the build
+        cat > _reports/slsa-provenance.json << EOF
+        {
+          "version": 1,
+          "predicateType": "https://slsa.dev/provenance/v1",
+          "predicate": {
+            "buildType": "https://github.com/actions/runner",
+            "builder": {
+              "id": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            },
+            "invocation": {
+              "configSource": {
+                "uri": "git+https://github.com/${{ github.repository }}@${{ github.sha }}",
+                "digest": {
+                  "sha1": "${{ github.sha }}"
+                }
+              },
+              "parameters": {
+                "workflow": "ci-release.yml",
+                "trigger": "${{ github.event_name }}"
+              }
+            },
+            "materials": [
+              {
+                "uri": "git+https://github.com/${{ github.repository }}@${{ github.sha }}",
+                "digest": {
+                  "sha1": "${{ github.sha }}"
+                }
+              }
+            ],
+            "metadata": {
+              "buildInvocationId": "${{ github.run_id }}",
+              "buildStartedOn": "${{ github.event.head_commit.timestamp }}",
+              "buildFinishedOn": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "completeness": {
+                "parameters": true,
+                "environment": true,
+                "materials": true
+              },
+              "reproducible": false
+            }
+          }
+        }
+        EOF
+        
+        echo "SLSA provenance generated"
+    
+    - name: Sign SLSA provenance
+      run: |
+        cosign sign-blob --yes _reports/slsa-provenance.json --bundle _reports/slsa-provenance.sig
+        echo "SLSA provenance signed"
+    
+    - name: Generate release artifacts
+      run: |
+        mkdir -p _reports/release
+        
+        # Create release manifest
+        cat > _reports/release/release-manifest.json << EOF
+        {
+          "version": "${{ github.ref_name }}",
+          "commit": "${{ github.sha }}",
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "images": [
+            {
+              "name": "atlas-gateway",
+              "tag": "${{ github.ref_name }}",
+              "digest": "ghcr.io/${{ github.repository }}/atlas-gateway:${{ github.ref_name }}"
+            }
+          ],
+          "artifacts": [
+            {
+              "name": "atlas-sbom.json",
+              "type": "sbom",
+              "format": "spdx-json"
+            },
+            {
+              "name": "atlas-sbom-cyclonedx.json",
+              "type": "sbom",
+              "format": "cyclonedx-json"
+            },
+            {
+              "name": "slsa-provenance.json",
+              "type": "provenance",
+              "format": "slsa-v1"
+            }
+          ]
+        }
+        EOF
+        
+        # Generate SHA256 manifest
+        find _reports -type f -name "*.json" -o -name "*.txt" -o -name "*.sig" | while read file; do
+          sha256sum "$file" >> _reports/release/sha256-manifest.txt
+        done
+        
+        echo "Release artifacts generated"
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        body: |
+          ## Atlas ${{ github.ref_name }} Release
+          
+          ### Container Images
+          - `ghcr.io/${{ github.repository }}/atlas-gateway:${{ github.ref_name }}`
+          - `ghcr.io/${{ github.repository }}/atlas-gateway:latest`
+          
+          ### Supply Chain Security
+          - ✅ Container images signed with cosign keyless
+          - ✅ SLSA provenance generated and signed
+          - ✅ SBOM generated (SPDX and CycloneDX formats)
+          - ✅ SHA256 manifest included
+          
+          ### Artifacts
+          See the attached artifacts for:
+          - SBOM files (SPDX and CycloneDX)
+          - SLSA provenance
+          - SHA256 manifest
+          - Release manifest
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Artifacts
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: _reports/sbom/atlas-sbom.json
+        asset_name: atlas-sbom.json
+        asset_content_type: application/json
+    
+    - name: Upload Release Artifacts - CycloneDX SBOM
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: _reports/sbom/atlas-sbom-cyclonedx.json
+        asset_name: atlas-sbom-cyclonedx.json
+        asset_content_type: application/json
+    
+    - name: Upload Release Artifacts - SLSA Provenance
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: _reports/slsa-provenance.json
+        asset_name: slsa-provenance.json
+        asset_content_type: application/json
+    
+    - name: Upload Release Artifacts - SHA256 Manifest
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: _reports/release/sha256-manifest.txt
+        asset_name: sha256-manifest.txt
+        asset_content_type: text/plain
+    
+    - name: Upload Release Artifacts - Release Manifest
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: _reports/release/release-manifest.json
+        asset_name: release-manifest.json
+        asset_content_type: application/json
+    
+    - name: Upload all artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-artifacts
+        path: _reports/
