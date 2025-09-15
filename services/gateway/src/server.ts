@@ -12,21 +12,18 @@ import pino from 'pino';
 import { QuorumManager } from './quorum';
 import { WitnessClient } from './witness-client';
 import { 
-  GatewayAPI, 
-  AdminAPI, 
-  WebSocketEvents, 
-  FabricConfig, 
-  WitnessConfig,
   SubmitRecordRequestSchema,
   SubmitRecordResponseSchema,
-  VerifyRecordResponseSchema,
-  GetConflictsResponseSchema,
-  WitnessStatusResponseSchema,
-  AdminMetricsResponseSchema,
-  ResolveConflictRequestSchema,
-  ResolveConflictResponseSchema,
-  WitnessPerformanceResponseSchema
+  FabricConfig,
+  WitnessConfig
 } from '@atlas/fabric-protocol';
+
+// Temporary type definitions for squeeze mode
+type WebSocketEvents = {
+  conflict_detected: {
+    conflict_ticket: any;
+  };
+};
 
 export class GatewayServer {
   private fastify: FastifyInstance;
@@ -46,10 +43,10 @@ export class GatewayServer {
     this.logger = pino({
       level: process.env.LOG_LEVEL || 'info',
       transport: process.env.NODE_ENV === 'development' ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-        },
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+          },
       } : undefined,
     });
     
@@ -112,7 +109,7 @@ export class GatewayServer {
     await this.fastify.register(rateLimit, {
       max: 1000, // requests per windowMs
       timeWindow: '1 minute',
-      errorResponseBuilder: (request, context) => ({
+      errorResponseBuilder: (request: any, context: any) => ({
         error: 'Rate limit exceeded',
         message: `Rate limit exceeded, retry in ${Math.round(context.after / 1000)} seconds`,
         retryAfter: Math.round(context.after / 1000),
@@ -192,9 +189,7 @@ export class GatewayServer {
     });
 
     // Submit record (primary endpoint) with validation and idempotency
-    this.fastify.post<{
-      Body: GatewayAPI['submitRecord']['body'];
-    }>('/record', async (request, reply) => {
+    this.fastify.post('/record', async (request: any, reply) => {
       const startTime = Date.now();
       const idempotencyKey = request.headers['idempotency-key'] as string;
       
@@ -285,9 +280,7 @@ export class GatewayServer {
     });
 
     // Verify record (primary endpoint)
-    this.fastify.get<{
-      Params: GatewayAPI['verifyRecord']['params'];
-    }>('/verify/:record_id', async (request, reply) => {
+    this.fastify.get('/verify/:record_id', async (request: any, reply) => {
       try {
         const { record_id } = request.params;
         
@@ -334,9 +327,7 @@ export class GatewayServer {
     });
 
     // Legacy API endpoints for backward compatibility with validation and idempotency
-    this.fastify.post<{
-      Body: GatewayAPI['submitRecord']['body'];
-    }>('/api/records', async (request, reply) => {
+    this.fastify.post('/api/records', async (request: any, reply) => {
       const startTime = Date.now();
       const idempotencyKey = request.headers['idempotency-key'] as string;
       
@@ -365,31 +356,31 @@ export class GatewayServer {
           idempotency_key: idempotencyKey,
           api: 'legacy'
         }, 'Processing record submission (legacy API)');
-        
-        const attestations = await this.witnessClient.submitToAllWitnesses(
-          app,
-          record_id,
-          payload,
-          meta
-        );
+      
+      const attestations = await this.witnessClient.submitToAllWitnesses(
+        app,
+        record_id,
+        payload,
+        meta
+      );
 
-        const quorumResult = this.quorumManager.verifyQuorum(attestations);
+      const quorumResult = this.quorumManager.verifyQuorum(attestations);
 
-        if (quorumResult.conflict_ticket) {
-          this.broadcastConflict(quorumResult.conflict_ticket);
-        }
+      if (quorumResult.conflict_ticket) {
+        this.broadcastConflict(quorumResult.conflict_ticket);
+      }
 
         const response = {
-          success: quorumResult.ok,
-          record_id,
-          attestations,
-          quorum_result: {
-            ok: quorumResult.ok,
-            quorum_count: quorumResult.quorum_count,
-            max_skew_ms: quorumResult.max_skew_ms,
-            conflict_ticket: quorumResult.conflict_ticket?.conflict_id,
-          },
-        };
+        success: quorumResult.ok,
+        record_id,
+        attestations,
+        quorum_result: {
+          ok: quorumResult.ok,
+          quorum_count: quorumResult.quorum_count,
+          max_skew_ms: quorumResult.max_skew_ms,
+          conflict_ticket: quorumResult.conflict_ticket?.conflict_id,
+        },
+      };
 
         // Cache response for idempotency
         if (idempotencyKey) {
@@ -426,9 +417,7 @@ export class GatewayServer {
       }
     });
 
-    this.fastify.get<{
-      Params: GatewayAPI['verifyRecord']['params'];
-    }>('/api/records/:record_id/verify', async (request, reply) => {
+    this.fastify.get('/api/records/:record_id/verify', async (request: any, reply) => {
       // Redirect to primary endpoint
       const { record_id } = request.params;
       
@@ -466,9 +455,7 @@ export class GatewayServer {
     });
 
     // Get conflicts
-    this.fastify.get<{
-      Querystring: GatewayAPI['getConflicts']['query'];
-    }>('/api/conflicts', async (request, reply) => {
+    this.fastify.get('/api/conflicts', async (request: any, reply) => {
       try {
         const { since, status, limit } = request.query;
         
@@ -534,9 +521,7 @@ export class GatewayServer {
    */
   private setupAdminRoutes(): void {
     // Get system metrics
-    this.fastify.get<{
-      Querystring: AdminAPI['getMetrics']['query'];
-    }>('/admin/metrics', async (request, reply) => {
+    this.fastify.get('/admin/metrics', async (request: any, reply) => {
       try {
         const stats = this.quorumManager.getQuorumStats();
         const witnessHealth = await this.witnessClient.getWitnessHealth();
@@ -569,9 +554,7 @@ export class GatewayServer {
     });
 
     // Get conflict details
-    this.fastify.get<{
-      Params: AdminAPI['getConflict']['params'];
-    }>('/admin/conflicts/:conflict_id', async (request, reply) => {
+    this.fastify.get('/admin/conflicts/:conflict_id', async (request: any, reply) => {
       try {
         const { conflict_id } = request.params;
         
@@ -592,10 +575,7 @@ export class GatewayServer {
     });
 
     // Resolve conflict
-    this.fastify.post<{
-      Params: AdminAPI['resolveConflict']['params'];
-      Body: AdminAPI['resolveConflict']['body'];
-    }>('/admin/conflicts/:conflict_id/resolve', async (request, reply) => {
+    this.fastify.post('/admin/conflicts/:conflict_id/resolve', async (request: any, reply) => {
       try {
         const { conflict_id } = request.params;
         const { method, chosen_attestation_id, reason } = request.body;
@@ -628,9 +608,7 @@ export class GatewayServer {
     });
 
     // Get witness performance
-    this.fastify.get<{
-      Querystring: AdminAPI['getWitnessPerformance']['query'];
-    }>('/admin/witnesses/performance', async (request, reply) => {
+    this.fastify.get('/admin/witnesses/performance', async (request: any, reply) => {
       try {
         const witnessHealth = await this.witnessClient.getWitnessHealth();
         

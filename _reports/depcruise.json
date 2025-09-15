@@ -509,9 +509,7 @@
         }
       ],
       "dependents": [
-        "apps/admin/src/lib/admin-client.ts",
-        "apps/web/src/components/IntegrityBadge.tsx",
-        "apps/web/src/lib/atlas-client.ts"
+        "apps/admin/src/lib/admin-client.ts"
       ],
       "orphan": false,
       "valid": true
@@ -549,31 +547,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./api",
+          "module": "./schemas",
           "moduleSystem": "cjs",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "require"
           ],
-          "resolved": "packages/fabric-protocol/dist/api.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "require"
-          ],
-          "resolved": "packages/fabric-protocol/dist/types.js",
+          "resolved": "packages/fabric-protocol/dist/schemas.js",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -585,9 +566,6 @@
       "dependents": [
         "apps/admin/src/lib/admin-client.ts",
         "packages/fabric-client/dist/client.js",
-        "apps/web/src/components/ChatMessage.tsx",
-        "apps/web/src/components/IntegrityBadge.tsx",
-        "apps/web/src/components/WitnessAttestationsModal.tsx",
         "packages/fabric-client/dist/client.d.ts",
         "packages/fabric-client/dist/index.d.ts",
         "packages/fabric-client/dist/utils.d.ts",
@@ -595,13 +573,10 @@
         "packages/fabric-client/src/index.ts",
         "packages/fabric-client/src/utils.ts",
         "packages/fabric-client/src/utils.test.ts",
-        "services/gateway/dist/quorum.js",
-        "services/gateway/dist/witness-client.js",
-        "services/gateway/dist/quorum.d.ts",
-        "services/gateway/dist/witness-client.d.ts",
         "services/gateway/src/server.ts",
         "services/gateway/src/quorum.ts",
         "services/gateway/src/witness-client.ts",
+        "services/witness-node/dist/witness.js",
         "services/witness-node/dist/ledger.d.ts",
         "services/witness-node/dist/witness.d.ts",
         "services/witness-node/src/server.ts",
@@ -612,21 +587,10 @@
       "valid": true
     },
     {
-      "source": "packages/fabric-protocol/dist/api.js",
+      "source": "packages/fabric-protocol/dist/schemas.js",
       "dependencies": [],
       "dependents": [
         "packages/fabric-protocol/dist/index.js",
-        "packages/fabric-protocol/dist/index.d.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "packages/fabric-protocol/dist/types.js",
-      "dependencies": [],
-      "dependents": [
-        "packages/fabric-protocol/dist/index.js",
-        "packages/fabric-protocol/dist/api.d.ts",
         "packages/fabric-protocol/dist/index.d.ts"
       ],
       "orphan": false,
@@ -967,173 +931,6 @@
       ]
     },
     {
-      "source": "apps/web/src/components/ChatMessage.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./IntegrityBadge",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/web/src/components/IntegrityBadge.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./WitnessAttestationsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/web/src/components/WitnessAttestationsModal.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-protocol",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "type-only",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/web/src/components/IntegrityBadge.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-client",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "import"
-          ],
-          "resolved": "packages/fabric-client/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-protocol",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "type-only",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/web/src/components/ChatMessage.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/web/src/components/WitnessAttestationsModal.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-protocol",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "type-only",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/web/src/components/ChatMessage.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/web/src/components/layout/Header.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Navigation",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/web/src/components/layout/Navigation.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/web/src/components/layout/Navigation.tsx",
-      "dependencies": [],
-      "dependents": [
-        "apps/web/src/components/layout/Header.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "apps/web/src/components/ui/Badge.tsx",
       "dependencies": [],
       "dependents": [],
@@ -1210,44 +1007,6 @@
           "name": "no-orphans"
         }
       ]
-    },
-    {
-      "source": "apps/web/src/components/ui/Textarea.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "apps/web/src/lib/atlas-client.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-client",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "import"
-          ],
-          "resolved": "packages/fabric-client/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
     },
     {
       "source": "apps/web/src/lib/features.ts",
@@ -1459,6 +1218,32 @@
       ]
     },
     {
+      "source": "packages/fabric-client/dist/telemetry.d.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "warn",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "packages/fabric-client/dist/telemetry.js",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "warn",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "packages/fabric-client/dist/utils.d.ts",
       "dependencies": [
         {
@@ -1577,23 +1362,6 @@
         },
         {
           "dynamic": false,
-          "module": "./telemetry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "packages/fabric-client/src/telemetry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1629,15 +1397,6 @@
         }
       ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "packages/fabric-client/src/telemetry.ts",
-      "dependencies": [],
-      "dependents": [
-        "packages/fabric-client/src/index.ts"
-      ],
       "orphan": false,
       "valid": true
     },
@@ -1726,43 +1485,18 @@
       "valid": true
     },
     {
-      "source": "packages/fabric-protocol/dist/api.d.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/dist/types.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "packages/fabric-protocol/dist/index.d.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./api",
+          "module": "./schemas",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "packages/fabric-protocol/dist/api.js",
+          "resolved": "packages/fabric-protocol/dist/schemas.js",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1772,7 +1506,7 @@
         },
         {
           "dynamic": false,
-          "module": "./api",
+          "module": "./schemas",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -1780,42 +1514,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "packages/fabric-protocol/dist/api.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/dist/types.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/dist/types.js",
+          "resolved": "packages/fabric-protocol/dist/schemas.js",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1829,7 +1528,7 @@
       "valid": true
     },
     {
-      "source": "packages/fabric-protocol/dist/types.d.ts",
+      "source": "packages/fabric-protocol/dist/schemas.d.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -1842,154 +1541,11 @@
       ]
     },
     {
-      "source": "packages/fabric-protocol/src/api.d.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/src/types.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "packages/fabric-protocol/src/types.js",
-      "dependencies": [],
-      "dependents": [
-        "packages/fabric-protocol/src/api.d.ts",
-        "packages/fabric-protocol/src/api.ts",
-        "packages/fabric-protocol/src/index.d.ts",
-        "packages/fabric-protocol/src/index.js",
-        "packages/fabric-protocol/src/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "packages/fabric-protocol/src/api.js",
       "dependencies": [],
       "dependents": [
-        "packages/fabric-protocol/src/index.d.ts",
-        "packages/fabric-protocol/src/index.js",
-        "packages/fabric-protocol/src/index.ts"
+        "packages/fabric-protocol/src/index.js"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "packages/fabric-protocol/src/api.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/src/types.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "packages/fabric-protocol/src/index.d.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./api",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/src/api.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./api",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/src/api.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/src/types.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/src/types.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2036,43 +1592,17 @@
       "valid": true
     },
     {
+      "source": "packages/fabric-protocol/src/types.js",
+      "dependencies": [],
+      "dependents": [
+        "packages/fabric-protocol/src/index.js"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/fabric-protocol/src/index.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./api",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/src/api.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./api",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/src/api.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./schemas",
@@ -2092,24 +1622,7 @@
         },
         {
           "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "packages/fabric-protocol/src/types.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
+          "module": "./schemas",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -2117,7 +1630,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "packages/fabric-protocol/src/types.js",
+          "resolved": "packages/fabric-protocol/src/schemas.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2136,309 +1649,6 @@
       "dependents": [
         "packages/fabric-protocol/src/index.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "packages/fabric-protocol/src/types.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "packages/fabric-protocol/src/types.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/index.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/index.js",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./server",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "require"
-          ],
-          "resolved": "services/gateway/dist/server.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "services/gateway/dist/server.js",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./quorum",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "require"
-          ],
-          "resolved": "services/gateway/dist/quorum.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./witness-client",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "require"
-          ],
-          "resolved": "services/gateway/dist/witness-client.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "services/gateway/dist/index.js"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "services/gateway/dist/quorum.js",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-protocol",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "require"
-          ],
-          "resolved": "packages/fabric-protocol/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "services/gateway/dist/server.js"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "services/gateway/dist/witness-client.js",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-protocol",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "require"
-          ],
-          "resolved": "packages/fabric-protocol/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "services/gateway/dist/server.js"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "services/gateway/dist/manual-span.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/manual-span.js",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/metrics.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/metrics.js",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/quorum.d.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-protocol",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "services/gateway/dist/server.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/tracing.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/tracing.js",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/gateway/dist/witness-client.d.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-protocol",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/dist/index.js",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2665,6 +1875,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@atlas/fabric-protocol",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "require"
+          ],
+          "resolved": "packages/fabric-protocol/dist/index.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -2710,58 +1937,6 @@
       "valid": true
     },
     {
-      "source": "services/witness-node/dist/manual-span.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/witness-node/dist/manual-span.js",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/witness-node/dist/metrics.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/witness-node/dist/metrics.js",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "services/witness-node/dist/server.d.ts",
       "dependencies": [
         {
@@ -2785,32 +1960,6 @@
       "dependents": [],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "services/witness-node/dist/tracing.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "services/witness-node/dist/tracing.js",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "services/witness-node/dist/witness.d.ts",
@@ -3287,15 +2436,6 @@
       },
       {
         "type": "module",
-        "from": "apps/web/src/components/ui/Textarea.tsx",
-        "to": "apps/web/src/components/ui/Textarea.tsx",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "apps/web/src/lib/features.ts",
         "to": "apps/web/src/lib/features.ts",
         "rule": {
@@ -3377,6 +2517,24 @@
       },
       {
         "type": "module",
+        "from": "packages/fabric-client/dist/telemetry.d.ts",
+        "to": "packages/fabric-client/dist/telemetry.d.ts",
+        "rule": {
+          "severity": "warn",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "packages/fabric-client/dist/telemetry.js",
+        "to": "packages/fabric-client/dist/telemetry.js",
+        "rule": {
+          "severity": "warn",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "packages/fabric-client/dist/utils.test.d.ts",
         "to": "packages/fabric-client/dist/utils.test.d.ts",
         "rule": {
@@ -3395,98 +2553,8 @@
       },
       {
         "type": "module",
-        "from": "packages/fabric-protocol/dist/types.d.ts",
-        "to": "packages/fabric-protocol/dist/types.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "packages/fabric-protocol/src/types.d.ts",
-        "to": "packages/fabric-protocol/src/types.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "packages/fabric-protocol/src/types.ts",
-        "to": "packages/fabric-protocol/src/types.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/gateway/dist/index.d.ts",
-        "to": "services/gateway/dist/index.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/gateway/dist/manual-span.d.ts",
-        "to": "services/gateway/dist/manual-span.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/gateway/dist/manual-span.js",
-        "to": "services/gateway/dist/manual-span.js",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/gateway/dist/metrics.d.ts",
-        "to": "services/gateway/dist/metrics.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/gateway/dist/metrics.js",
-        "to": "services/gateway/dist/metrics.js",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/gateway/dist/server.d.ts",
-        "to": "services/gateway/dist/server.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/gateway/dist/tracing.d.ts",
-        "to": "services/gateway/dist/tracing.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/gateway/dist/tracing.js",
-        "to": "services/gateway/dist/tracing.js",
+        "from": "packages/fabric-protocol/dist/schemas.d.ts",
+        "to": "packages/fabric-protocol/dist/schemas.d.ts",
         "rule": {
           "severity": "warn",
           "name": "no-orphans"
@@ -3500,68 +2568,14 @@
           "severity": "warn",
           "name": "no-orphans"
         }
-      },
-      {
-        "type": "module",
-        "from": "services/witness-node/dist/manual-span.d.ts",
-        "to": "services/witness-node/dist/manual-span.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/witness-node/dist/manual-span.js",
-        "to": "services/witness-node/dist/manual-span.js",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/witness-node/dist/metrics.d.ts",
-        "to": "services/witness-node/dist/metrics.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/witness-node/dist/metrics.js",
-        "to": "services/witness-node/dist/metrics.js",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/witness-node/dist/tracing.d.ts",
-        "to": "services/witness-node/dist/tracing.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "services/witness-node/dist/tracing.js",
-        "to": "services/witness-node/dist/tracing.js",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
       }
     ],
     "error": 0,
-    "warn": 60,
+    "warn": 45,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 139,
-    "totalDependenciesCruised": 87,
+    "totalCruised": 106,
+    "totalDependenciesCruised": 59,
     "optionsUsed": {
       "baseDir": "/Users/simon/Atlas",
       "combinedDependencies": false,

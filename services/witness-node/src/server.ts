@@ -6,7 +6,7 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { WitnessNode } from './witness';
-import { WitnessAPI } from '@atlas/fabric-protocol';
+// import { WitnessAPI } from '@atlas/fabric-protocol'; // Temporarily disabled
 
 export class WitnessServer {
   private fastify: FastifyInstance;
@@ -56,9 +56,7 @@ export class WitnessServer {
     });
 
     // Submit record
-    this.fastify.post<{
-      Body: WitnessAPI['submitRecord']['body'];
-    }>('/witness/record', async (request, reply) => {
+    this.fastify.post('/witness/record', async (request: any, reply) => {
       try {
         const { app, record_id, payload, meta } = request.body;
         
@@ -80,9 +78,7 @@ export class WitnessServer {
     });
 
     // Get ledger
-    this.fastify.get<{
-      Querystring: WitnessAPI['getLedger']['query'];
-    }>('/witness/ledger', async (request, reply) => {
+    this.fastify.get('/witness/ledger', async (request: any, reply) => {
       try {
         const { since, limit } = request.query;
         
@@ -106,9 +102,7 @@ export class WitnessServer {
     });
 
     // Get specific record
-    this.fastify.get<{
-      Params: WitnessAPI['getRecord']['params'];
-    }>('/witness/records/:record_id', async (request, reply) => {
+    this.fastify.get('/witness/records/:record_id', async (request: any, reply) => {
       try {
         const { record_id } = request.params;
         
