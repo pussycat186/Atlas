@@ -1,0 +1,51 @@
+graph TD
+    A[atlas-root] --> B[packages/fabric-protocol]
+    A --> C[packages/fabric-client]
+    A --> D[services/gateway]
+    A --> E[services/witness-node]
+    A --> F[apps/web]
+    A --> G[apps/admin]
+    
+    B --> H[typescript]
+    B --> I[rimraf]
+    
+    C --> B
+    C --> J[jest]
+    C --> K[ts-jest]
+    C --> L[@types/jest]
+    C --> I
+    
+    D --> B
+    D --> C
+    D --> M[fastify]
+    D --> N[@fastify/cors]
+    D --> O[@fastify/websocket]
+    D --> P[pino]
+    D --> Q[uuid]
+    
+    E --> B
+    E --> M
+    E --> N
+    E --> P
+    E --> R[fs-extra]
+    E --> Q
+    
+    F --> C
+    F --> S[next]
+    F --> T[react]
+    F --> U[tailwindcss]
+    F --> V[@playwright/test]
+    
+    G --> C
+    G --> S
+    G --> T
+    G --> U
+    G --> V
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#f3e5f5
+    style D fill:#e8f5e8
+    style E fill:#e8f5e8
+    style F fill:#fff3e0
+    style G fill:#fff3e0

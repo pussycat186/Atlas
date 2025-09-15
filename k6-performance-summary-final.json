@@ -1,0 +1,81 @@
+{
+  "test_name": "Atlas Web App Performance Test - Final Production",
+  "timestamp": "2025-09-10T20:30:00Z",
+  "duration": "1m20.1s",
+  "scenario": "4 pages load test (home, keys, playground, metrics)",
+  "build_mode": "production",
+  "results": {
+    "http_reqs": {
+      "total": 86836,
+      "rate": 1083.95,
+      "target": 500,
+      "status": "PASSED"
+    },
+    "http_req_duration": {
+      "avg": "227.69ms",
+      "min": "843µs",
+      "median": "191.6ms",
+      "max": "20.32s",
+      "p90": "319.56ms",
+      "p95": "362.14ms",
+      "target": "<200ms",
+      "status": "FAILED"
+    },
+    "http_req_failed": {
+      "rate": "0.00%",
+      "target": "<1%",
+      "status": "PASSED"
+    },
+    "checks": {
+      "total": 260508,
+      "succeeded": 218667,
+      "failed": 41841,
+      "success_rate": "83.93%"
+    },
+    "iterations": {
+      "total": 21709,
+      "rate": "270.99/s"
+    },
+    "vus": {
+      "max": 500,
+      "final": 6
+    }
+  },
+  "thresholds": {
+    "http_req_duration_p95": {
+      "threshold": "p(95)<200",
+      "actual": "362.14ms",
+      "status": "FAILED"
+    },
+    "http_req_failed_rate": {
+      "threshold": "rate<0.01",
+      "actual": "0.00%",
+      "status": "PASSED"
+    },
+    "http_reqs_rate": {
+      "threshold": "rate>=500",
+      "actual": "1083.95/s",
+      "status": "PASSED"
+    }
+  },
+  "performance_analysis": {
+    "achieved_targets": [
+      "RPS target exceeded (1083 > 500)",
+      "Error rate target met (0% < 1%)",
+      "Production build optimization successful"
+    ],
+    "remaining_issues": [
+      "p95 latency above 200ms threshold (362ms)",
+      "High load causes latency degradation"
+    ],
+    "root_cause": "Single-threaded Node.js server cannot handle 500+ concurrent requests efficiently",
+    "recommendations": [
+      "Deploy with reverse proxy (nginx/CloudFlare)",
+      "Enable HTTP/2 with compression",
+      "Implement CDN for static assets",
+      "Add load balancing across multiple instances",
+      "Use Redis caching layer"
+    ]
+  },
+  "status": "PARTIAL SUCCESS - RPS and error targets met, latency needs production infrastructure"
+}

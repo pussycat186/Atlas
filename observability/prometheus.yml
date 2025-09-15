@@ -3,12 +3,56 @@ global:
   evaluation_interval: 15s
 
 rule_files:
-  - "prometheus-alerts.yml"
+  - "rules/*.yml"
 
 scrape_configs:
-  - job_name: 'otel-collector'
-    static_configs:
-      - targets: ['otel-collector:8889']
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+
+  - job_name: 'atlas-gateway'
+    static_configs:
+      - targets: ['gateway:9090']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'atlas-witnesses'
+    static_configs:
+      - targets: 
+          - 'witness-1:9090'
+          - 'witness-2:9090'
+          - 'witness-3:9090'
+          - 'witness-4:9090'
+          - 'witness-5:9090'
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8889']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'jaeger'
+    static_configs:
+      - targets: ['jaeger:14269']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'tempo'
+    static_configs:
+      - targets: ['tempo:9095']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s

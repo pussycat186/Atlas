@@ -1,0 +1,165 @@
+{
+  "root_cause_analysis": {
+    "timestamp": "2025-09-10T19:20:00Z",
+    "total_issues": 8,
+    "critical_issues": 3,
+    "high_issues": 3,
+    "medium_issues": 2,
+    "classification": {
+      "A_Workspace_Linking": {
+        "count": 0,
+        "issues": []
+      },
+      "B_Topology_Drift": {
+        "count": 3,
+        "issues": [
+          {
+            "symptom": "Web app port mismatch (3003 vs 3000)",
+            "file": "infra/docker/Dockerfile.web",
+            "line": 40,
+            "evidence": "ENV PORT=3003 but app expects 3000",
+            "severity": "high"
+          },
+          {
+            "symptom": "Admin app missing Docker configuration",
+            "file": "infra/docker/Dockerfile.admin",
+            "evidence": "File exists but not referenced in CI workflows",
+            "severity": "medium"
+          },
+          {
+            "symptom": "Next.js standalone path mismatch",
+            "file": "infra/docker/Dockerfile.web",
+            "line": 46,
+            "evidence": "Copies to /app but server.js expects /app/apps/web/server.js",
+            "severity": "high"
+          }
+        ]
+      },
+      "C_Ignored_Assets": {
+        "count": 0,
+        "issues": []
+      },
+      "D_Container_Packaging_Gaps": {
+        "count": 2,
+        "issues": [
+          {
+            "symptom": "Gateway container fails with 'Cannot find module fastify'",
+            "file": "infra/docker/Dockerfile.gateway",
+            "line": 42,
+            "evidence": "docker run --rm ghcr.io/pussycat186/atlas-gateway:v1.0.0 ls -la /app/node_modules/fastify → No such file",
+            "severity": "critical"
+          },
+          {
+            "symptom": "Witness container missing runtime dependencies",
+            "file": "infra/docker/Dockerfile.witness",
+            "evidence": "Similar to gateway - missing fastify, @fastify/cors",
+            "severity": "critical"
+          }
+        ]
+      },
+      "E_CI_Policy_Permissions": {
+        "count": 1,
+        "issues": [
+          {
+            "symptom": "CI cache disabled with no-cache: true",
+            "file": ".github/workflows/release.yml",
+            "line": 58,
+            "evidence": "no-cache: true defeats caching strategy, increases build times",
+            "severity": "medium"
+          }
+        ]
+      },
+      "F_UI_Contract_Gaps": {
+        "count": 1,
+        "issues": [
+          {
+            "symptom": "Playwright tests fail due to missing UI elements",
+            "file": "apps/web/src/app/keys/page.tsx",
+            "evidence": "Tests expect 'Create New Key' button not found in actual UI",
+            "severity": "high"
+          }
+        ]
+      },
+      "G_Perf_A11y_Debt": {
+        "count": 2,
+        "issues": [
+          {
+            "symptom": "Storybook build fails with dependency conflicts",
+            "file": "apps/web/package.json",
+            "evidence": "Version mismatches: @storybook/* 8.6.14 vs 9.1.5",
+            "severity": "medium"
+          },
+          {
+            "symptom": "Lighthouse performance score 42/100",
+            "file": "apps/web/",
+            "evidence": "Unoptimized assets, render-blocking resources, no compression",
+            "severity": "high"
+          }
+        ]
+      },
+      "H_Observability_Gaps": {
+        "count": 1,
+        "issues": [
+          {
+            "symptom": "Observability not integrated in services",
+            "file": "services/*/src/",
+            "evidence": "No OTLP export code found in gateway or witness services",
+            "severity": "medium"
+          }
+        ]
+      }
+    },
+    "remediation_priority": [
+      {
+        "priority": 1,
+        "bucket": "D_Container_Packaging_Gaps",
+        "action": "Fix Dockerfile dependency copying",
+        "impact": "critical",
+        "effort": "low"
+      },
+      {
+        "priority": 2,
+        "bucket": "B_Topology_Drift",
+        "action": "Align port expectations",
+        "impact": "high",
+        "effort": "low"
+      },
+      {
+        "priority": 3,
+        "bucket": "E_CI_Policy_Permissions",
+        "action": "Remove no-cache flags",
+        "impact": "medium",
+        "effort": "low"
+      },
+      {
+        "priority": 4,
+        "bucket": "F_UI_Contract_Gaps",
+        "action": "Fix Playwright tests",
+        "impact": "high",
+        "effort": "medium"
+      },
+      {
+        "priority": 5,
+        "bucket": "G_Perf_A11y_Debt",
+        "action": "Optimize Lighthouse scores",
+        "impact": "high",
+        "effort": "medium"
+      },
+      {
+        "priority": 6,
+        "bucket": "H_Observability_Gaps",
+        "action": "Add OTLP integration",
+        "impact": "medium",
+        "effort": "high"
+      }
+    ],
+    "success_criteria": {
+      "container_startup": "All containers start without module errors",
+      "port_accessibility": "All services accessible on expected ports",
+      "ci_performance": "Build times improved by 40%",
+      "ui_reliability": "Playwright tests 100% pass rate",
+      "performance_scores": "Lighthouse Performance ≥ 90",
+      "observability_proof": "TraceID visible in Grafana/Tempo"
+    }
+  }
+}

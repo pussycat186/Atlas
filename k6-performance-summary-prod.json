@@ -1,0 +1,86 @@
+{
+  "test_name": "Atlas Web App Performance Test - Production Build",
+  "timestamp": "2025-09-10T20:00:00Z",
+  "duration": "1m20.1s",
+  "scenario": "4 pages load test (home, keys, playground, metrics)",
+  "build_mode": "production",
+  "results": {
+    "http_reqs": {
+      "total": 80920,
+      "rate": 1010.38,
+      "target": 500,
+      "status": "PASSED"
+    },
+    "http_req_duration": {
+      "avg": "247.18ms",
+      "min": "1ms",
+      "median": "213.12ms",
+      "max": "21.73s",
+      "p90": "332.39ms",
+      "p95": "363.14ms",
+      "target": "<200ms",
+      "status": "FAILED"
+    },
+    "http_req_failed": {
+      "rate": "0.00%",
+      "target": "<1%",
+      "status": "PASSED"
+    },
+    "checks": {
+      "total": 242760,
+      "succeeded": 199121,
+      "failed": 43639,
+      "success_rate": "82.02%"
+    },
+    "iterations": {
+      "total": 20230,
+      "rate": "252.59/s"
+    },
+    "vus": {
+      "max": 500,
+      "final": 16
+    }
+  },
+  "thresholds": {
+    "http_req_duration_p95": {
+      "threshold": "p(95)<200",
+      "actual": "363.14ms",
+      "status": "FAILED"
+    },
+    "http_req_failed_rate": {
+      "threshold": "rate<0.01",
+      "actual": "0.00%",
+      "status": "PASSED"
+    },
+    "http_reqs_rate": {
+      "threshold": "rate>=500",
+      "actual": "1010.38/s",
+      "status": "PASSED"
+    }
+  },
+  "performance_improvements": {
+    "rps_improvement": "8.7x faster (116.56 → 1010.38)",
+    "latency_improvement": "12.6x faster (4.57s → 363ms)",
+    "error_rate": "0% (maintained)",
+    "build_optimization": "Production bundles with minification and tree-shaking"
+  },
+  "analysis": {
+    "achieved_targets": [
+      "RPS target met (1010 > 500)",
+      "Error rate target met (0% < 1%)",
+      "Production build optimization successful"
+    ],
+    "remaining_issues": [
+      "p95 latency still above 200ms threshold (363ms)",
+      "Some response time variance under high load"
+    ],
+    "recommendations": [
+      "Add reverse proxy with compression",
+      "Implement CDN for static assets",
+      "Add database connection pooling",
+      "Enable HTTP/2 server push"
+    ]
+  },
+  "status": "PARTIAL SUCCESS - RPS and error targets met, latency needs optimization",
+  "note": "Significant improvement over dev server. Production deployment with additional optimizations would likely meet all targets."
+}

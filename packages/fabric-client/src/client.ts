@@ -10,46 +10,97 @@ import {
   ConflictTicket,
   LedgerEntry,
   FabricConfig,
-  DEFAULT_FABRIC_CONFIG
+  DEFAULT_FABRIC_CONFIG,
+  SubmitRecordRequestSchema,
+  SubmitRecordResponseSchema,
+  VerifyRecordResponseSchema,
+  GetConflictsResponseSchema,
+  WitnessStatusResponseSchema,
+  SubmitRecordRequest,
+  SubmitRecordResponse,
+  VerifyRecordResponse,
+  GetConflictsResponse,
+  WitnessStatusResponse
 } from '@atlas/fabric-protocol';
+
+export interface AtlasClientConfig {
+  gatewayEndpoint: string;
+  fabricConfig?: Partial<FabricConfig>;
+  idempotencyKey?: string;
+  timeout?: number;
+  retries?: number;
+}
 
 export class AtlasFabricClient {
   private config: FabricConfig;
   private gatewayEndpoint: string;
+  private idempotencyKey?: string;
+  private timeout: number;
+  private retries: number;
+  private idempotencyCache: Map<string, SubmitRecordResponse> = new Map();
 
-  constructor(gatewayEndpoint: string, config?: Partial<FabricConfig>) {
-    this.gatewayEndpoint = gatewayEndpoint;
-    this.config = { ...DEFAULT_FABRIC_CONFIG, ...config };
+  constructor(config: AtlasClientConfig) {
+    this.gatewayEndpoint = config.gatewayEndpoint;
+    this.config = { ...DEFAULT_FABRIC_CONFIG, ...config.fabricConfig };
+    this.idempotencyKey = config.idempotencyKey;
+    this.timeout = config.timeout || 30000;
+    this.retries = config.retries || 3;
   }
 
   /**
-   * Submit a record to the Atlas fabric
+   * Submit a record to the Atlas fabric with validation and idempotency
    */
   async submitRecord(
     app: 'chat' | 'drive',
     recordId: string,
     payload: string,
     meta: Record<string, any>
-  ): Promise<QuorumResult> {
-    const response = await fetch(`${this.gatewayEndpoint}/api/records`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        app,
-        record_id: recordId,
-        payload,
-        meta,
-      }),
+  ): Promise<SubmitRecordResponse> {
+    // Validate input
+    const validatedRecord = SubmitRecordRequestSchema.parse({
+      app,
+      record_id: recordId,
+      payload,
+      meta,
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to submit record: ${response.statusText}`);
+    // Check idempotency cache
+    const cacheKey = this.generateIdempotencyKey(validatedRecord);
+    if (this.idempotencyCache.has(cacheKey)) {
+      const cached = this.idempotencyCache.get(cacheKey)!;
+      console.log(`Returning cached result for record ${validatedRecord.record_id}`);
+      return cached;
     }
 
-    const result = await response.json();
-    return this.verifyQuorum(result.attestations);
+    // Submit with retries
+    const response = await this.executeWithRetry(async () => {
+      const response = await fetch(`${this.gatewayEndpoint}/api/records`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': this.idempotencyKey || cacheKey,
+        },
+        body: JSON.stringify(validatedRecord),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to submit record: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return SubmitRecordResponseSchema.parse(data);
+    });
+
+    // Cache successful response
+    this.idempotencyCache.set(cacheKey, response);
+    
+    // Clean up old cache entries (keep last 100)
+    if (this.idempotencyCache.size > 100) {
+      const firstKey = this.idempotencyCache.keys().next().value;
+      this.idempotencyCache.delete(firstKey);
+    }
+
+    return response;
   }
 
   /**
@@ -305,5 +356,66 @@ export class AtlasFabricClient {
    */
   updateConfig(newConfig: Partial<FabricConfig>): void {
     this.config = { ...this.config, ...newConfig };
+  }
+
+  /**
+   * Execute a function with retries and timeout
+   */
+  private async executeWithRetry<T>(fn: () => Promise<T>): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= this.retries; attempt++) {
+      try {
+        return await this.executeWithTimeout(fn);
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`Attempt ${attempt} failed:`, error);
+        
+        if (attempt < this.retries) {
+          // Exponential backoff
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw lastError || new Error('All retry attempts failed');
+  }
+
+  /**
+   * Execute a function with timeout
+   */
+  private async executeWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
+    return Promise.race([
+      fn(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), this.timeout);
+      }),
+    ]);
+  }
+
+  /**
+   * Generate idempotency key for caching
+   */
+  private generateIdempotencyKey(record: SubmitRecordRequest): string {
+    const key = `${record.app}:${record.record_id}:${JSON.stringify(record.meta)}`;
+    return Buffer.from(key).toString('base64');
+  }
+
+  /**
+   * Clear idempotency cache
+   */
+  clearIdempotencyCache(): void {
+    this.idempotencyCache.clear();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): { size: number; maxSize: number } {
+    return {
+      size: this.idempotencyCache.size,
+      maxSize: 100,
+    };
   }
 }

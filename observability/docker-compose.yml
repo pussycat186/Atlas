@@ -1,56 +1,111 @@
-version: "3.9"
+version: '3.8'
 
 services:
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=atlas-collector,service.version=1.0.0
+    depends_on:
+      - jaeger
+      - prometheus
+    networks:
+      - observability
+
+  # Jaeger - Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:1.51
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14250:14250"  # Jaeger gRPC
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - observability
+
+  # Prometheus - Metrics Collection
   prometheus:
-    image: prom/prometheus:v2.54.0
+    image: prom/prometheus:v2.48.0
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/etc/prometheus/console_libraries"
-      - "--web.console.templates=/etc/prometheus/consoles"
-    restart: unless-stopped
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - observability
 
-  tempo:
-    image: grafana/tempo:2.5.0
-    ports:
-      - "3200:3200"
-    volumes:
-      - ./tempo.yml:/etc/tempo/tempo.yml:ro
-    command:
-      - "-config.file=/etc/tempo/tempo.yml"
-    restart: unless-stopped
-
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.104.0
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "8889:8889"
-    volumes:
-      - ./otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
-    command:
-      - "--config=/etc/otelcol-contrib/config.yaml"
-    depends_on:
-      - tempo
-    restart: unless-stopped
-
+  # Grafana - Visualization
   grafana:
-    image: grafana/grafana:11.1.0
+    image: grafana/grafana:10.2.0
     ports:
-      - "3030:3000"
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      - "3000:3000"
     volumes:
-      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
     depends_on:
       - prometheus
-      - tempo
-    restart: unless-stopped
+      - jaeger
+    networks:
+      - observability
+
+  # Tempo - Distributed Tracing Backend
+  tempo:
+    image: grafana/tempo:2.3.1
+    ports:
+      - "3200:3200"   # Tempo HTTP
+      - "9095:9095"   # Tempo metrics
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo.yaml
+    command: ["-config.file=/etc/tempo.yaml"]
+    networks:
+      - observability
+
+  # Loki - Log Aggregation
+  loki:
+    image: grafana/loki:2.9.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    networks:
+      - observability
+
+  # Promtail - Log Collection
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - ./promtail-config.yaml:/etc/promtail/config.yml
+      - /var/log:/var/log:ro
+    command: ["-config.file=/etc/promtail/config.yml"]
+    depends_on:
+      - loki
+    networks:
+      - observability
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  observability:
+    driver: bridge

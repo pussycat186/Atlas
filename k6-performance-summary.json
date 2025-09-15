@@ -1,0 +1,77 @@
+{
+  "test_name": "Atlas Web App Performance Test",
+  "timestamp": "2025-09-10T19:50:00Z",
+  "duration": "1m26.4s",
+  "scenario": "4 pages load test (home, keys, playground, metrics)",
+  "results": {
+    "http_reqs": {
+      "total": 10072,
+      "rate": 116.56,
+      "target": 500,
+      "status": "FAILED"
+    },
+    "http_req_duration": {
+      "avg": "2.42s",
+      "min": "18.24ms",
+      "median": "2.2s",
+      "max": "6.73s",
+      "p90": "4.32s",
+      "p95": "4.57s",
+      "target": "<200ms",
+      "status": "FAILED"
+    },
+    "http_req_failed": {
+      "rate": "0.00%",
+      "target": "<1%",
+      "status": "PASSED"
+    },
+    "checks": {
+      "total": 30216,
+      "succeeded": 20189,
+      "failed": 10027,
+      "success_rate": "66.81%"
+    },
+    "iterations": {
+      "total": 2518,
+      "rate": "29.14/s"
+    },
+    "vus": {
+      "max": 500,
+      "final": 45
+    }
+  },
+  "thresholds": {
+    "http_req_duration_p95": {
+      "threshold": "p(95)<200",
+      "actual": "4.57s",
+      "status": "FAILED"
+    },
+    "http_req_failed_rate": {
+      "threshold": "rate<0.01",
+      "actual": "0.00%",
+      "status": "PASSED"
+    },
+    "http_reqs_rate": {
+      "threshold": "rate>=500",
+      "actual": "116.56/s",
+      "status": "FAILED"
+    }
+  },
+  "analysis": {
+    "performance_issues": [
+      "Development server not optimized for production load",
+      "Next.js dev mode has slower response times",
+      "No caching or compression enabled",
+      "Single-threaded Node.js process"
+    ],
+    "recommendations": [
+      "Use production build with 'next build' and 'next start'",
+      "Enable compression and caching",
+      "Use PM2 or similar for process management",
+      "Implement CDN for static assets",
+      "Add database connection pooling"
+    ]
+  },
+  "status": "FAILED - Performance targets not met",
+  "note": "Test run on development server. Production deployment would likely meet targets."
+}

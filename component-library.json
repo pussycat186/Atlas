@@ -1,0 +1,82 @@
+{
+  "components": [
+    {
+      "name": "Button",
+      "props": ["variant", "size", "disabled", "onClick"],
+      "description": "Primary action button with multiple variants"
+    },
+    {
+      "name": "Card",
+      "props": ["title", "children", "className"],
+      "description": "Container component for content sections"
+    },
+    {
+      "name": "Input",
+      "props": ["type", "placeholder", "value", "onChange", "disabled"],
+      "description": "Text input field with validation states"
+    },
+    {
+      "name": "Switch",
+      "props": ["checked", "onCheckedChange", "disabled"],
+      "description": "Toggle switch component"
+    },
+    {
+      "name": "Select",
+      "props": ["options", "value", "onChange", "placeholder"],
+      "description": "Dropdown selection component"
+    },
+    {
+      "name": "Badge",
+      "props": ["variant", "children"],
+      "description": "Status indicator badge"
+    },
+    {
+      "name": "Textarea",
+      "props": ["placeholder", "value", "onChange", "rows"],
+      "description": "Multi-line text input"
+    },
+    {
+      "name": "Header",
+      "props": ["title", "navigation"],
+      "description": "Application header with navigation"
+    },
+    {
+      "name": "Navigation",
+      "props": ["items", "activeItem"],
+      "description": "Navigation menu component"
+    },
+    {
+      "name": "ChatMessage",
+      "props": ["message", "timestamp", "sender"],
+      "description": "Individual chat message display"
+    },
+    {
+      "name": "IntegrityBadge",
+      "props": ["status", "verification"],
+      "description": "Data integrity verification indicator"
+    },
+    {
+      "name": "WitnessAttestationsModal",
+      "props": ["isOpen", "onClose", "attestations"],
+      "description": "Modal showing witness attestations"
+    },
+    {
+      "name": "Page",
+      "props": ["title", "children"],
+      "description": "Base page layout component"
+    },
+    {
+      "name": "Layout",
+      "props": ["children", "sidebar"],
+      "description": "Application layout wrapper"
+    },
+    {
+      "name": "Modal",
+      "props": ["isOpen", "onClose", "title", "children"],
+      "description": "Modal dialog component"
+    }
+  ],
+  "total": 15,
+  "status": "Complete component library with design system integration"
+}
+

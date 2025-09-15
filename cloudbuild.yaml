@@ -1,0 +1,101 @@
+# ATLAS v14 Cloud Build Configuration
+# Builds two images: app (port 3000) and nginx (port 80) with micro-cache
+
+steps:
+  # Build app image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/atlas-app:$COMMIT_SHA',
+      '-t', 'gcr.io/$PROJECT_ID/atlas-app:latest',
+      '-f', 'Dockerfile.app',
+      '.'
+    ]
+    id: 'build-app'
+
+  # Build nginx image with micro-cache configuration
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/atlas-nginx:$COMMIT_SHA',
+      '-t', 'gcr.io/$PROJECT_ID/atlas-nginx:latest',
+      '-f', 'Dockerfile.nginx',
+      '.'
+    ]
+    id: 'build-nginx'
+
+  # Push app image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/atlas-app:$COMMIT_SHA']
+    waitFor: ['build-app']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/atlas-app:latest']
+    waitFor: ['build-app']
+
+  # Push nginx image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/atlas-nginx:$COMMIT_SHA']
+    waitFor: ['build-nginx']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/atlas-nginx:latest']
+    waitFor: ['build-nginx']
+
+  # Deploy Cloud Run services
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'deploy', 'atlas-app',
+      '--image', 'gcr.io/$PROJECT_ID/atlas-app:$COMMIT_SHA',
+      '--region', 'us-central1',
+      '--platform', 'managed',
+      '--port', '3000',
+      '--min-instances', '1',
+      '--max-instances', '1',
+      '--concurrency', '100',
+      '--memory', '1Gi',
+      '--cpu', '1',
+      '--allow-unauthenticated',
+      '--set-env-vars', 'NODE_ENV=production'
+    ]
+    id: 'deploy-app'
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'deploy', 'atlas-nginx',
+      '--image', 'gcr.io/$PROJECT_ID/atlas-nginx:$COMMIT_SHA',
+      '--region', 'us-central1',
+      '--platform', 'managed',
+      '--port', '80',
+      '--min-instances', '1',
+      '--max-instances', '1',
+      '--concurrency', '150',
+      '--memory', '512Mi',
+      '--cpu', '0.5',
+      '--allow-unauthenticated',
+      '--set-env-vars', 'APP_SERVICE_URL=https://atlas-app-${_RANDOM_SUFFIX}-uc.a.run.app'
+    ]
+    waitFor: ['deploy-app']
+    id: 'deploy-nginx'
+
+  # Get nginx service URL
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'services', 'describe', 'atlas-nginx',
+      '--region', 'us-central1',
+      '--format', 'value(status.url)'
+    ]
+    id: 'get-nginx-url'
+
+images:
+  - 'gcr.io/$PROJECT_ID/atlas-app:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/atlas-app:latest'
+  - 'gcr.io/$PROJECT_ID/atlas-nginx:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/atlas-nginx:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'

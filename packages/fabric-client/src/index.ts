@@ -5,6 +5,7 @@
 
 export { AtlasFabricClient } from './client';
 export * from './utils';
+export * from './telemetry';
 
 // Re-export commonly used types
 export type {

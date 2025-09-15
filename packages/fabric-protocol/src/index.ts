@@ -5,6 +5,7 @@
 
 export * from './types';
 export * from './api';
+export * from './schemas';
 
 // Re-export commonly used types for convenience
 export type {
