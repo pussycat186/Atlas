@@ -34,7 +34,7 @@
 * server-optimized.js
 * tests/performance/atlas-load-test.js
 
-## Unused dependencies (39)
+## Unused dependencies (37)
 
 | Name                                      | Location                                 | Severity |
 | :---------------------------------------- | :--------------------------------------- | :------- |
@@ -51,21 +51,19 @@
 | @opentelemetry/sdk-node                   | services/witness-node/package.json:24:6  | error    |
 | @opentelemetry/api                        | services/witness-node/package.json:23:6  | error    |
 | pino-pretty                               | services/witness-node/package.json:20:6  | error    |
-| pino                                      | services/witness-node/package.json:19:6  | error    |
-| @opentelemetry/auto-instrumentations-node | services/gateway/package.json:26:6       | error    |
-| @opentelemetry/instrumentation-fastify    | services/gateway/package.json:31:6       | error    |
-| @opentelemetry/instrumentation-http       | services/gateway/package.json:30:6       | error    |
-| @opentelemetry/instrumentation-pino       | services/gateway/package.json:32:6       | error    |
-| @opentelemetry/semantic-conventions       | services/gateway/package.json:34:6       | error    |
-| @opentelemetry/exporter-prometheus        | services/gateway/package.json:28:6       | error    |
-| @opentelemetry/exporter-otlp-http         | services/gateway/package.json:27:6       | error    |
-| @opentelemetry/instrumentation            | services/gateway/package.json:29:6       | error    |
-| @opentelemetry/resources                  | services/gateway/package.json:33:6       | error    |
-| @opentelemetry/sdk-node                   | services/gateway/package.json:25:6       | error    |
+| @opentelemetry/auto-instrumentations-node | services/gateway/package.json:27:6       | error    |
+| @opentelemetry/instrumentation-fastify    | services/gateway/package.json:32:6       | error    |
+| @opentelemetry/instrumentation-http       | services/gateway/package.json:31:6       | error    |
+| @opentelemetry/instrumentation-pino       | services/gateway/package.json:33:6       | error    |
+| @opentelemetry/semantic-conventions       | services/gateway/package.json:35:6       | error    |
+| @opentelemetry/exporter-prometheus        | services/gateway/package.json:29:6       | error    |
+| @opentelemetry/exporter-otlp-http         | services/gateway/package.json:28:6       | error    |
+| @opentelemetry/instrumentation            | services/gateway/package.json:30:6       | error    |
+| @opentelemetry/resources                  | services/gateway/package.json:34:6       | error    |
+| @opentelemetry/sdk-node                   | services/gateway/package.json:26:6       | error    |
 | @atlas/fabric-client                      | services/gateway/package.json:17:6       | error    |
-| @opentelemetry/api                        | services/gateway/package.json:24:6       | error    |
-| pino-pretty                               | services/gateway/package.json:22:6       | error    |
-| pino                                      | services/gateway/package.json:21:6       | error    |
+| @opentelemetry/api                        | services/gateway/package.json:25:6       | error    |
+| pino-pretty                               | services/gateway/package.json:23:6       | error    |
 | @headlessui/react                         | apps/admin/package.json:24:6             | error    |
 | lucide-react                              | apps/admin/package.json:27:6             | error    |
 | recharts                                  | apps/admin/package.json:29:6             | error    |
@@ -78,12 +76,12 @@
 | compression                               | apps/web/package.json:28:6               | error    |
 | date-fns                                  | apps/web/package.json:29:6               | error    |
 
-## Unused devDependencies (13)
+## Unused devDependencies (12)
 
 | Name                             | Location                                | Severity |
 | :------------------------------- | :-------------------------------------- | :------- |
 | ts-jest                          | services/witness-node/package.json:43:6 | error    |
-| ts-jest                          | services/gateway/package.json:43:6      | error    |
+| ts-jest                          | services/gateway/package.json:44:6      | error    |
 | @typescript-eslint/eslint-plugin | apps/admin/package.json:38:6            | error    |
 | @typescript-eslint/parser        | apps/admin/package.json:39:6            | error    |
 | @typescript-eslint/eslint-plugin | apps/web/package.json:54:6              | error    |
@@ -94,7 +92,6 @@
 | @storybook/blocks                | apps/web/package.json:47:6              | error    |
 | @storybook/test                  | apps/web/package.json:50:6              | error    |
 | dependency-cruiser               | package.json:39:6                       | error    |
-| ts-prune                         | package.json:46:6                       | error    |
 
 ## Unlisted dependencies (10)
 
@@ -111,12 +108,13 @@
 | @atlas/fabric-protocol                    | tests/integration/quorum.test.ts        | error    |
 | @atlas/fabric-client                      | tests/integration/quorum.test.ts        | error    |
 
-## Unlisted binaries (4)
+## Unlisted binaries (5)
 
 | Name           | Location                                      | Severity |
 | :------------- | :-------------------------------------------- | :------- |
 | lighthouse     | .github/workflows/atlas-v14-oidc-cloudrun.yml | error    |
 | gcloud         | .github/workflows/atlas-v14-oidc-cloudrun.yml | error    |
+| test:e2e       | .github/workflows/ci-build-test.yml           | error    |
 | docker-compose | package.json                                  | error    |
 | helm           | package.json                                  | error    |
 
