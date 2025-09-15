@@ -93,6 +93,26 @@ export const FabricConfigSchema = z.object({
   security_track: z.enum(['Z', 'L']),
 });
 
+// AtlasRecord schema
+export const AtlasRecordSchema = z.object({
+  record_id: z.string().uuid(),
+  ts: z.string().datetime(),
+  app: z.enum(['chat', 'drive']),
+  payload: z.string().min(1),
+  meta: RecordMetaSchema,
+  state_view: StateViewSchema,
+});
+
+// Default fabric config
+export const DEFAULT_FABRIC_CONFIG: z.infer<typeof FabricConfigSchema> = {
+  total_witnesses: 5,
+  quorum_size: 4,
+  max_timestamp_skew_ms: 2000,
+  witnesses: [],
+  mirror_endpoints: [],
+  security_track: 'Z',
+};
+
 // API request/response schemas
 export const SubmitRecordRequestSchema = z.object({
   app: z.enum(['chat', 'drive']),
@@ -212,6 +232,7 @@ export const WitnessStatusChangedEventSchema = z.object({
 });
 
 // Type exports for TypeScript
+export type AtlasRecord = z.infer<typeof AtlasRecordSchema>;
 export type RecordMeta = z.infer<typeof RecordMetaSchema>;
 export type StateView = z.infer<typeof StateViewSchema>;
 export type WitnessAttestation = z.infer<typeof WitnessAttestationSchema>;

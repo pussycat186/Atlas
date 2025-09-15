@@ -3,8 +3,6 @@
  * Main export file for all protocol types and utilities
  */
 
-export * from './types';
-export * from './api';
 export * from './schemas';
 
 // Re-export commonly used types for convenience
@@ -15,12 +13,25 @@ export type {
   QuorumResult,
   LedgerEntry,
   FabricConfig,
-  WitnessConfig
-} from './types';
+  WitnessConfig,
+  RecordMeta,
+  StateView,
+  ConflictResolution,
+  LedgerEntry as LedgerEntryType,
+  WitnessConfig as WitnessConfigType
+} from './schemas';
 
+// API types are now defined in schemas.ts
 export type {
-  GatewayAPI,
-  WitnessAPI,
-  AdminAPI,
-  WebSocketEvents
-} from './api';
+  SubmitRecordRequest,
+  SubmitRecordResponse,
+  VerifyRecordResponse,
+  GetConflictsResponse,
+  WitnessStatusResponse,
+  WitnessHealthResponse,
+  WitnessInfoResponse,
+  AdminMetricsResponse,
+  ResolveConflictRequest,
+  ResolveConflictResponse,
+  WitnessPerformanceResponse
+} from './schemas';

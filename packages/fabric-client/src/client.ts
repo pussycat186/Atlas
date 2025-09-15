@@ -97,7 +97,9 @@ export class AtlasFabricClient {
     // Clean up old cache entries (keep last 100)
     if (this.idempotencyCache.size > 100) {
       const firstKey = this.idempotencyCache.keys().next().value;
-      this.idempotencyCache.delete(firstKey);
+      if (firstKey) {
+        this.idempotencyCache.delete(firstKey);
+      }
     }
 
     return response;
