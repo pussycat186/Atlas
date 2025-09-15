@@ -4,12 +4,14 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import pino from 'pino';
 import {
   AtlasRecord,
   WitnessAttestation,
   StateView,
   RecordMeta,
-  DEFAULT_FABRIC_CONFIG
+  DEFAULT_FABRIC_CONFIG,
+  FabricConfig
 } from '@atlas/fabric-protocol';
 import { WitnessLedger } from './ledger';
 
@@ -19,41 +21,88 @@ export class WitnessNode {
   private ledger: WitnessLedger;
   private startTime: number;
   private securityTrack: 'Z' | 'L';
+  private logger: pino.Logger;
+  private fabricConfig: FabricConfig;
+  private observedSkew: number = 0;
 
   constructor(
     witnessId: string,
     region: string,
     ledgerPath: string,
     mirrorPath?: string,
-    securityTrack: 'Z' | 'L' = 'Z'
+    securityTrack: 'Z' | 'L' = 'Z',
+    fabricConfig?: Partial<FabricConfig>
   ) {
     this.witnessId = witnessId;
     this.region = region;
     this.ledger = new WitnessLedger(ledgerPath, mirrorPath);
     this.startTime = Date.now();
     this.securityTrack = securityTrack;
+    this.fabricConfig = { ...DEFAULT_FABRIC_CONFIG, ...fabricConfig };
+    
+    // Initialize structured logger
+    this.logger = pino({
+      level: process.env.LOG_LEVEL || 'info',
+      transport: process.env.NODE_ENV === 'development' ? {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+        },
+      } : undefined,
+    });
   }
 
   /**
-   * Process a record and create an attestation
+   * Process a record and create an attestation with quorum enforcement
    */
   async processRecord(
     app: 'chat' | 'drive',
     recordId: string,
     payload: string,
-    meta: RecordMeta
+    meta: RecordMeta,
+    timestamp?: string
   ): Promise<WitnessAttestation> {
+    const startTime = Date.now();
+    const recordTimestamp = timestamp || new Date().toISOString();
+    
     try {
+      this.logger.info({ 
+        record_id: recordId, 
+        app, 
+        payload_size: payload.length,
+        witness_id: this.witnessId 
+      }, 'Processing record');
+
       // Validate the record
       const validation = this.validateRecord(app, recordId, payload, meta);
       if (!validation.valid) {
+        this.logger.warn({ 
+          record_id: recordId, 
+          reason: validation.reason,
+          witness_id: this.witnessId 
+        }, 'Record validation failed');
         return this.createRejectionAttestation(recordId, validation.reason || 'Validation failed');
       }
 
-      // Create the record
+      // Check for timestamp skew (quorum enforcement)
+      const skew = this.calculateTimestampSkew(recordTimestamp);
+      if (skew > this.fabricConfig.max_timestamp_skew_ms) {
+        this.logger.warn({ 
+          record_id: recordId, 
+          skew, 
+          max_skew: this.fabricConfig.max_timestamp_skew_ms,
+          witness_id: this.witnessId 
+        }, 'Timestamp skew exceeds threshold');
+        return this.createRejectionAttestation(recordId, `Timestamp skew too large: ${skew}ms > ${this.fabricConfig.max_timestamp_skew_ms}ms`);
+      }
+
+      // Update observed skew
+      this.observedSkew = Math.max(this.observedSkew, skew);
+
+      // Create the record with deterministic ordering
       const record: AtlasRecord = {
         record_id: recordId,
-        ts: new Date().toISOString(),
+        ts: recordTimestamp,
         app,
         payload,
         meta,
@@ -69,11 +118,11 @@ export class WitnessNode {
         record.state_view.state_hash = this.calculateStateHash(record);
       }
 
-      // Create attestation
+      // Create attestation with observed skew
       const attestation: WitnessAttestation = {
         witness_id: this.witnessId,
         accept: true,
-        ts: record.ts,
+        ts: recordTimestamp,
         state_view: record.state_view,
       };
 
@@ -82,12 +131,26 @@ export class WitnessNode {
         attestation.signature = this.signAttestation(attestation);
       }
 
-      // Append to ledger
+      // Append to ledger (deterministic append-only)
       await this.ledger.appendRecord(record, attestation);
+
+      const duration = Date.now() - startTime;
+      this.logger.info({ 
+        record_id: recordId, 
+        duration, 
+        skew,
+        witness_id: this.witnessId 
+      }, 'Record processed successfully');
 
       return attestation;
     } catch (error) {
-      console.error('Failed to process record:', error);
+      const duration = Date.now() - startTime;
+      this.logger.error({ 
+        record_id: recordId, 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        duration,
+        witness_id: this.witnessId 
+      }, 'Failed to process record');
       return this.createRejectionAttestation(recordId, `Processing error: ${error}`);
     }
   }
@@ -221,7 +284,16 @@ export class WitnessNode {
   }
 
   /**
-   * Get witness information
+   * Calculate timestamp skew from current time
+   */
+  private calculateTimestampSkew(timestamp: string): number {
+    const recordTime = new Date(timestamp).getTime();
+    const currentTime = Date.now();
+    return Math.abs(currentTime - recordTime);
+  }
+
+  /**
+   * Get witness information including observed skew
    */
   getInfo(): {
     witness_id: string;
@@ -229,6 +301,12 @@ export class WitnessNode {
     version: string;
     security_track: 'Z' | 'L';
     uptime: number;
+    observed_skew_ms: number;
+    quorum_config: {
+      total_witnesses: number;
+      quorum_size: number;
+      max_timestamp_skew_ms: number;
+    };
   } {
     return {
       witness_id: this.witnessId,
@@ -236,6 +314,12 @@ export class WitnessNode {
       version: '1.0.0',
       security_track: this.securityTrack,
       uptime: Date.now() - this.startTime,
+      observed_skew_ms: this.observedSkew,
+      quorum_config: {
+        total_witnesses: this.fabricConfig.total_witnesses,
+        quorum_size: this.fabricConfig.quorum_size,
+        max_timestamp_skew_ms: this.fabricConfig.max_timestamp_skew_ms,
+      },
     };
   }
 

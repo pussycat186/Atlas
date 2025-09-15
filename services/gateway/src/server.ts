@@ -1,41 +1,65 @@
 /**
  * Atlas Gateway Server
- * Main HTTP server for the gateway service
+ * Main HTTP server for the gateway service with hardening
  */
 
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
+import rateLimit from '@fastify/rate-limit';
 import { v4 as uuidv4 } from 'uuid';
+import pino from 'pino';
 import { QuorumManager } from './quorum';
 import { WitnessClient } from './witness-client';
-import { GatewayAPI, AdminAPI, WebSocketEvents, FabricConfig, WitnessConfig } from '@atlas/fabric-protocol';
+import { 
+  GatewayAPI, 
+  AdminAPI, 
+  WebSocketEvents, 
+  FabricConfig, 
+  WitnessConfig,
+  SubmitRecordRequestSchema,
+  SubmitRecordResponseSchema,
+  VerifyRecordResponseSchema,
+  GetConflictsResponseSchema,
+  WitnessStatusResponseSchema,
+  AdminMetricsResponseSchema,
+  ResolveConflictRequestSchema,
+  ResolveConflictResponseSchema,
+  WitnessPerformanceResponseSchema
+} from '@atlas/fabric-protocol';
 
 export class GatewayServer {
   private fastify: FastifyInstance;
   private quorumManager: QuorumManager;
   private witnessClient: WitnessClient;
   private startTime: number;
+  private logger: pino.Logger;
+  private idempotencyCache: Map<string, { response: any; timestamp: number }> = new Map();
+  private readonly IDEMPOTENCY_TTL = 60000; // 60 seconds
 
   constructor(port: number = 3000) {
     this.startTime = Date.now();
     this.quorumManager = new QuorumManager();
     this.witnessClient = new WitnessClient(this.createConfigFromEnv());
     
-    this.fastify = Fastify({
-      logger: {
-        level: 'info',
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-          },
+    // Initialize structured logger
+    this.logger = pino({
+      level: process.env.LOG_LEVEL || 'info',
+      transport: process.env.NODE_ENV === 'development' ? {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
         },
-      },
+      } : undefined,
+    });
+    
+    this.fastify = Fastify({
+      logger: this.logger,
     });
 
     this.setupPlugins();
     this.setupRoutes();
+    this.setupIdempotencyCleanup();
   }
 
   /**
@@ -83,27 +107,121 @@ export class GatewayServer {
     });
 
     await this.fastify.register(websocket);
+
+    // Rate limiting
+    await this.fastify.register(rateLimit, {
+      max: 1000, // requests per windowMs
+      timeWindow: '1 minute',
+      errorResponseBuilder: (request, context) => ({
+        error: 'Rate limit exceeded',
+        message: `Rate limit exceeded, retry in ${Math.round(context.after / 1000)} seconds`,
+        retryAfter: Math.round(context.after / 1000),
+      }),
+    });
+  }
+
+  /**
+   * Setup idempotency cache cleanup
+   */
+  private setupIdempotencyCleanup(): void {
+    // Clean up expired idempotency entries every 30 seconds
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, entry] of this.idempotencyCache.entries()) {
+        if (now - entry.timestamp > this.IDEMPOTENCY_TTL) {
+          this.idempotencyCache.delete(key);
+        }
+      }
+    }, 30000);
   }
 
   /**
    * Setup API routes
    */
   private setupRoutes(): void {
-    // Health check
+    // Health check with metrics
     this.fastify.get('/health', async (request, reply) => {
+      const uptime = Date.now() - this.startTime;
+      const memoryUsage = process.memoryUsage();
+      
       return {
         status: 'healthy',
-        uptime: Date.now() - this.startTime,
+        uptime,
         timestamp: new Date().toISOString(),
+        memory: {
+          rss: memoryUsage.rss,
+          heapTotal: memoryUsage.heapTotal,
+          heapUsed: memoryUsage.heapUsed,
+          external: memoryUsage.external,
+        },
+        idempotency_cache_size: this.idempotencyCache.size,
       };
     });
 
-    // Submit record (primary endpoint)
+    // Metrics endpoint
+    this.fastify.get('/metrics', async (request, reply) => {
+      const stats = this.quorumManager.getQuorumStats();
+      const witnessHealth = await this.witnessClient.getWitnessHealth();
+      const memoryUsage = process.memoryUsage();
+      
+      return {
+        latency: {
+          p50: 100, // Mock data - would be calculated from actual requests
+          p95: 200,
+          p99: 500,
+        },
+        quorum_rate: 0.95, // Mock data
+        conflict_rate: stats.conflictRate,
+        witness_health: witnessHealth.reduce((acc, w) => {
+          acc[w.witness_id] = w.status === 'active' ? 1 : 0;
+          return acc;
+        }, {} as Record<string, number>),
+        timestamp_skew: {
+          min: 0,
+          max: 1000,
+          avg: 200,
+        },
+        memory: {
+          rss: memoryUsage.rss,
+          heapTotal: memoryUsage.heapTotal,
+          heapUsed: memoryUsage.heapUsed,
+          external: memoryUsage.external,
+        },
+        idempotency_cache_size: this.idempotencyCache.size,
+      };
+    });
+
+    // Submit record (primary endpoint) with validation and idempotency
     this.fastify.post<{
       Body: GatewayAPI['submitRecord']['body'];
     }>('/record', async (request, reply) => {
+      const startTime = Date.now();
+      const idempotencyKey = request.headers['idempotency-key'] as string;
+      
       try {
-        const { app, record_id, payload, meta } = request.body;
+        // Validate input using Zod schema
+        const validatedBody = SubmitRecordRequestSchema.parse(request.body);
+        const { app, record_id, payload, meta } = validatedBody;
+
+        // Check idempotency cache
+        if (idempotencyKey) {
+          const cached = this.idempotencyCache.get(idempotencyKey);
+          if (cached && Date.now() - cached.timestamp < this.IDEMPOTENCY_TTL) {
+            this.logger.info({ 
+              record_id, 
+              idempotency_key: idempotencyKey,
+              cached: true 
+            }, 'Returning cached response for idempotent request');
+            return cached.response;
+          }
+        }
+        
+        this.logger.info({ 
+          record_id, 
+          app, 
+          payload_size: payload.length,
+          idempotency_key: idempotencyKey 
+        }, 'Processing record submission');
         
         // Submit to all witnesses
         const attestations = await this.witnessClient.submitToAllWitnesses(
@@ -121,7 +239,7 @@ export class GatewayServer {
           this.broadcastConflict(quorumResult.conflict_ticket);
         }
 
-        return {
+        const response = {
           success: quorumResult.ok,
           record_id,
           attestations,
@@ -132,7 +250,32 @@ export class GatewayServer {
             conflict_ticket: quorumResult.conflict_ticket?.conflict_id,
           },
         };
+
+        // Cache response for idempotency
+        if (idempotencyKey) {
+          this.idempotencyCache.set(idempotencyKey, {
+            response,
+            timestamp: Date.now(),
+          });
+        }
+
+        const duration = Date.now() - startTime;
+        this.logger.info({ 
+          record_id, 
+          duration, 
+          quorum_ok: quorumResult.ok,
+          attestation_count: attestations.length 
+        }, 'Record submission completed');
+
+        return response;
       } catch (error) {
+        const duration = Date.now() - startTime;
+        this.logger.error({ 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          duration,
+          record_id: request.body?.record_id 
+        }, 'Record submission failed');
+        
         reply.code(500);
         return {
           error: 'Failed to submit record',
@@ -190,37 +333,97 @@ export class GatewayServer {
       }
     });
 
-    // Legacy API endpoints for backward compatibility
+    // Legacy API endpoints for backward compatibility with validation and idempotency
     this.fastify.post<{
       Body: GatewayAPI['submitRecord']['body'];
     }>('/api/records', async (request, reply) => {
-      // Redirect to primary endpoint
-      const { app, record_id, payload, meta } = request.body;
+      const startTime = Date.now();
+      const idempotencyKey = request.headers['idempotency-key'] as string;
       
-      const attestations = await this.witnessClient.submitToAllWitnesses(
-        app,
-        record_id,
-        payload,
-        meta
-      );
+      try {
+        // Validate input using Zod schema
+        const validatedBody = SubmitRecordRequestSchema.parse(request.body);
+        const { app, record_id, payload, meta } = validatedBody;
 
-      const quorumResult = this.quorumManager.verifyQuorum(attestations);
+        // Check idempotency cache
+        if (idempotencyKey) {
+          const cached = this.idempotencyCache.get(idempotencyKey);
+          if (cached && Date.now() - cached.timestamp < this.IDEMPOTENCY_TTL) {
+            this.logger.info({ 
+              record_id, 
+              idempotency_key: idempotencyKey,
+              cached: true 
+            }, 'Returning cached response for idempotent request (legacy API)');
+            return cached.response;
+          }
+        }
+        
+        this.logger.info({ 
+          record_id, 
+          app, 
+          payload_size: payload.length,
+          idempotency_key: idempotencyKey,
+          api: 'legacy'
+        }, 'Processing record submission (legacy API)');
+        
+        const attestations = await this.witnessClient.submitToAllWitnesses(
+          app,
+          record_id,
+          payload,
+          meta
+        );
 
-      if (quorumResult.conflict_ticket) {
-        this.broadcastConflict(quorumResult.conflict_ticket);
+        const quorumResult = this.quorumManager.verifyQuorum(attestations);
+
+        if (quorumResult.conflict_ticket) {
+          this.broadcastConflict(quorumResult.conflict_ticket);
+        }
+
+        const response = {
+          success: quorumResult.ok,
+          record_id,
+          attestations,
+          quorum_result: {
+            ok: quorumResult.ok,
+            quorum_count: quorumResult.quorum_count,
+            max_skew_ms: quorumResult.max_skew_ms,
+            conflict_ticket: quorumResult.conflict_ticket?.conflict_id,
+          },
+        };
+
+        // Cache response for idempotency
+        if (idempotencyKey) {
+          this.idempotencyCache.set(idempotencyKey, {
+            response,
+            timestamp: Date.now(),
+          });
+        }
+
+        const duration = Date.now() - startTime;
+        this.logger.info({ 
+          record_id, 
+          duration, 
+          quorum_ok: quorumResult.ok,
+          attestation_count: attestations.length,
+          api: 'legacy'
+        }, 'Record submission completed (legacy API)');
+
+        return response;
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        this.logger.error({ 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          duration,
+          record_id: request.body?.record_id,
+          api: 'legacy'
+        }, 'Record submission failed (legacy API)');
+        
+        reply.code(500);
+        return {
+          error: 'Failed to submit record',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        };
       }
-
-      return {
-        success: quorumResult.ok,
-        record_id,
-        attestations,
-        quorum_result: {
-          ok: quorumResult.ok,
-          quorum_count: quorumResult.quorum_count,
-          max_skew_ms: quorumResult.max_skew_ms,
-          conflict_ticket: quorumResult.conflict_ticket?.conflict_id,
-        },
-      };
     });
 
     this.fastify.get<{
