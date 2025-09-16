@@ -22,6 +22,12 @@ module.exports = {
       setupFilesAfterEnv: ['<rootDir>/packages/fabric-client/src/setupTests.ts'],
     },
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/apps/web/tests/e2e/',
+    '/apps/web/.next/',
+    '/apps/admin/.next/',
+  ],
   collectCoverageFrom: [
     'packages/**/src/**/*.ts',
     'services/**/src/**/*.ts',
