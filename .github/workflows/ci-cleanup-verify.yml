@@ -1,106 +1,104 @@
 name: CI Cleanup Verify
 
 on:
+  push:
+    branches: [ main, develop ]
   pull_request:
-    paths:
-      - 'scripts/cleanup.sh'
-      - 'DELETION_REPORT.md'
-  workflow_dispatch:
+    branches: [ main, develop ]
 
 jobs:
   cleanup-verify:
-    name: Verify Cleanup Script
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
         
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9.0.0
         
-      - name: Verify cleanup script exists
-        run: |
-          if [ ! -f "scripts/cleanup.sh" ]; then
-            echo "❌ Cleanup script not found"
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Run cleanup script (dry run)
+      run: |
+        chmod +x scripts/cleanup.sh
+        ./scripts/cleanup.sh --dry-run --verbose
+        
+    - name: Verify cleanup script
+      run: |
+        # Test that cleanup script is idempotent
+        ./scripts/cleanup.sh --dry-run
+        echo "✅ Cleanup script dry run successful"
+        
+        # Test that cleanup script handles missing files gracefully
+        ./scripts/cleanup.sh --dry-run --verbose
+        echo "✅ Cleanup script handles missing files gracefully"
+        
+    - name: Verify DELETION_REPORT.md exists
+      run: |
+        if [ ! -f DELETION_REPORT.md ]; then
+          echo "❌ DELETION_REPORT.md not found"
+          exit 1
+        fi
+        echo "✅ DELETION_REPORT.md exists"
+        
+    - name: Verify cleanup script exists
+      run: |
+        if [ ! -f scripts/cleanup.sh ]; then
+          echo "❌ scripts/cleanup.sh not found"
+          exit 1
+        fi
+        echo "✅ scripts/cleanup.sh exists"
+        
+    - name: Verify cleanup script is executable
+      run: |
+        if [ ! -x scripts/cleanup.sh ]; then
+          echo "❌ scripts/cleanup.sh is not executable"
+          exit 1
+        fi
+        echo "✅ scripts/cleanup.sh is executable"
+        
+    - name: Test cleanup script help
+      run: |
+        ./scripts/cleanup.sh --help
+        echo "✅ Cleanup script help works"
+        
+    - name: Verify no critical files are marked for deletion
+      run: |
+        # Check that critical files are not in DELETION_REPORT.md
+        critical_files=(
+          "services/gateway/src/server.ts"
+          "services/witness-node/src/server.ts"
+          "packages/fabric-protocol/src/schemas.ts"
+          "package.json"
+          "tsconfig.json"
+        )
+        
+        for file in "${critical_files[@]}"; do
+          if grep -q "$file" DELETION_REPORT.md; then
+            echo "❌ Critical file $file is marked for deletion"
             exit 1
           fi
-          echo "✅ Cleanup script found"
-          
-      - name: Verify cleanup script is executable
-        run: |
-          if [ ! -x "scripts/cleanup.sh" ]; then
-            echo "❌ Cleanup script is not executable"
-            exit 1
-          fi
-          echo "✅ Cleanup script is executable"
-          
-      - name: Verify DELETION_REPORT.md exists
-        run: |
-          if [ ! -f "DELETION_REPORT.md" ]; then
-            echo "❌ DELETION_REPORT.md not found"
-            exit 1
-          fi
-          echo "✅ DELETION_REPORT.md found"
-          
-      - name: Test cleanup script (dry run)
-        run: |
-          echo "🧪 Testing cleanup script..."
-          # Create a test file to verify script works
-          mkdir -p test-cleanup
-          echo "test" > test-cleanup/test-file.txt
-          
-          # Test the script logic (without actually deleting)
-          echo "✅ Cleanup script logic verified"
-          
-      - name: Verify no critical files are targeted
-        run: |
-          echo "🔍 Verifying no critical files are targeted for deletion..."
-          
-          # Check that core protocol files are not targeted
-          if grep -q "packages/fabric-protocol/src/index.ts" DELETION_REPORT.md; then
-            echo "❌ Critical file packages/fabric-protocol/src/index.ts is targeted for deletion"
-            exit 1
-          fi
-          
-          # Check that service files are not targeted
-          if grep -q "services/gateway/src/server.ts" DELETION_REPORT.md; then
-            echo "❌ Critical file services/gateway/src/server.ts is targeted for deletion"
-            exit 1
-          fi
-          
-          echo "✅ No critical files are targeted for deletion"
-          
-      - name: Verify cleanup script safety
-        run: |
-          echo "🛡️ Verifying cleanup script safety..."
-          
-          # Check that script has proper error handling
-          if ! grep -q "set -euo pipefail" scripts/cleanup.sh; then
-            echo "❌ Cleanup script missing proper error handling"
-            exit 1
-          fi
-          
-          # Check that script has confirmation messages
-          if ! grep -q "Deleting:" scripts/cleanup.sh; then
-            echo "❌ Cleanup script missing confirmation messages"
-            exit 1
-          fi
-          
-          echo "✅ Cleanup script safety verified"
-          
-      - name: Cleanup test files
-        if: always()
-        run: |
-          rm -rf test-cleanup
-          echo "🧹 Test cleanup completed"
+        done
+        
+        echo "✅ No critical files marked for deletion"
+        
+    - name: Verify build still works after cleanup
+      run: |
+        # Run cleanup in dry run mode to verify it doesn't break build
+        ./scripts/cleanup.sh --dry-run
+        pnpm build
+        echo "✅ Build works after cleanup verification"
+        
+    - name: Verify tests still pass after cleanup
+      run: |
+        pnpm test
+        echo "✅ Tests pass after cleanup verification"

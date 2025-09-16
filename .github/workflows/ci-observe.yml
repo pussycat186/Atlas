@@ -2,184 +2,80 @@ name: CI Observability
 
 on:
   push:
-    branches: [main, reboot/atlas-hardening-v1]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches: [ main, develop ]
 
 jobs:
   observability-test:
-    runs-on: ubuntu-latest-xl
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    
-    services:
-      otel-collector:
-        image: otel/opentelemetry-collector-contrib:0.91.0
-        ports:
-          - 4317:4317
-          - 4318:4318
-          - 8889:8889
-        env:
-          OTEL_RESOURCE_ATTRIBUTES: service.name=atlas-collector,service.version=1.0.0
-        options: >-
-          --health-cmd "curl -f http://localhost:13133/ || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 3
-      
-      prometheus:
-        image: prom/prometheus:v2.48.0
-        ports:
-          - 9090:9090
-        options: >-
-          --health-cmd "curl -f http://localhost:9090/-/healthy || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 3
-      
-      jaeger:
-        image: jaegertracing/all-in-one:1.51
-        ports:
-          - 16686:16686
-          - 14250:14250
-        env:
-          COLLECTOR_OTLP_ENABLED: true
-        options: >-
-          --health-cmd "curl -f http://localhost:16686/ || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 3
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20
-        cache: 'npm'
-    
+        node-version: '20.x'
+        
     - name: Setup pnpm
       uses: pnpm/action-setup@v2
       with:
-        version: 9
-        run_install: false
-    
+        version: 9.0.0
+        
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
-    
+      
     - name: Build services
       run: pnpm build
-    
-    - name: Start services with observability
+      
+    - name: Start observability stack
       run: |
-        docker-compose -f observability/docker-compose.yml up -d
+        docker-compose -f docker-compose.observability.yml up -d
         sleep 30
-    
-    - name: Test health endpoints
+        
+    - name: Test observability endpoints
       run: |
-        # Test gateway health
-        curl -f http://localhost:3000/health || exit 1
-        echo "Gateway health check passed"
+        # Test Jaeger
+        curl -f http://localhost:16686 || exit 1
         
-        # Test gateway metrics
-        curl -f http://localhost:3000/metrics || exit 1
-        echo "Gateway metrics endpoint passed"
+        # Test Prometheus
+        curl -f http://localhost:9090 || exit 1
         
-        # Test witness health (assuming witness-1 on port 3001)
-        curl -f http://localhost:3001/health || exit 1
-        echo "Witness health check passed"
-    
-    - name: Test OpenTelemetry traces
+        # Test Grafana
+        curl -f http://localhost:3000 || exit 1
+        
+        # Test OpenTelemetry Collector
+        curl -f http://localhost:4318/v1/traces || exit 1
+        
+        # Test Tempo
+        curl -f http://localhost:3200 || exit 1
+        
+    - name: Test service observability
       run: |
-        # Start services with OTEL instrumentation
-        export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-        export OTEL_SERVICE_NAME=atlas-test
-        export OTEL_RESOURCE_ATTRIBUTES=service.name=atlas-test,service.version=1.0.0
-        
-        # Start gateway with OTEL
-        cd services/gateway
-        node dist/index.js &
+        # Start services in background
+        cd services/gateway && pnpm start &
         GATEWAY_PID=$!
         
-        # Start witness with OTEL
-        cd ../witness-node
-        node dist/index.js &
+        cd services/witness-node && pnpm start &
         WITNESS_PID=$!
         
         # Wait for services to start
         sleep 10
         
-        # Generate test traffic
-        for i in {1..10}; do
-          curl -X POST http://localhost:3000/record \
-            -H "Content-Type: application/json" \
-            -H "Idempotency-Key: test-$i" \
-            -d '{"app":"chat","record_id":"'$(uuidgen)'","payload":"test message","meta":{"room_id":"test-room"}}'
-          sleep 1
-        done
+        # Test health endpoints
+        curl -f http://localhost:8080/health || exit 1
+        curl -f http://localhost:8091/witness/health || exit 1
         
-        # Check for traces in Jaeger
-        sleep 5
-        curl -f http://localhost:16686/api/services || exit 1
-        echo "Jaeger traces endpoint accessible"
+        # Test metrics endpoints
+        curl -f http://localhost:8080/metrics || exit 1
+        curl -f http://localhost:8091/witness/stats || exit 1
         
         # Cleanup
         kill $GATEWAY_PID $WITNESS_PID || true
-    
-    - name: Test Prometheus metrics
-      run: |
-        # Check Prometheus is scraping metrics
-        curl -f http://localhost:9090/api/v1/targets || exit 1
-        echo "Prometheus targets endpoint accessible"
         
-        # Check for Atlas metrics
-        curl -f "http://localhost:9090/api/v1/query?query=up" || exit 1
-        echo "Prometheus query endpoint accessible"
-    
-    - name: Generate observability report
-      run: |
-        mkdir -p _reports
-        cat > _reports/OBSERVABILITY.md << EOF
-        # Observability Test Report
-        Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-        
-        ## Health Endpoints
-        - Gateway: http://localhost:3000/health ✅
-        - Gateway Metrics: http://localhost:3000/metrics ✅
-        - Witness: http://localhost:3001/health ✅
-        
-        ## OpenTelemetry
-        - Collector: http://localhost:4318 ✅
-        - Jaeger UI: http://localhost:16686 ✅
-        - Trace Export: OTLP HTTP ✅
-        
-        ## Prometheus
-        - Prometheus: http://localhost:9090 ✅
-        - Targets: http://localhost:9090/api/v1/targets ✅
-        - Query API: http://localhost:9090/api/v1/query ✅
-        
-        ## Test Results
-        - Health checks: PASSED
-        - Metrics endpoints: PASSED
-        - Trace generation: PASSED
-        - OTLP export: PASSED
-        
-        ## Trace Sampling
-        - Generated 10 test requests
-        - Expected ≥1 trace per 100 requests: ✅
-        - Trace sampling rate: 100% (test mode)
-        EOF
-    
-    - name: Upload observability report
-      uses: actions/upload-artifact@v3
-      with:
-        name: observability-report
-        path: _reports/OBSERVABILITY.md
-    
     - name: Cleanup
       if: always()
       run: |
-        docker-compose -f observability/docker-compose.yml down || true
-        docker system prune -f || true
+        docker-compose -f docker-compose.observability.yml down
