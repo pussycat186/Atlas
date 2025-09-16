@@ -573,13 +573,17 @@
         "packages/fabric-client/src/index.ts",
         "packages/fabric-client/src/utils.ts",
         "packages/fabric-client/src/utils.test.ts",
+        "services/gateway/dist/server.js",
+        "services/gateway/dist/quorum.js",
+        "services/gateway/dist/witness-client.js",
+        "services/gateway/dist/quorum.d.ts",
+        "services/gateway/dist/witness-client.d.ts",
         "services/gateway/src/server.ts",
         "services/gateway/src/quorum.ts",
         "services/gateway/src/witness-client.ts",
         "services/witness-node/dist/witness.js",
         "services/witness-node/dist/ledger.d.ts",
         "services/witness-node/dist/witness.d.ts",
-        "services/witness-node/src/server.ts",
         "services/witness-node/src/witness.ts",
         "services/witness-node/src/ledger.ts"
       ],
@@ -1218,32 +1222,6 @@
       ]
     },
     {
-      "source": "packages/fabric-client/dist/telemetry.d.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "packages/fabric-client/dist/telemetry.js",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "packages/fabric-client/dist/utils.d.ts",
       "dependencies": [
         {
@@ -1653,6 +1631,222 @@
       "valid": true
     },
     {
+      "source": "services/gateway/dist/index.d.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "warn",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "services/gateway/dist/index.js",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./server",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "require"
+          ],
+          "resolved": "services/gateway/dist/server.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "services/gateway/dist/server.js",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./quorum",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "require"
+          ],
+          "resolved": "services/gateway/dist/quorum.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./witness-client",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "require"
+          ],
+          "resolved": "services/gateway/dist/witness-client.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@atlas/fabric-protocol",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "require"
+          ],
+          "resolved": "packages/fabric-protocol/dist/index.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "services/gateway/dist/index.js"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "services/gateway/dist/quorum.js",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@atlas/fabric-protocol",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "require"
+          ],
+          "resolved": "packages/fabric-protocol/dist/index.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "services/gateway/dist/server.js"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "services/gateway/dist/witness-client.js",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@atlas/fabric-protocol",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "require"
+          ],
+          "resolved": "packages/fabric-protocol/dist/index.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "services/gateway/dist/server.js"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "services/gateway/dist/quorum.d.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@atlas/fabric-protocol",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/fabric-protocol/dist/index.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "services/gateway/dist/server.d.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "warn",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "services/gateway/dist/witness-client.d.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@atlas/fabric-protocol",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/fabric-protocol/dist/index.js",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "services/gateway/src/index.ts",
       "dependencies": [
         {
@@ -2058,23 +2252,6 @@
             "import"
           ],
           "resolved": "services/witness-node/src/witness.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@atlas/fabric-protocol",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "import"
-          ],
-          "resolved": "packages/fabric-protocol/dist/index.js",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2517,24 +2694,6 @@
       },
       {
         "type": "module",
-        "from": "packages/fabric-client/dist/telemetry.d.ts",
-        "to": "packages/fabric-client/dist/telemetry.d.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "packages/fabric-client/dist/telemetry.js",
-        "to": "packages/fabric-client/dist/telemetry.js",
-        "rule": {
-          "severity": "warn",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "packages/fabric-client/dist/utils.test.d.ts",
         "to": "packages/fabric-client/dist/utils.test.d.ts",
         "rule": {
@@ -2562,6 +2721,24 @@
       },
       {
         "type": "module",
+        "from": "services/gateway/dist/index.d.ts",
+        "to": "services/gateway/dist/index.d.ts",
+        "rule": {
+          "severity": "warn",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "services/gateway/dist/server.d.ts",
+        "to": "services/gateway/dist/server.d.ts",
+        "rule": {
+          "severity": "warn",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "services/witness-node/dist/index.d.ts",
         "to": "services/witness-node/dist/index.d.ts",
         "rule": {
@@ -2574,8 +2751,8 @@
     "warn": 45,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 106,
-    "totalDependenciesCruised": 59,
+    "totalCruised": 112,
+    "totalDependenciesCruised": 66,
     "optionsUsed": {
       "baseDir": "/Users/simon/Atlas",
       "combinedDependencies": false,
@@ -2604,7 +2781,7 @@
         "tsd",
         "amd"
       ],
-      "outputTo": "-",
+      "outputTo": "_reports/depcruise.json",
       "outputType": "json",
       "preserveSymlinks": false,
       "reporterOptions": {
@@ -2659,7 +2836,7 @@
         "fileName": "tsconfig.json"
       },
       "tsPreCompilationDeps": true,
-      "args": "."
+      "args": "packages services apps"
     },
     "ruleSetUsed": {
       "forbidden": [

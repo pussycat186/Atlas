@@ -1,116 +1,119 @@
-# ATLAS v12 Baseline Report
+# ATLAS v12 BASELINE REPORT
 
-## Environment Baseline
+## Performance Baseline
+- **Target RPS**: 500 requests per second
+- **Target P95 Latency**: ≤200ms
+- **Target Error Rate**: <1%
+- **Measurement Window**: 60 seconds (after 15-30s warm-up)
 
-### Node.js & pnpm
-- **Node.js Version**: 20.x LTS (enforced)
-- **pnpm Version**: 8.x (enforced)
+## Current State Assessment
+
+### Service Architecture
+- **Gateway Service**: Fastify-based API gateway
+- **Witness Node Service**: Quorum-based witness service
+- **Chat Service**: Real-time messaging service
+- **Drive Service**: File storage service
+
+### Technology Stack
+- **Runtime**: Node.js 20+
+- **Framework**: Fastify (services), Next.js (apps)
 - **Package Manager**: pnpm workspaces
 - **TypeScript**: Strict mode enabled
+- **Container**: Docker with multi-stage builds
 
-### Current Performance Baseline
-- **No performance measurements available yet**
-- **Target Performance**:
-  - RPS: 500 (constant-arrival)
-  - p95 Latency: ≤200ms
-  - Error Rate: <1%
-  - Measurement Window: 60s after 15-30s warm-up
+### Current Performance Characteristics
+- **Baseline RPS**: Not yet measured
+- **Baseline P95**: Not yet measured
+- **Baseline Error Rate**: Not yet measured
+- **Memory Usage**: Not yet profiled
+- **CPU Usage**: Not yet profiled
 
-### Current Observability Baseline
-- **Traces**: Not yet implemented
-- **Metrics**: Basic Prometheus setup configured
-- **Logs**: Basic logging, not structured
-- **Health Checks**: Basic endpoints present
+### Observability Status
+- **OpenTelemetry**: Dependencies installed but not integrated
+- **Metrics**: No /metrics endpoints implemented
+- **Health Checks**: No /health endpoints implemented
+- **Tracing**: No trace collection configured
+- **Logging**: Basic logging in place
 
-### Current Security Baseline
-- **Container Scanning**: Trivy configured
-- **SBOM**: Not yet generated
-- **Signing**: Not yet implemented
-- **SLSA**: Not yet implemented
+### Supply Chain Security
+- **SBOM**: Not generated
+- **Signing**: No cosign integration
+- **SLSA**: No provenance generation
+- **Dependencies**: 37 unused dependencies identified
 
-## Docker Targets
+### CI/CD Pipeline
+- **Build Pipeline**: Basic build/test pipeline exists
+- **Performance Gates**: No performance validation
+- **Observability Pipeline**: Not implemented
+- **Release Pipeline**: No SBOM/signing integration
 
-### Core Services
-- `atlas-gateway:latest` - API gateway service
-- `atlas-witness:latest` - Witness node service
-- `atlas-web:latest` - Web application
-- `atlas-admin:latest` - Admin dashboard
+## Hardening Requirements
 
-### Observability Stack
-- `otel/opentelemetry-collector-contrib:0.91.0`
-- `jaegertracing/all-in-one:1.51`
-- `prom/prometheus:v2.48.0`
-- `grafana/grafana:10.2.0`
+### Phase 0 - Inventory ✅
+- [x] Run knip analysis
+- [x] Run ts-prune analysis
+- [x] Generate dependency graph
+- [x] Create inventory report
 
-## Scripts Available
+### Phase 1 - Clean Sweep
+- [ ] Identify unused files and dependencies
+- [ ] Create DELETION_REPORT.md
+- [ ] Implement cleanup script
+- [ ] Verify cleanup via CI
 
-### Development
-- `pnpm dev` - Start development environment
-- `pnpm build` - Build all packages
-- `pnpm test` - Run tests
-- `pnpm lint` - Run linting
-- `pnpm format` - Format code
+### Phase 2 - Strictness
+- [ ] Maintain TypeScript strict mode
+- [ ] Centralize DTO schemas
+- [ ] Unify client SDK
+- [ ] Harden gateway service
+- [ ] Implement witness quorum guard
 
-### Docker
-- `docker-compose up -d` - Start all services
-- `docker-compose down` - Stop all services
-- `docker-compose logs` - View logs
+### Phase 3 - Observability
+- [ ] Add OTEL bootstrap per service
+- [ ] Implement /metrics endpoints
+- [ ] Implement /health endpoints
+- [ ] Configure trace collection
+- [ ] Set up OTLP export
 
-### CI/CD
-- Build and test pipelines configured
-- Performance testing pipeline configured
-- Observability testing pipeline configured
-- Cleanup verification pipeline configured
-- Release pipeline configured
+### Phase 4 - CI/CD & Gates
+- [ ] Implement performance gates
+- [ ] Add observability pipeline
+- [ ] Integrate SBOM generation
+- [ ] Add cosign signing
+- [ ] Implement SLSA provenance
 
-## Current Issues
+### Phase 5 - Evidence
+- [ ] Generate evidence pack
+- [ ] Create SHA256 manifest
+- [ ] Document all artifacts
+- [ ] Validate completeness
 
-### Performance
-- No performance measurements available
-- Need to implement k6 testing
-- Need to establish performance baselines
+## Risk Assessment
 
-### Observability
-- OpenTelemetry not yet integrated
-- Metrics collection not active
-- Trace collection not active
-- Structured logging not implemented
+### High Risk
+- **Performance**: No baseline measurements
+- **Observability**: No monitoring in place
+- **Security**: No supply chain security
 
-### Security
-- Container images not signed
-- SBOM not generated
-- SLSA provenance not implemented
-- Supply chain security incomplete
+### Medium Risk
+- **Code Quality**: Unused dependencies and files
+- **Maintainability**: Complex dependency graph
+- **Testing**: Performance tests not integrated
 
-### Code Quality
-- 31 unused files identified
-- 37 unused dependencies identified
-- 11 unused exports identified
-- Need cleanup and optimization
+### Low Risk
+- **Architecture**: Well-defined service boundaries
+- **TypeScript**: Strict mode enabled
+- **Build System**: pnpm workspaces properly configured
 
 ## Success Criteria
-
-### Performance Gates
-- [ ] 500 RPS sustained load
-- [ ] p95 latency ≤200ms
-- [ ] Error rate <1%
-- [ ] Single 60s measurement window
-
-### Observability Gates
-- [ ] ≥1 trace per 100 requests
-- [ ] /metrics endpoint on all services
-- [ ] /health endpoint on all services
-- [ ] OTLP export configured
-
-### Security Gates
-- [ ] Container images signed with cosign
-- [ ] SBOM generated and attached
-- [ ] SLSA provenance generated
-- [ ] Supply chain security complete
+1. **Performance**: 500 RPS, ≤200ms P95, <1% error rate
+2. **Observability**: 1 trace per 100 requests, metrics/health endpoints
+3. **Security**: SBOM, cosign signature, SLSA provenance
+4. **Quality**: Clean codebase, integrated CI/CD gates
 
 ## Next Actions
-1. **Phase 1**: Clean up unused code and dependencies
-2. **Phase 2**: Implement observability instrumentation
-3. **Phase 3**: Add performance testing and measurement
-4. **Phase 4**: Implement supply chain security
-5. **Phase 5**: Generate evidence and documentation
+1. Complete Phase 1 cleanup
+2. Implement Phase 2 hardening
+3. Add Phase 3 observability
+4. Configure Phase 4 CI/CD gates
+5. Generate Phase 5 evidence pack

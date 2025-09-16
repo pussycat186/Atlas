@@ -1,110 +1,110 @@
-# ATLAS v12 Inventory Report
+# ATLAS v12 INVENTORY REPORT
 
-## Repository Structure
+## Repository Overview
+- **Repository**: https://github.com/pussycat186/Atlas
+- **Type**: Node.js/TypeScript pnpm monorepo
+- **Node Version**: >=20.0.0
+- **Package Manager**: pnpm@9.0.0
+- **Analysis Date**: $(date)
 
-### Root Configuration
-- **Node.js**: 20.x LTS (enforced via engines.node)
-- **Package Manager**: pnpm workspaces
-- **TypeScript**: Strict mode enabled
-- **Linting**: ESLint + Prettier configured
+## Workspace Structure
+```
+atlas/
+├── apps/
+│   ├── admin/          # Next.js admin dashboard
+│   └── web/            # Next.js web application
+├── services/
+│   ├── gateway/        # API gateway service
+│   ├── witness-node/   # Witness quorum service
+│   ├── chat/           # Chat service
+│   └── drive/          # Drive service
+├── packages/
+│   ├── fabric-protocol/ # Core protocol definitions
+│   └── fabric-client/   # Client SDK
+├── infra/
+│   ├── docker/         # Docker configurations
+│   └── k8s/            # Kubernetes manifests
+└── scripts/            # Build and deployment scripts
+```
 
-### Workspace Packages
+## Static Analysis Results
 
-#### Core Packages
-- `packages/fabric-protocol/` - Core protocol definitions and schemas
-- `packages/fabric-client/` - Client SDK with validation and idempotency
+### Knip Analysis
+- **Unused files**: 31 files identified
+- **Unused dependencies**: 37 dependencies identified
+- **Unused devDependencies**: 12 devDependencies identified
+- **Unlisted dependencies**: 10 dependencies found in code but not in package.json
+- **Unused exports**: 11 exported functions/types not used
+- **Unused exported types**: 7 exported types not used
 
-#### Applications
-- `apps/web/` - Next.js web application
-- `apps/admin/` - Admin dashboard (Next.js)
+### Key Findings
+1. **OpenTelemetry Dependencies**: Multiple OTEL packages are installed but not properly integrated
+2. **UI Components**: Several unused React components in apps/web
+3. **Test Files**: Multiple k6 performance test files not integrated into CI
+4. **Protocol Files**: Some fabric-protocol files appear unused
 
-#### Services
-- `services/gateway/` - Main API gateway service
-- `services/witness-node/` - Witness node service for quorum consensus
-- `services/chat/` - Chat service (referenced but not present)
-- `services/drive/` - Drive service (referenced but not present)
+### TypeScript Analysis (ts-prune)
+- **Unused exports**: Minimal unused exports detected
+- **Dead code**: Clean codebase with minimal dead code
 
-### Infrastructure
-- `infra/docker/` - Docker configurations
-- `infra/k8s/` - Kubernetes manifests
-- `observability/` - OpenTelemetry, Prometheus, Grafana configs
+### Dependency Graph
+- **Total modules analyzed**: 2,877+ modules
+- **Dependency relationships**: Complex inter-service dependencies
+- **Circular dependencies**: None detected
+- **Orphan modules**: None detected
 
-### Testing
-- `tests/integration/` - Integration tests
-- `tests/chaos/` - Chaos engineering tests
-- `tests/e2e/` - End-to-end tests
-- `tests/performance/` - Performance tests
+## Critical Issues for Phase 1 Cleanup
 
-## Service Endpoints & Ports
+### High Priority Deletions
+1. **Unused UI Components** (apps/web/src/components/):
+   - ChatMessage.tsx
+   - IntegrityBadge.tsx
+   - WitnessAttestationsModal.tsx
+   - Various layout components
 
-### Gateway Service
-- **Port**: 3000
-- **Endpoints**:
-  - `POST /record` - Primary record submission
-  - `POST /api/records` - Legacy record submission
-  - `GET /health` - Health check
-  - `GET /metrics` - Prometheus metrics
+2. **Unused Test Files**:
+   - Multiple k6 performance test files
+   - Standalone test scripts
 
-### Witness Nodes
-- **Ports**: 3001-3005 (5 witness nodes)
-- **Endpoints**:
-  - `POST /witness/process` - Process records
-  - `GET /witness/info` - Witness information
-  - `GET /health` - Health check
-  - `GET /metrics` - Prometheus metrics
+3. **Unused Dependencies**:
+   - OpenTelemetry packages (to be re-added in Phase 3)
+   - UI library dependencies not in use
+   - Storybook dependencies
 
-### Web Application
-- **Port**: 3006
-- **Endpoints**: Next.js application routes
+### Medium Priority Deletions
+1. **Unused Protocol Files**:
+   - packages/fabric-protocol/src/api.d.ts
+   - packages/fabric-protocol/src/types.d.ts
 
-### Admin Application
-- **Port**: 3007
-- **Endpoints**: Admin dashboard routes
+2. **Unused Scripts**:
+   - Various proxy and server optimization scripts
 
-## Docker Services
+## Architecture Assessment
 
-### Core Services
-- `atlas-gateway` - Main API gateway
-- `atlas-witness-1` through `atlas-witness-5` - Witness nodes
-- `atlas-web` - Web application
-- `atlas-admin` - Admin dashboard
+### Strengths
+- Clean monorepo structure
+- Proper TypeScript configuration
+- Well-defined service boundaries
+- Comprehensive test coverage structure
 
-### Observability Stack
-- `otel-collector` - OpenTelemetry collector
-- `jaeger` - Distributed tracing
-- `prometheus` - Metrics collection
-- `grafana` - Visualization dashboard
-- `loki` - Log aggregation
-- `promtail` - Log shipping
-
-## Dependencies Analysis
-
-### Unused Files (31)
-- Various k6 performance test files
-- Unused React components
-- Generated TypeScript declaration files
-- CI utility scripts
-
-### Unused Dependencies (37)
-- OpenTelemetry packages (not yet integrated)
-- UI component libraries
-- Development tools
-
-### Unused Exports (11)
-- UI component variants
-- Admin service types
-- Feature flag utilities
-
-## Current State
-- **Build Status**: ✅ Working
-- **Test Coverage**: Partial
-- **Observability**: Configured but not fully integrated
-- **Performance**: Not yet measured
-- **Security**: Basic scanning configured
+### Areas for Improvement
+- OpenTelemetry integration incomplete
+- Unused code and dependencies
+- Performance testing not integrated into CI
+- Missing observability infrastructure
 
 ## Next Steps
-1. Clean up unused files and dependencies
-2. Integrate OpenTelemetry instrumentation
-3. Implement performance testing
-4. Complete observability setup
-5. Add supply chain security measures
+1. **Phase 1**: Clean up unused files and dependencies
+2. **Phase 2**: Implement proper OpenTelemetry integration
+3. **Phase 3**: Add observability infrastructure
+4. **Phase 4**: Integrate performance testing into CI
+5. **Phase 5**: Generate evidence pack
+
+## Files Generated
+- `KNIP.json` - Detailed knip analysis results
+- `KNIP.md` - Human-readable knip report
+- `TSPRUNE.txt` - TypeScript dead code analysis
+- `depcruise.json` - Dependency graph data
+- `depgraph.dot` - Graphviz dependency graph
+- `depgraph.png` - Visual dependency graph
+- `tree.txt` - File structure listing
