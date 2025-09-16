@@ -3,17 +3,17 @@
  * Main HTTP server for the gateway service with hardening
  */
 
-import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 import rateLimit from '@fastify/rate-limit';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid'; // Unused for now
 import pino from 'pino';
 import { QuorumManager } from './quorum';
 import { WitnessClient } from './witness-client';
 import { 
   SubmitRecordRequestSchema,
-  SubmitRecordResponseSchema,
+  // SubmitRecordResponseSchema, // Unused for now
   FabricConfig,
   WitnessConfig
 } from '@atlas/fabric-protocol';
@@ -34,24 +34,29 @@ export class GatewayServer {
   private idempotencyCache: Map<string, { response: any; timestamp: number }> = new Map();
   private readonly IDEMPOTENCY_TTL = 60000; // 60 seconds
 
-  constructor(port: number = 3000) {
+  constructor(_port: number = 3000) {
     this.startTime = Date.now();
     this.quorumManager = new QuorumManager();
     this.witnessClient = new WitnessClient(this.createConfigFromEnv());
     
     // Initialize structured logger
-    this.logger = pino({
+    const loggerConfig: pino.LoggerOptions = {
       level: process.env.LOG_LEVEL || 'info',
-      transport: process.env.NODE_ENV === 'development' ? {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-          },
-      } : undefined,
-    });
+    };
+    
+    if (process.env.NODE_ENV === 'development') {
+      loggerConfig.transport = {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+        },
+      };
+    }
+    
+    this.logger = pino(loggerConfig);
     
     this.fastify = Fastify({
-      logger: this.logger,
+      logger: true,
     });
 
     this.setupPlugins();
@@ -109,7 +114,7 @@ export class GatewayServer {
     await this.fastify.register(rateLimit, {
       max: 1000, // requests per windowMs
       timeWindow: '1 minute',
-      errorResponseBuilder: (request: any, context: any) => ({
+      errorResponseBuilder: (_request: any, context: any) => ({
         error: 'Rate limit exceeded',
         message: `Rate limit exceeded, retry in ${Math.round(context.after / 1000)} seconds`,
         retryAfter: Math.round(context.after / 1000),
@@ -137,7 +142,7 @@ export class GatewayServer {
    */
   private setupRoutes(): void {
     // Health check with metrics
-    this.fastify.get('/health', async (request, reply) => {
+    this.fastify.get('/health', async (_request, _reply) => {
       const uptime = Date.now() - this.startTime;
       const memoryUsage = process.memoryUsage();
       
@@ -156,7 +161,7 @@ export class GatewayServer {
     });
 
     // Metrics endpoint
-    this.fastify.get('/metrics', async (request, reply) => {
+    this.fastify.get('/metrics', async (_request, _reply) => {
       const stats = this.quorumManager.getQuorumStats();
       const witnessHealth = await this.witnessClient.getWitnessHealth();
       const memoryUsage = process.memoryUsage();
@@ -459,11 +464,12 @@ export class GatewayServer {
       try {
         const { since, status, limit } = request.query;
         
-        const conflicts = this.quorumManager.getConflicts({
-          since,
-          status,
-          limit: limit ? parseInt(limit.toString()) : undefined,
-        });
+        const conflictOptions: { since?: string; status?: 'open' | 'resolved' | 'escalated'; limit?: number } = {};
+        if (since) conflictOptions.since = since as string;
+        if (status) conflictOptions.status = status as 'open' | 'resolved' | 'escalated';
+        if (limit) conflictOptions.limit = parseInt(limit.toString());
+        
+        const conflicts = this.quorumManager.getConflicts(conflictOptions);
 
         return {
           conflicts,
@@ -479,7 +485,7 @@ export class GatewayServer {
     });
 
     // Get witness status
-    this.fastify.get('/api/witnesses/status', async (request, reply) => {
+    this.fastify.get('/api/witnesses/status', async (_request, reply) => {
       try {
         const witnesses = await this.witnessClient.getWitnessHealth();
         return { witnesses };
@@ -497,7 +503,7 @@ export class GatewayServer {
 
     // WebSocket endpoint for real-time updates
     this.fastify.register(async function (fastify) {
-      fastify.get('/ws', { websocket: true }, (connection, req) => {
+      fastify.get('/ws', { websocket: true }, (connection, _req) => {
         console.log('WebSocket connection established');
         
         connection.socket.on('message', (message: any) => {
@@ -521,7 +527,7 @@ export class GatewayServer {
    */
   private setupAdminRoutes(): void {
     // Get system metrics
-    this.fastify.get('/admin/metrics', async (request: any, reply) => {
+    this.fastify.get('/admin/metrics', async (_request: any, reply) => {
       try {
         const stats = this.quorumManager.getQuorumStats();
         const witnessHealth = await this.witnessClient.getWitnessHealth();
@@ -608,7 +614,7 @@ export class GatewayServer {
     });
 
     // Get witness performance
-    this.fastify.get('/admin/witnesses/performance', async (request: any, reply) => {
+    this.fastify.get('/admin/witnesses/performance', async (_request: any, reply) => {
       try {
         const witnessHealth = await this.witnessClient.getWitnessHealth();
         

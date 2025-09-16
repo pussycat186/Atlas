@@ -4,7 +4,6 @@
  */
 
 import {
-  AtlasRecord,
   WitnessAttestation,
   QuorumResult,
   ConflictTicket,
@@ -13,14 +12,8 @@ import {
   DEFAULT_FABRIC_CONFIG,
   SubmitRecordRequestSchema,
   SubmitRecordResponseSchema,
-  VerifyRecordResponseSchema,
-  GetConflictsResponseSchema,
-  WitnessStatusResponseSchema,
   SubmitRecordRequest,
-  SubmitRecordResponse,
-  VerifyRecordResponse,
-  GetConflictsResponse,
-  WitnessStatusResponse
+  SubmitRecordResponse
 } from '@atlas/fabric-protocol';
 
 export interface AtlasClientConfig {
@@ -34,7 +27,7 @@ export interface AtlasClientConfig {
 export class AtlasFabricClient {
   private config: FabricConfig;
   private gatewayEndpoint: string;
-  private idempotencyKey?: string;
+  private idempotencyKey: string | undefined;
   private timeout: number;
   private retries: number;
   private idempotencyCache: Map<string, SubmitRecordResponse> = new Map();
@@ -259,7 +252,6 @@ export class AtlasFabricClient {
     const skewOk = maxSkewMs <= this.config.max_timestamp_skew_ms;
 
     // Check for state consistency among accepted attestations
-    const stateViews = acceptedAttestations.map(a => a.state_view);
     const consistentAttestations = this.findConsistentAttestations(acceptedAttestations);
     const conflictingAttestations = acceptedAttestations.filter(
       a => !consistentAttestations.some(ca => ca.witness_id === a.witness_id)

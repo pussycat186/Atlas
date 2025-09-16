@@ -12,7 +12,7 @@ export class WitnessServer {
   private fastify: FastifyInstance;
   private witness: WitnessNode;
 
-  constructor(witness: WitnessNode, port: number = 3001) {
+  constructor(witness: WitnessNode, _port: number = 3001) {
     this.witness = witness;
     this.fastify = Fastify({
       logger: {
@@ -45,13 +45,13 @@ export class WitnessServer {
    */
   private setupRoutes(): void {
     // Health check
-    this.fastify.get('/witness/health', async (request, reply) => {
+    this.fastify.get('/witness/health', async (_request, _reply) => {
       const health = await this.witness.getHealth();
       return health;
     });
 
     // Witness info
-    this.fastify.get('/witness/info', async (request, reply) => {
+    this.fastify.get('/witness/info', async (_request, _reply) => {
       return this.witness.getInfo();
     });
 
@@ -82,10 +82,11 @@ export class WitnessServer {
       try {
         const { since, limit } = request.query;
         
-        const entries = await this.witness.getLedger().readLedger({
-          since,
-          limit: limit ? parseInt(limit.toString()) : undefined,
-        });
+        const readOptions: { since?: string; limit?: number } = {};
+        if (since) readOptions.since = since as string;
+        if (limit) readOptions.limit = parseInt(limit.toString());
+        
+        const entries = await this.witness.getLedger().readLedger(readOptions);
 
         return {
           entries,
@@ -136,9 +137,10 @@ export class WitnessServer {
         reply.header('Connection', 'keep-alive');
         
         // Stream ledger entries
-        const entries = await this.witness.getLedger().readLedger({
-          since,
-        });
+        const readOptions: { since?: string } = {};
+        if (since) readOptions.since = since;
+        
+        const entries = await this.witness.getLedger().readLedger(readOptions);
 
         // Stream each entry as NDJSON
         for (const entry of entries) {
@@ -147,6 +149,7 @@ export class WitnessServer {
         }
         
         reply.raw.end();
+        return;
       } catch (error) {
         reply.code(500);
         return {
@@ -157,7 +160,7 @@ export class WitnessServer {
     });
 
     // Ledger statistics
-    this.fastify.get('/witness/stats', async (request, reply) => {
+    this.fastify.get('/witness/stats', async (_request, reply) => {
       try {
         const stats = await this.witness.getLedger().getStats();
         return stats;
@@ -171,7 +174,7 @@ export class WitnessServer {
     });
 
     // Validate ledger integrity
-    this.fastify.get('/witness/validate', async (request, reply) => {
+    this.fastify.get('/witness/validate', async (_request, reply) => {
       try {
         const validation = await this.witness.getLedger().validateIntegrity();
         return validation;

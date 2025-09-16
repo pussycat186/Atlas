@@ -3,12 +3,12 @@
  * Core witness service implementation
  */
 
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid'; // Unused for now
 import pino from 'pino';
 import {
   AtlasRecord,
   WitnessAttestation,
-  StateView,
+  // StateView, // Unused for now
   RecordMeta,
   DEFAULT_FABRIC_CONFIG,
   FabricConfig
@@ -41,15 +41,20 @@ export class WitnessNode {
     this.fabricConfig = { ...DEFAULT_FABRIC_CONFIG, ...fabricConfig };
     
     // Initialize structured logger
-    this.logger = pino({
+    const loggerConfig: pino.LoggerOptions = {
       level: process.env.LOG_LEVEL || 'info',
-      transport: process.env.NODE_ENV === 'development' ? {
+    };
+    
+    if (process.env.NODE_ENV === 'development') {
+      loggerConfig.transport = {
         target: 'pino-pretty',
         options: {
           colorize: true,
         },
-      } : undefined,
-    });
+      };
+    }
+    
+    this.logger = pino(loggerConfig);
   }
 
   /**

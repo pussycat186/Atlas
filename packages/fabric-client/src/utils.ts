@@ -3,7 +3,7 @@
  * Helper functions for common operations
  */
 
-import { WitnessAttestation, QuorumResult, AtlasRecord, LedgerEntry } from '@atlas/fabric-protocol';
+import { WitnessAttestation, QuorumResult, LedgerEntry } from '@atlas/fabric-protocol';
 
 /**
  * Generate a unique record ID

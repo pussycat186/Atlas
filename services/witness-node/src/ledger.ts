@@ -9,12 +9,12 @@ import { AtlasRecord, WitnessAttestation, LedgerEntry } from '@atlas/fabric-prot
 
 export class WitnessLedger {
   private ledgerPath: string;
-  private mirrorPath?: string;
+  private mirrorPath: string | undefined;
   private orderCounter: number = 0;
 
   constructor(ledgerPath: string, mirrorPath?: string) {
     this.ledgerPath = ledgerPath;
-    this.mirrorPath = mirrorPath;
+    this.mirrorPath = mirrorPath ?? undefined;
     this.initializeLedger();
   }
 
@@ -31,7 +31,7 @@ export class WitnessLedger {
       
       if (lines.length > 0) {
         try {
-          const lastEntry = JSON.parse(lines[lines.length - 1]);
+          const lastEntry = JSON.parse(lines[lines.length - 1]!);
           this.orderCounter = lastEntry.attestation.state_view.order;
         } catch (error) {
           console.warn('Failed to parse last ledger entry, starting from 0');
@@ -154,7 +154,7 @@ export class WitnessLedger {
     
     return {
       totalEntries: entries.length,
-      lastEntryTs: entries.length > 0 ? entries[entries.length - 1].record.ts : null,
+      lastEntryTs: entries.length > 0 ? entries[entries.length - 1]?.record.ts ?? null : null,
       ledgerSize: stats.size,
       orderCounter: this.orderCounter,
     };
@@ -215,10 +215,10 @@ export class WitnessLedger {
       
       // Check timestamp ordering
       for (let i = 1; i < entries.length; i++) {
-        const prevTs = new Date(entries[i - 1].record.ts).getTime();
-        const currTs = new Date(entries[i].record.ts).getTime();
+        const prevTs = new Date(entries[i - 1]?.record.ts ?? '').getTime();
+        const currTs = new Date(entries[i]?.record.ts ?? '').getTime();
         if (currTs < prevTs) {
-          warnings.push(`Timestamp out of order at ${entries[i].record.record_id}`);
+          warnings.push(`Timestamp out of order at ${entries[i]?.record.record_id ?? 'unknown'}`);
         }
       }
       

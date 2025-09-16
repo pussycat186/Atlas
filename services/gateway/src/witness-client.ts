@@ -40,8 +40,9 @@ export class WitnessClient {
       if (result.status === 'fulfilled') {
         attestations.push(result.value);
       } else {
-        errors.push(`Witness ${witness.witness_id}: ${result.reason}`);
-        console.error(`Failed to submit to witness ${witness.witness_id}:`, result.reason);
+        const witnessId = witness?.witness_id ?? 'unknown';
+        errors.push(`Witness ${witnessId}: ${result.reason}`);
+        console.error(`Failed to submit to witness ${witnessId}:`, result.reason);
       }
     });
 
@@ -99,19 +100,22 @@ export class WitnessClient {
     
     return results.map((result, index) => {
       const witness = this.config.witnesses[index];
+      const witnessId = witness?.witness_id ?? 'unknown';
+      const region = witness?.region ?? 'unknown';
+      
       if (result.status === 'fulfilled') {
         return {
-          witness_id: witness.witness_id,
+          witness_id: witnessId,
           status: 'active' as const,
           last_seen: new Date().toISOString(),
-          region: witness.region,
+          region: region,
         };
       } else {
         return {
-          witness_id: witness.witness_id,
+          witness_id: witnessId,
           status: 'error' as const,
           last_seen: new Date().toISOString(),
-          region: witness.region,
+          region: region,
         };
       }
     });
@@ -155,10 +159,11 @@ export class WitnessClient {
     return results
       .map((result, index) => {
         const witness = this.config.witnesses[index];
+        const witnessId = witness?.witness_id ?? 'unknown';
         if (result.status === 'fulfilled') {
           return result.value;
         } else {
-          console.error(`Failed to get info from witness ${witness.witness_id}:`, result.reason);
+          console.error(`Failed to get info from witness ${witnessId}:`, result.reason);
           return null;
         }
       })

@@ -159,8 +159,8 @@ describe('Atlas Fabric Client Utils', () => {
       const parsed = parseLedger(ndjson);
       
       expect(parsed).toHaveLength(2);
-      expect(parsed[0].record.record_id).toBe('r1');
-      expect(parsed[1].record.record_id).toBe('r2');
+      expect(parsed[0]?.record.record_id).toBe('r1');
+      expect(parsed[1]?.record.record_id).toBe('r2');
     });
   });
 
@@ -175,8 +175,8 @@ describe('Atlas Fabric Client Utils', () => {
       const lines = ndjson.split('\n');
       
       expect(lines).toHaveLength(2);
-      expect(JSON.parse(lines[0]).record.record_id).toBe('r1');
-      expect(JSON.parse(lines[1]).record.record_id).toBe('r2');
+      expect(JSON.parse(lines[0]!).record.record_id).toBe('r1');
+      expect(JSON.parse(lines[1]!).record.record_id).toBe('r2');
     });
   });
 
@@ -189,19 +189,19 @@ describe('Atlas Fabric Client Utils', () => {
     it('should filter by app', () => {
       const filtered = filterLedgerEntries(entries, { app: 'chat' });
       expect(filtered).toHaveLength(1);
-      expect(filtered[0].record.app).toBe('chat');
+      expect(filtered[0]?.record.app).toBe('chat');
     });
 
     it('should filter by record ID', () => {
       const filtered = filterLedgerEntries(entries, { recordId: 'r1' });
       expect(filtered).toHaveLength(1);
-      expect(filtered[0].record.record_id).toBe('r1');
+      expect(filtered[0]?.record.record_id).toBe('r1');
     });
 
     it('should filter by witness ID', () => {
       const filtered = filterLedgerEntries(entries, { witnessId: 'w1' });
       expect(filtered).toHaveLength(1);
-      expect(filtered[0].attestation.witness_id).toBe('w1');
+      expect(filtered[0]?.attestation.witness_id).toBe('w1');
     });
   });
 
@@ -213,8 +213,8 @@ describe('Atlas Fabric Client Utils', () => {
       ];
 
       const sorted = sortLedgerEntries(entries, true);
-      expect(sorted[0].record.record_id).toBe('r1');
-      expect(sorted[1].record.record_id).toBe('r2');
+      expect(sorted[0]?.record.record_id).toBe('r1');
+      expect(sorted[1]?.record.record_id).toBe('r2');
     });
   });
 
