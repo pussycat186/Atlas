@@ -11,6 +11,7 @@ import rateLimit from '@fastify/rate-limit';
 import pino from 'pino';
 import { QuorumManager } from './quorum';
 import { WitnessClient } from './witness-client';
+import { telemetry } from './telemetry';
 import { 
   SubmitRecordRequestSchema,
   // SubmitRecordResponseSchema, // Unused for now
@@ -33,6 +34,11 @@ export class GatewayServer {
   private logger: pino.Logger;
   private idempotencyCache: Map<string, { response: any; timestamp: number }> = new Map();
   private readonly IDEMPOTENCY_TTL = 60000; // 60 seconds
+  
+  // Metrics
+  private requestCounter: any;
+  private requestDuration: any;
+  private errorCounter: any;
 
   constructor(_port: number = 3000) {
     this.startTime = Date.now();
@@ -59,9 +65,32 @@ export class GatewayServer {
       logger: true,
     });
 
+    this.setupMetrics();
     this.setupPlugins();
     this.setupRoutes();
     this.setupIdempotencyCleanup();
+  }
+
+  /**
+   * Setup metrics
+   */
+  private setupMetrics(): void {
+    const meter = telemetry.getMeter();
+    
+    // Request counter
+    this.requestCounter = meter.createCounter('http_requests_total', {
+      description: 'Total number of HTTP requests',
+    });
+    
+    // Request duration histogram
+    this.requestDuration = meter.createHistogram('http_request_duration_seconds', {
+      description: 'HTTP request duration in seconds',
+    });
+    
+    // Error counter
+    this.errorCounter = meter.createCounter('http_errors_total', {
+      description: 'Total number of HTTP errors',
+    });
   }
 
   /**
@@ -196,6 +225,11 @@ export class GatewayServer {
     // Submit record (primary endpoint) with validation and idempotency
     this.fastify.post('/record', async (request: any, reply) => {
       const startTime = Date.now();
+      const tracer = telemetry.getTracer();
+      const span = tracer.startSpan('submit_record');
+      
+      // Increment request counter
+      this.requestCounter.add(1, { method: 'POST', route: '/record' });
       const idempotencyKey = request.headers['idempotency-key'] as string;
       
       try {
@@ -267,6 +301,11 @@ export class GatewayServer {
           attestation_count: attestations.length 
         }, 'Record submission completed');
 
+        // Record metrics
+        this.requestDuration.record(duration / 1000, { method: 'POST', route: '/record', status: 'success' });
+        span.setStatus({ code: 1 }); // OK
+        span.end();
+
         return response;
       } catch (error) {
         const duration = Date.now() - startTime;
@@ -275,6 +314,12 @@ export class GatewayServer {
           duration,
           record_id: request.body?.record_id 
         }, 'Record submission failed');
+        
+        // Record error metrics
+        this.errorCounter.add(1, { method: 'POST', route: '/record', status: 'error' });
+        this.requestDuration.record(duration / 1000, { method: 'POST', route: '/record', status: 'error' });
+        span.setStatus({ code: 2, message: error instanceof Error ? error.message : 'Unknown error' }); // ERROR
+        span.end();
         
         reply.code(500);
         return {

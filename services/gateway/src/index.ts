@@ -4,8 +4,11 @@
  */
 
 import { GatewayServer } from './server';
+import { telemetry } from './telemetry';
 
 async function main() {
+  // Initialize OpenTelemetry first
+  await telemetry.initialize();
   // Get configuration from environment variables
   const port = parseInt(process.env.PORT || '8080');
   const host = process.env.HOST || '0.0.0.0';
@@ -21,12 +24,14 @@ async function main() {
   process.on('SIGINT', async () => {
     console.log('Received SIGINT, shutting down gracefully...');
     await server.stop();
+    await telemetry.shutdown();
     process.exit(0);
   });
 
   process.on('SIGTERM', async () => {
     console.log('Received SIGTERM, shutting down gracefully...');
     await server.stop();
+    await telemetry.shutdown();
     process.exit(0);
   });
 

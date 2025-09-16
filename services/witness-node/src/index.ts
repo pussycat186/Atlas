@@ -5,9 +5,12 @@
 
 import { WitnessNode } from './witness';
 import { WitnessServer } from './server';
+import { telemetry } from './telemetry';
 import * as path from 'path';
 
 async function main() {
+  // Initialize OpenTelemetry first
+  await telemetry.initialize();
   // Get configuration from environment variables
   const witnessId = process.env.WITNESS_ID || 'w1';
   const region = process.env.WITNESS_REGION || 'us-east-1';
@@ -45,12 +48,14 @@ async function main() {
   process.on('SIGINT', async () => {
     console.log('Received SIGINT, shutting down gracefully...');
     await server.stop();
+    await telemetry.shutdown();
     process.exit(0);
   });
 
   process.on('SIGTERM', async () => {
     console.log('Received SIGTERM, shutting down gracefully...');
     await server.stop();
+    await telemetry.shutdown();
     process.exit(0);
   });
 

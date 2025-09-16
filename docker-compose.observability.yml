@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # Jaeger - Distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:1.51
+    container_name: atlas-jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    command: ["--collector.otlp.enabled=true"]
+    networks:
+      - atlas-observability
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: atlas-otel-collector
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics
+    volumes:
+      - ./observability/otel-collector-config.yml:/etc/otelcol-contrib/otel-collector-config.yml
+    command: ["--config=/etc/otelcol-contrib/otel-collector-config.yml"]
+    depends_on:
+      - jaeger
+      - prometheus
+    networks:
+      - atlas-observability
+
+  # Prometheus - Metrics collection
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: atlas-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - atlas-observability
+
+  # Grafana - Observability dashboards
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: atlas-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+      - jaeger
+    networks:
+      - atlas-observability
+
+  # Tempo - Distributed tracing backend
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: atlas-tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP
+      - "9095:9095"   # Tempo metrics
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml
+      - tempo_data:/tmp/tempo
+    networks:
+      - atlas-observability
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  tempo_data:
+
+networks:
+  atlas-observability:
+    driver: bridge
