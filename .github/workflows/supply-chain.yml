@@ -68,7 +68,7 @@ jobs:
 
       - name: Sign artifact with cosign keyless
         run: |
-          cosign sign-blob --bundle cosign.bundle atlas-build-artifact.tar.gz
+          cosign sign-blob --bundle cosign.bundle --yes atlas-build-artifact.tar.gz
           echo "Artifact signed successfully"
 
       - name: Verify signature
@@ -79,7 +79,7 @@ jobs:
 
       - name: Create SBOM attestation
         run: |
-          cosign attest --predicate _reports/SBOM.spdx --type spdxjson --bundle sbom-attestation.bundle atlas-build-artifact.tar.gz
+          cosign attest --predicate _reports/SBOM.spdx --type spdxjson --bundle sbom-attestation.bundle --yes atlas-build-artifact.tar.gz
           echo "SBOM attestation created"
 
       - name: Verify SBOM attestation
