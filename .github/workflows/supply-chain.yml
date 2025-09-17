@@ -101,13 +101,13 @@ jobs:
       - name: Create SBOM attestation
         run: |
           TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
-          cosign attest-blob --predicate _reports/SBOM.spdx --type spdxjson atlas-${TAG_NAME}.tar.gz
+          cosign attest-blob --predicate _reports/SBOM.spdx --type spdxjson --bundle sbom-attestation.bundle atlas-${TAG_NAME}.tar.gz
           echo "SBOM attestation created"
 
       - name: Verify SBOM attestation
         run: |
           TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
-          cosign verify-blob-attestation --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-${TAG_NAME}.tar.gz > COSIGN_ATTEST_VERIFY.txt
+          cosign verify-blob-attestation --bundle sbom-attestation.bundle --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-${TAG_NAME}.tar.gz > COSIGN_ATTEST_VERIFY.txt
           echo "SBOM attestation verification completed"
           cat COSIGN_ATTEST_VERIFY.txt
 
@@ -172,6 +172,7 @@ jobs:
             atlas-*.tar.gz
             _reports/SBOM.spdx
             cosign.bundle
+            sbom-attestation.bundle
             COSIGN_VERIFY.txt
             COSIGN_ATTEST_VERIFY.txt
             SLSA_PROVENANCE.json
@@ -196,6 +197,7 @@ jobs:
             atlas-*.tar.gz
             _reports/SBOM.spdx
             cosign.bundle
+            sbom-attestation.bundle
             COSIGN_VERIFY.txt
             COSIGN_ATTEST_VERIFY.txt
             SLSA_PROVENANCE.json
