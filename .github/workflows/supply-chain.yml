@@ -21,6 +21,11 @@ permissions:
 jobs:
   supply-chain:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      COSIGN_YES: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,7 +56,8 @@ jobs:
 
       - name: Generate SBOM
         run: |
-          syft packages . -o spdx-json > _reports/SBOM.spdx
+          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          syft packages atlas-${TAG_NAME}.tar.gz -o spdx-json > _reports/SBOM.spdx
           echo "SBOM generated: $(ls -lh _reports/SBOM.spdx)"
 
       - name: Install cosign
@@ -66,30 +72,48 @@ jobs:
           tar -czf atlas-build-artifact.tar.gz services/ packages/ apps/ _reports/
           echo "Build artifact created: $(ls -lh atlas-build-artifact.tar.gz)"
 
+      - name: Compute SHA-256 digest
+        id: sha256
+        run: |
+          SHA256=$(sha256sum atlas-build-artifact.tar.gz | cut -d' ' -f1)
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "Bundle SHA-256: $SHA256"
+
+      - name: Rename bundle with tag
+        run: |
+          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          mv atlas-build-artifact.tar.gz atlas-${TAG_NAME}.tar.gz
+          echo "Renamed bundle to atlas-${TAG_NAME}.tar.gz"
+
       - name: Sign artifact with cosign keyless
         run: |
-          cosign sign-blob --bundle cosign.bundle --yes atlas-build-artifact.tar.gz
+          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          cosign sign-blob --bundle cosign.bundle atlas-${TAG_NAME}.tar.gz
           echo "Artifact signed successfully"
 
       - name: Verify signature
         run: |
-          cosign verify-blob --bundle cosign.bundle --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-build-artifact.tar.gz > COSIGN_VERIFY.txt
+          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          cosign verify-blob --bundle cosign.bundle --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-${TAG_NAME}.tar.gz > COSIGN_VERIFY.txt
           echo "Signature verification completed"
           cat COSIGN_VERIFY.txt
 
       - name: Create SBOM attestation
         run: |
-          cosign attest-blob --predicate _reports/SBOM.spdx --type spdxjson --yes atlas-build-artifact.tar.gz
+          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          cosign attest-blob --predicate _reports/SBOM.spdx --type spdxjson atlas-${TAG_NAME}.tar.gz
           echo "SBOM attestation created"
 
       - name: Verify SBOM attestation
         run: |
-          cosign verify-blob-attestation --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-build-artifact.tar.gz > COSIGN_ATTEST_VERIFY.txt
+          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          cosign verify-blob-attestation --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-${TAG_NAME}.tar.gz > COSIGN_ATTEST_VERIFY.txt
           echo "SBOM attestation verification completed"
           cat COSIGN_ATTEST_VERIFY.txt
 
       - name: Generate SLSA provenance
         run: |
+          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
           # Create a basic SLSA v3 provenance document
           cat > SLSA_PROVENANCE.json << EOF
           {
@@ -97,9 +121,9 @@ jobs:
             "predicateType": "https://slsa.dev/provenance/v1",
             "subject": [
               {
-                "name": "atlas-build-artifact.tar.gz",
+                "name": "atlas-${TAG_NAME}.tar.gz",
                 "digest": {
-                  "sha256": "$(sha256sum atlas-build-artifact.tar.gz | cut -d' ' -f1)"
+                  "sha256": "${{ steps.sha256.outputs.sha256 }}"
                 }
               }
             ],
@@ -145,7 +169,7 @@ jobs:
         with:
           name: supply-chain-artifacts
           path: |
-            atlas-build-artifact.tar.gz
+            atlas-*.tar.gz
             _reports/SBOM.spdx
             cosign.bundle
             COSIGN_VERIFY.txt
@@ -169,7 +193,7 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: Atlas ${{ steps.tag.outputs.tag }}
           files: |
-            atlas-build-artifact.tar.gz
+            atlas-*.tar.gz
             _reports/SBOM.spdx
             cosign.bundle
             COSIGN_VERIFY.txt
