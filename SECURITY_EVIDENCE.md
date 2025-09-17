@@ -10,21 +10,21 @@ This evidence package documents the complete implementation of security hardenin
 
 ## Supply Chain Security Evidence ✅
 
-**Tag**: v20250918-0013  
-**Commit SHA**: 6a21b797c6d9f6b969ecf179ab97c5995e7a52b1  
-**Bundle SHA-256**: 5b59634689da3245417a6ea6207b8d57b3a0cb6a33e385598983fb0cf22299c9  
-**Workflow Run ID**: 17805313483  
+**Tag**: v20250918-0020  
+**Commit SHA**: 16640c879c19666f17989d895d1f91eea98e9314  
+**Bundle SHA-256**: acb94322cc5ec25dd672564652965cead2655a1f494d4535440c06f2477015c9  
+**Workflow Run ID**: 17805492601  
 
 ### Verifiable Artifacts (HTTP 200 OK)
 
-- **Bundle**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/atlas-v20250918-0013.tar.gz
-- **SBOM**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/SBOM.spdx
-- **Signature Bundle**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/cosign.bundle
-- **SBOM Attestation**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/sbom-attestation.bundle
-- **Signature Verification**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/COSIGN_VERIFY.txt
-- **Attestation Verification**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/COSIGN_ATTEST_VERIFY.txt
-- **SLSA Provenance**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/SLSA_PROVENANCE.json
-- **SHA256 Digest**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/SHA256.txt
+- **Bundle**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0020/atlas-v20250918-0020.tar.gz
+- **SBOM**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0020/SBOM.spdx
+- **Signature Bundle**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0020/cosign.bundle
+- **SBOM Attestation**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0020/sbom-attestation.bundle
+- **Signature Verification**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0020/COSIGN_VERIFY.txt
+- **Attestation Verification**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0020/COSIGN_ATTEST_VERIFY.txt
+- **SLSA Provenance**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0020/SLSA_PROVENANCE.json
+- **SHA256 Digest**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0020/SHA256.txt
 
 ### Security Gates Validated
 
