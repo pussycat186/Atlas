@@ -73,7 +73,7 @@ jobs:
 
       - name: Verify signature
         run: |
-          cosign verify-blob --bundle cosign.bundle atlas-build-artifact.tar.gz > COSIGN_VERIFY.txt
+          cosign verify-blob --bundle cosign.bundle --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-build-artifact.tar.gz > COSIGN_VERIFY.txt
           echo "Signature verification completed"
           cat COSIGN_VERIFY.txt
 
@@ -84,7 +84,7 @@ jobs:
 
       - name: Verify SBOM attestation
         run: |
-          cosign verify-attestation --bundle sbom-attestation.bundle atlas-build-artifact.tar.gz > COSIGN_ATTEST_VERIFY.txt
+          cosign verify-attestation --bundle sbom-attestation.bundle --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-build-artifact.tar.gz > COSIGN_ATTEST_VERIFY.txt
           echo "SBOM attestation verification completed"
           cat COSIGN_ATTEST_VERIFY.txt
 
