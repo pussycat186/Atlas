@@ -101,7 +101,7 @@ jobs:
       - name: Create SBOM attestation
         run: |
           TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
-          cosign attest-blob --predicate _reports/SBOM.spdx --type spdxjson --bundle sbom-attestation.bundle atlas-${TAG_NAME}.tar.gz
+          cosign attest-blob --predicate _reports/SBOM.spdx --type custom --bundle sbom-attestation.bundle atlas-${TAG_NAME}.tar.gz
           echo "SBOM attestation created"
 
       - name: Verify SBOM attestation
