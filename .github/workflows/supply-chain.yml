@@ -54,12 +54,6 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
           syft version
 
-      - name: Generate SBOM
-        run: |
-          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
-          syft packages atlas-${TAG_NAME}.tar.gz -o spdx-json > _reports/SBOM.spdx
-          echo "SBOM generated: $(ls -lh _reports/SBOM.spdx)"
-
       - name: Install cosign
         run: |
           curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o cosign
@@ -84,6 +78,12 @@ jobs:
           TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
           mv atlas-build-artifact.tar.gz atlas-${TAG_NAME}.tar.gz
           echo "Renamed bundle to atlas-${TAG_NAME}.tar.gz"
+
+      - name: Generate SBOM
+        run: |
+          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          syft scan atlas-${TAG_NAME}.tar.gz -o spdx-json > _reports/SBOM.spdx
+          echo "SBOM generated: $(ls -lh _reports/SBOM.spdx)"
 
       - name: Sign artifact with cosign keyless
         run: |
