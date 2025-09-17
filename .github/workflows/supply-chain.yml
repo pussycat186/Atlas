@@ -79,12 +79,12 @@ jobs:
 
       - name: Create SBOM attestation
         run: |
-          cosign attest --predicate _reports/SBOM.spdx --type spdxjson --yes atlas-build-artifact.tar.gz
+          cosign attest-blob --predicate _reports/SBOM.spdx --type spdxjson --yes atlas-build-artifact.tar.gz
           echo "SBOM attestation created"
 
       - name: Verify SBOM attestation
         run: |
-          cosign verify-attestation --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-build-artifact.tar.gz > COSIGN_ATTEST_VERIFY.txt
+          cosign verify-blob-attestation --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-build-artifact.tar.gz > COSIGN_ATTEST_VERIFY.txt
           echo "SBOM attestation verification completed"
           cat COSIGN_ATTEST_VERIFY.txt
 
