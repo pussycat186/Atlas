@@ -10,28 +10,29 @@ This evidence package documents the complete implementation of security hardenin
 
 ## Supply Chain Security Evidence ✅
 
-**Tag**: v20250917-2315  
-**Commit SHA**: f8a1e84bf973a4bba355ffa0754b87325bf85ddf  
-**Bundle SHA-256**: 68ac8ce8490801f2e377f8579d87d964821d8787039202d99b61ae9ead499b66  
-**Trace ID**: 17803925368  
+**Tag**: v20250918-0013  
+**Commit SHA**: 6a21b797c6d9f6b969ecf179ab97c5995e7a52b1  
+**Bundle SHA-256**: 5b59634689da3245417a6ea6207b8d57b3a0cb6a33e385598983fb0cf22299c9  
+**Workflow Run ID**: 17805313483  
 
 ### Verifiable Artifacts (HTTP 200 OK)
 
-- **Bundle**: https://github.com/pussycat186/Atlas/releases/download/v20250917-2315/atlas-v20250917-2315.tar.gz
-- **SBOM**: https://github.com/pussycat186/Atlas/releases/download/v20250917-2315/SBOM.spdx
-- **Signature Bundle**: https://github.com/pussycat186/Atlas/releases/download/v20250917-2315/cosign.bundle
-- **SBOM Attestation**: https://github.com/pussycat186/Atlas/releases/download/v20250917-2315/sbom-attestation.bundle
-- **Signature Verification**: https://github.com/pussycat186/Atlas/releases/download/v20250917-2315/COSIGN_VERIFY.txt
-- **Attestation Verification**: https://github.com/pussycat186/Atlas/releases/download/v20250917-2315/COSIGN_ATTEST_VERIFY.txt
-- **SLSA Provenance**: https://github.com/pussycat186/Atlas/releases/download/v20250917-2315/SLSA_PROVENANCE.json
+- **Bundle**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/atlas-v20250918-0013.tar.gz
+- **SBOM**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/SBOM.spdx
+- **Signature Bundle**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/cosign.bundle
+- **SBOM Attestation**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/sbom-attestation.bundle
+- **Signature Verification**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/COSIGN_VERIFY.txt
+- **Attestation Verification**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/COSIGN_ATTEST_VERIFY.txt
+- **SLSA Provenance**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/SLSA_PROVENANCE.json
+- **SHA256 Digest**: https://github.com/pussycat186/Atlas/releases/download/v20250918-0013/SHA256.txt
 
 ### Security Gates Validated
 
 - ✅ **OIDC Gate**: OIDC keyless signing with token.actions.githubusercontent.com
-- ✅ **Signature Gate**: Cosign signature verification successful
-- ✅ **Attestation Gate**: SBOM attestation verification successful  
+- ✅ **Signature Gate**: Cosign signature verification successful ("Verified OK")
+- ✅ **Attestation Gate**: SBOM attestation verification successful ("Verified OK")
 - ✅ **SLSA Gate**: SLSA v3 provenance generated and bound to correct digest
-- ✅ **URL Gate**: All artifact URLs return HTTP 200 OK
+- ✅ **URL Gate**: All artifact URLs return HTTP 302→200 OK
 
 ## Security Controls Implemented
 
