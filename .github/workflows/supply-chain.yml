@@ -79,12 +79,12 @@ jobs:
 
       - name: Create SBOM attestation
         run: |
-          cosign attest --predicate _reports/SBOM.spdx --type spdxjson --bundle sbom-attestation.bundle --yes atlas-build-artifact.tar.gz
+          cosign attest --predicate _reports/SBOM.spdx --type spdxjson --yes atlas-build-artifact.tar.gz
           echo "SBOM attestation created"
 
       - name: Verify SBOM attestation
         run: |
-          cosign verify-attestation --bundle sbom-attestation.bundle --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-build-artifact.tar.gz > COSIGN_ATTEST_VERIFY.txt
+          cosign verify-attestation --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-build-artifact.tar.gz > COSIGN_ATTEST_VERIFY.txt
           echo "SBOM attestation verification completed"
           cat COSIGN_ATTEST_VERIFY.txt
 
@@ -148,7 +148,6 @@ jobs:
             atlas-build-artifact.tar.gz
             _reports/SBOM.spdx
             cosign.bundle
-            sbom-attestation.bundle
             COSIGN_VERIFY.txt
             COSIGN_ATTEST_VERIFY.txt
             SLSA_PROVENANCE.json
@@ -173,7 +172,6 @@ jobs:
             atlas-build-artifact.tar.gz
             _reports/SBOM.spdx
             cosign.bundle
-            sbom-attestation.bundle
             COSIGN_VERIFY.txt
             COSIGN_ATTEST_VERIFY.txt
             SLSA_PROVENANCE.json
