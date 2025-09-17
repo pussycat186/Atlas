@@ -12,7 +12,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   id-token: write
@@ -55,11 +55,9 @@ jobs:
           syft version
 
       - name: Install cosign
-        run: |
-          curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o cosign
-          chmod +x cosign
-          sudo mv cosign /usr/local/bin/
-          cosign version
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.1'
 
       - name: Create build artifact
         run: |
@@ -72,28 +70,40 @@ jobs:
           SHA256=$(sha256sum atlas-build-artifact.tar.gz | cut -d' ' -f1)
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
           echo "Bundle SHA-256: $SHA256"
+          echo "$SHA256" > SHA256.txt
+
+      - name: Set tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" =~ ^refs/tags/v.* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=v$(date +%Y%m%d-%H%M)" >> $GITHUB_OUTPUT
+          fi
 
       - name: Rename bundle with tag
         run: |
-          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          TAG_NAME="${{ steps.tag.outputs.tag }}"
           mv atlas-build-artifact.tar.gz atlas-${TAG_NAME}.tar.gz
           echo "Renamed bundle to atlas-${TAG_NAME}.tar.gz"
 
       - name: Generate SBOM
         run: |
-          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
-          syft scan atlas-${TAG_NAME}.tar.gz -o spdx-json > _reports/SBOM.spdx
-          echo "SBOM generated: $(ls -lh _reports/SBOM.spdx)"
+          TAG_NAME="${{ steps.tag.outputs.tag }}"
+          syft scan atlas-${TAG_NAME}.tar.gz -o spdx-json > SBOM.spdx
+          echo "SBOM generated: $(ls -lh SBOM.spdx)"
 
       - name: Sign artifact with cosign keyless
         run: |
-          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          TAG_NAME="${{ steps.tag.outputs.tag }}"
           cosign sign-blob --bundle cosign.bundle atlas-${TAG_NAME}.tar.gz
           echo "Artifact signed successfully"
 
       - name: Verify signature
         run: |
-          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          TAG_NAME="${{ steps.tag.outputs.tag }}"
           cosign verify-blob --bundle cosign.bundle --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-${TAG_NAME}.tar.gz > COSIGN_VERIFY.txt 2>&1 || echo "Verification failed but continuing"
           echo "Signature verification completed"
           echo "Verification output:" >> COSIGN_VERIFY.txt
@@ -101,13 +111,13 @@ jobs:
 
       - name: Create SBOM attestation
         run: |
-          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
-          cosign attest-blob --predicate _reports/SBOM.spdx --type custom --bundle sbom-attestation.bundle atlas-${TAG_NAME}.tar.gz
+          TAG_NAME="${{ steps.tag.outputs.tag }}"
+          cosign attest-blob --predicate SBOM.spdx --type custom --bundle sbom-attestation.bundle atlas-${TAG_NAME}.tar.gz
           echo "SBOM attestation created"
 
       - name: Verify SBOM attestation
         run: |
-          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
+          TAG_NAME="${{ steps.tag.outputs.tag }}"
           cosign verify-blob-attestation --bundle sbom-attestation.bundle --certificate-identity-regexp="https://github.com/${{ github.repository }}" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" atlas-${TAG_NAME}.tar.gz > COSIGN_ATTEST_VERIFY.txt 2>&1 || echo "Attestation verification failed but continuing"
           echo "SBOM attestation verification completed"
           echo "Attestation verification output:" >> COSIGN_ATTEST_VERIFY.txt
@@ -115,8 +125,7 @@ jobs:
 
       - name: Generate SLSA provenance
         run: |
-          TAG_NAME="${{ steps.tag.outputs.tag || github.ref_name }}"
-          # Create a basic SLSA v3 provenance document
+          TAG_NAME="${{ steps.tag.outputs.tag }}"
           cat > SLSA_PROVENANCE.json << EOF
           {
             "_type": "https://in-toto.io/Statement/v1",
@@ -172,23 +181,13 @@ jobs:
           name: supply-chain-artifacts
           path: |
             atlas-*.tar.gz
-            _reports/SBOM.spdx
+            SBOM.spdx
             cosign.bundle
             sbom-attestation.bundle
             COSIGN_VERIFY.txt
             COSIGN_ATTEST_VERIFY.txt
             SLSA_PROVENANCE.json
-
-      - name: Set tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" =~ ^refs/tags/v.* ]]; then
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=v$(date +%Y%m%d-%H%M)" >> $GITHUB_OUTPUT
-          fi
+            SHA256.txt
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -197,12 +196,13 @@ jobs:
           name: Atlas ${{ steps.tag.outputs.tag }}
           files: |
             atlas-*.tar.gz
-            _reports/SBOM.spdx
+            SBOM.spdx
             cosign.bundle
             sbom-attestation.bundle
             COSIGN_VERIFY.txt
             COSIGN_ATTEST_VERIFY.txt
             SLSA_PROVENANCE.json
+            SHA256.txt
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
