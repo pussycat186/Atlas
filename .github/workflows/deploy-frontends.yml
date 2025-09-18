@@ -1,0 +1,210 @@
+name: Deploy Frontends
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy'
+        required: true
+        default: 'v20250918-0020'
+      rollback_to_tag:
+        description: 'Rollback to specific tag (optional)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-frontends:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Determine release tag
+      id: tag
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ -n "${{ github.event.inputs.rollback_to_tag }}" ]; then
+            echo "tag=${{ github.event.inputs.rollback_to_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Download signed release tarball
+      run: |
+        TAG="${{ steps.tag.outputs.tag }}"
+        echo "Downloading release tarball for tag: $TAG"
+        curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/octet-stream" \
+          -o "atlas-${TAG}.tar.gz" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/assets/$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | jq -r '.assets[] | select(.name | contains("tar.gz")) | .id')"
+        
+    - name: Extract release tarball
+      run: |
+        TAG="${{ steps.tag.outputs.tag }}"
+        echo "Extracting release tarball: atlas-${TAG}.tar.gz"
+        tar -xzf "atlas-${TAG}.tar.gz"
+        ls -la
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9.0.0
+        
+    - name: Install dependencies
+      run: |
+        cd atlas-*
+        pnpm install --frozen-lockfile
+        
+    - name: Build proof-messenger
+      run: |
+        cd atlas-*
+        cd apps/proof-messenger
+        pnpm build
+        
+    - name: Build admin-insights
+      run: |
+        cd atlas-*
+        cd apps/admin-insights
+        pnpm build
+        
+    - name: Build dev-portal (if VERCEL_PROJECT_ID_DEVPORTAL exists)
+      if: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL != '' }}
+      run: |
+        cd atlas-*
+        cd apps/dev-portal
+        pnpm build
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+      
+    - name: Deploy proof-messenger to Vercel
+      run: |
+        cd atlas-*/apps/proof-messenger
+        vercel --token ${{ secrets.VERCEL_TOKEN }} \
+          --scope ${{ secrets.VERCEL_ORG_ID }} \
+          --prod \
+          --confirm \
+          --name atlas-proof-messenger
+      env:
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
+        
+    - name: Deploy admin-insights to Vercel
+      run: |
+        cd atlas-*/apps/admin-insights
+        vercel --token ${{ secrets.VERCEL_TOKEN }} \
+          --scope ${{ secrets.VERCEL_ORG_ID }} \
+          --prod \
+          --confirm \
+          --name atlas-admin-insights
+      env:
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
+        
+    - name: Deploy dev-portal to Vercel (if configured)
+      if: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL != '' }}
+      run: |
+        cd atlas-*/apps/dev-portal
+        vercel --token ${{ secrets.VERCEL_TOKEN }} \
+          --scope ${{ secrets.VERCEL_ORG_ID }} \
+          --prod \
+          --confirm \
+          --name atlas-dev-portal
+      env:
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
+        
+    - name: Get Vercel deployment URLs
+      id: urls
+      run: |
+        # Get the latest deployments for each project
+        PROOF_URL=$(vercel ls --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} atlas-proof-messenger --json | jq -r '.[0].url' | sed 's/^/https:\/\//')
+        INSIGHTS_URL=$(vercel ls --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} atlas-admin-insights --json | jq -r '.[0].url' | sed 's/^/https:\/\//')
+        
+        echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
+        echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
+        
+        if [ "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" != "" ]; then
+          DEV_PORTAL_URL=$(vercel ls --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} atlas-dev-portal --json | jq -r '.[0].url' | sed 's/^/https:\/\//')
+          echo "dev_portal_url=$DEV_PORTAL_URL" >> $GITHUB_OUTPUT
+        else
+          echo "dev_portal_url=" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Verify deployments
+      run: |
+        echo "Verifying frontend deployments..."
+        
+        # Verify proof-messenger
+        PROOF_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.urls.outputs.proof_messenger_url }}")
+        if [ "$PROOF_STATUS" = "200" ] || [ "$PROOF_STATUS" = "302" ]; then
+          echo "✅ proof-messenger: $PROOF_STATUS"
+        else
+          echo "❌ proof-messenger: $PROOF_STATUS"
+          exit 1
+        fi
+        
+        # Verify admin-insights
+        INSIGHTS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.urls.outputs.admin_insights_url }}")
+        if [ "$INSIGHTS_STATUS" = "200" ] || [ "$INSIGHTS_STATUS" = "302" ]; then
+          echo "✅ admin-insights: $INSIGHTS_STATUS"
+        else
+          echo "❌ admin-insights: $INSIGHTS_STATUS"
+          exit 1
+        fi
+        
+        # Verify dev-portal if deployed
+        if [ "${{ steps.urls.outputs.dev_portal_url }}" != "" ]; then
+          DEV_PORTAL_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.urls.outputs.dev_portal_url }}")
+          if [ "$DEV_PORTAL_STATUS" = "200" ] || [ "$DEV_PORTAL_STATUS" = "302" ]; then
+            echo "✅ dev-portal: $DEV_PORTAL_STATUS"
+          else
+            echo "❌ dev-portal: $DEV_PORTAL_STATUS"
+            exit 1
+          fi
+        fi
+        
+    - name: Generate LIVE_URLS.json
+      run: |
+        cat > LIVE_URLS.json << EOF
+        {
+          "status": "LIVE",
+          "tag": "${{ steps.tag.outputs.tag }}",
+          "frontends": {
+            "proof_messenger": "${{ steps.urls.outputs.proof_messenger_url }}",
+            "admin_insights": "${{ steps.urls.outputs.admin_insights_url }}",
+            "dev_portal": "${{ steps.urls.outputs.dev_portal_url }}"
+          },
+          "deployment_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "workflow_run_id": "${{ github.run_id }}"
+        }
+        EOF
+        
+        echo "Generated LIVE_URLS.json:"
+        cat LIVE_URLS.json
+        
+    - name: Upload LIVE_URLS.json
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-live-urls
+        path: LIVE_URLS.json
