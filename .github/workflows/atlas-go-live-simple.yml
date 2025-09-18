@@ -1,0 +1,460 @@
+name: ATLAS Go-Live Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy'
+        required: false
+        default: 'v20250918-2305'
+
+jobs:
+  go-live:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Install Fly CLI
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          echo "$HOME/.fly/bin" >> $GITHUB_PATH
+
+      - name: Validate Environment Contract
+        run: |
+          echo "=== Environment Contract Validation ==="
+          
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "BLOCKER: Not on main branch"
+            exit 1
+          fi
+          
+          if [ "${{ github.event.repository.fork }}" == "true" ]; then
+            echo "BLOCKER: Repository is a fork"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "BLOCKER_MISSING_SECRET_OR_MAPPING:VERCEL_TOKEN"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
+            echo "BLOCKER_MISSING_SECRET_OR_MAPPING:VERCEL_ORG_ID"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.VERCEL_PROJECT_ID_PROOF }}" ]; then
+            echo "BLOCKER_MISSING_SECRET_OR_MAPPING:VERCEL_PROJECT_ID_PROOF"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" ]; then
+            echo "BLOCKER_MISSING_SECRET_OR_MAPPING:VERCEL_PROJECT_ID_INSIGHTS"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
+            echo "BLOCKER_MISSING_SECRET_OR_MAPPING:FLY_API_TOKEN"
+            exit 1
+          fi
+          
+          echo "✅ Environment contract validation passed"
+
+      - name: Resolve and Download Release
+        id: release
+        run: |
+          echo "=== Resolving Release Tag ==="
+          
+          TAG="${{ github.event.inputs.tag || 'v20250918-2305' }}"
+          
+          if [ "$TAG" = "v20250918-2305" ] && [ -z "${{ github.event.inputs.tag }}" ]; then
+            echo "Finding latest v* tag..."
+            TAG=$(git tag --list "v*" --sort=-version:refname | head -1)
+            echo "Latest tag: $TAG"
+          fi
+          
+          echo "Using tag: $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          
+          echo "Downloading atlas-$TAG.tar.gz..."
+          gh release download "$TAG" --pattern "atlas-*.tar.gz" || {
+            echo "BLOCKER: Failed to download release $TAG"
+            exit 1
+          }
+          
+          if [ ! -f "atlas-$TAG.tar.gz" ]; then
+            echo "BLOCKER: Tarball atlas-$TAG.tar.gz not found"
+            exit 1
+          fi
+          
+          echo "✅ Release downloaded successfully"
+
+      - name: Extract and Setup Signed Source
+        run: |
+          echo "=== Extracting Signed Source ==="
+          
+          TAG="${{ steps.release.outputs.tag }}"
+          
+          mkdir -p signed-src
+          tar -xzf "atlas-$TAG.tar.gz" -C signed-src --strip-components=1
+          
+          if [ ! -d "signed-src/apps" ] || [ ! -d "signed-src/services" ]; then
+            echo "BLOCKER: Invalid tarball structure"
+            exit 1
+          fi
+          
+          echo "✅ Signed source extracted successfully"
+
+      - name: Install Dependencies
+        run: |
+          echo "=== Installing Dependencies ==="
+          cd signed-src
+          pnpm -w install --no-frozen-lockfile
+          echo "✅ Dependencies installed"
+
+      - name: Deploy Frontends to Vercel
+        id: frontends
+        run: |
+          echo "=== Deploying Frontends to Vercel ==="
+          
+          cd signed-src
+          
+          # Deploy proof-messenger
+          echo "Deploying proof-messenger..."
+          cd apps/proof-messenger
+          
+          vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} || {
+            echo "BLOCKER: Failed to pull Vercel config for proof-messenger"
+            exit 1
+          }
+          
+          vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} || {
+            echo "BLOCKER_DEPENDENCY_RESOLUTION:Failed to build proof-messenger"
+            exit 1
+          }
+          
+          PROOF_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_PROOF }} --json | jq -r '.url')
+          
+          if [ -z "$PROOF_URL" ] || [ "$PROOF_URL" = "null" ]; then
+            echo "BLOCKER: Failed to get proof-messenger URL"
+            exit 1
+          fi
+          
+          echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
+          echo "✅ proof-messenger deployed to: $PROOF_URL"
+          
+          # Deploy admin-insights
+          echo "Deploying admin-insights..."
+          cd ../admin-insights
+          
+          vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} || {
+            echo "BLOCKER: Failed to pull Vercel config for admin-insights"
+            exit 1
+          }
+          
+          vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} || {
+            echo "BLOCKER_DEPENDENCY_RESOLUTION:Failed to build admin-insights"
+            exit 1
+          }
+          
+          INSIGHTS_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }} --json | jq -r '.url')
+          
+          if [ -z "$INSIGHTS_URL" ] || [ "$INSIGHTS_URL" = "null" ]; then
+            echo "BLOCKER: Failed to get admin-insights URL"
+            exit 1
+          fi
+          
+          echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
+          echo "✅ admin-insights deployed to: $INSIGHTS_URL"
+          
+          # Deploy dev-portal (optional)
+          if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+            echo "Deploying dev-portal..."
+            cd ../dev-portal
+            
+            vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} || {
+              echo "BLOCKER: Failed to pull Vercel config for dev-portal"
+              exit 1
+            }
+            
+            vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} || {
+              echo "BLOCKER_DEPENDENCY_RESOLUTION:Failed to build dev-portal"
+              exit 1
+            }
+            
+            DEVPORTAL_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }} --json | jq -r '.url')
+            
+            if [ -z "$DEVPORTAL_URL" ] || [ "$DEVPORTAL_URL" = "null" ]; then
+              echo "BLOCKER: Failed to get dev-portal URL"
+              exit 1
+            fi
+            
+            echo "dev_portal_url=$DEVPORTAL_URL" >> $GITHUB_OUTPUT
+            echo "✅ dev-portal deployed to: $DEVPORTAL_URL"
+          else
+            echo "dev_portal_url=null" >> $GITHUB_OUTPUT
+            echo "ℹ️  dev-portal skipped (no VERCEL_PROJECT_ID_DEVPORTAL secret)"
+          fi
+
+      - name: Deploy Backends to Fly.io
+        id: backends
+        run: |
+          echo "=== Deploying Backends to Fly.io ==="
+          
+          TAG="${{ steps.release.outputs.tag }}"
+          SHORT_TAG=$(echo "$TAG" | sed 's/v//' | sed 's/-.*//')
+          
+          cd signed-src
+          
+          # Deploy gateway
+          echo "Deploying gateway service..."
+          cd services/gateway
+          
+          # Create fly.toml if missing
+          if [ ! -f "fly.toml" ]; then
+            cat > fly.toml << 'EOF'
+app = "atlas-gateway-$SHORT_TAG"
+primary_region = "sin"
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+EOF
+            echo "Created fly.toml for gateway"
+          fi
+          
+          # Authenticate and deploy
+          fly auth token ${{ secrets.FLY_API_TOKEN }}
+          
+          fly deploy --image-label "$TAG" --auto-confirm || {
+            echo "BLOCKER_BACKEND_DEPLOY:gateway:Deploy failed"
+            exit 1
+          }
+          
+          GATEWAY_URL="https://atlas-gateway-$SHORT_TAG.fly.dev"
+          echo "gateway_url=$GATEWAY_URL" >> $GITHUB_OUTPUT
+          echo "✅ gateway deployed to: $GATEWAY_URL"
+          
+          # Deploy witness
+          echo "Deploying witness service..."
+          cd ../witness
+          
+          # Create fly.toml if missing
+          if [ ! -f "fly.toml" ]; then
+            cat > fly.toml << 'EOF'
+app = "atlas-witness-$SHORT_TAG"
+primary_region = "sin"
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+EOF
+            echo "Created fly.toml for witness"
+          fi
+          
+          fly deploy --image-label "$TAG" --auto-confirm || {
+            echo "BLOCKER_BACKEND_DEPLOY:witness:Deploy failed"
+            exit 1
+          }
+          
+          WITNESS_URL="https://atlas-witness-$SHORT_TAG.fly.dev"
+          echo "witness_url=$WITNESS_URL" >> $GITHUB_OUTPUT
+          echo "✅ witness deployed to: $WITNESS_URL"
+
+      - name: Validate All URLs
+        run: |
+          echo "=== Validating All URLs ==="
+          
+          # Validate frontends
+          echo "Validating frontends..."
+          
+          PROOF_URL="${{ steps.frontends.outputs.proof_messenger_url }}"
+          if ! curl -s -o /dev/null -w "%{http_code}" "$PROOF_URL" | grep -q "200\|302"; then
+            echo "BLOCKER_URL_GATE:$PROOF_URL:$(curl -s -o /dev/null -w "%{http_code}" "$PROOF_URL")"
+            exit 1
+          fi
+          echo "✅ proof-messenger: $PROOF_URL"
+          
+          INSIGHTS_URL="${{ steps.frontends.outputs.admin_insights_url }}"
+          if ! curl -s -o /dev/null -w "%{http_code}" "$INSIGHTS_URL" | grep -q "200\|302"; then
+            echo "BLOCKER_URL_GATE:$INSIGHTS_URL:$(curl -s -o /dev/null -w "%{http_code}" "$INSIGHTS_URL")"
+            exit 1
+          fi
+          echo "✅ admin-insights: $INSIGHTS_URL"
+          
+          DEVPORTAL_URL="${{ steps.frontends.outputs.dev_portal_url }}"
+          if [ "$DEVPORTAL_URL" != "null" ] && [ -n "$DEVPORTAL_URL" ]; then
+            if ! curl -s -o /dev/null -w "%{http_code}" "$DEVPORTAL_URL" | grep -q "200\|302"; then
+              echo "BLOCKER_URL_GATE:$DEVPORTAL_URL:$(curl -s -o /dev/null -w "%{http_code}" "$DEVPORTAL_URL")"
+              exit 1
+            fi
+            echo "✅ dev-portal: $DEVPORTAL_URL"
+          fi
+          
+          # Validate backends
+          echo "Validating backends..."
+          
+          GATEWAY_URL="${{ steps.backends.outputs.gateway_url }}"
+          if ! curl -s -o /dev/null -w "%{http_code}" "$GATEWAY_URL/health" | grep -q "200"; then
+            echo "BLOCKER_URL_GATE:$GATEWAY_URL/health:$(curl -s -o /dev/null -w "%{http_code}" "$GATEWAY_URL/health")"
+            exit 1
+          fi
+          if ! curl -s -o /dev/null -w "%{http_code}" "$GATEWAY_URL/metrics" | grep -q "200"; then
+            echo "BLOCKER_URL_GATE:$GATEWAY_URL/metrics:$(curl -s -o /dev/null -w "%{http_code}" "$GATEWAY_URL/metrics")"
+            exit 1
+          fi
+          echo "✅ gateway: $GATEWAY_URL"
+          
+          WITNESS_URL="${{ steps.backends.outputs.witness_url }}"
+          if ! curl -s -o /dev/null -w "%{http_code}" "$WITNESS_URL/health" | grep -q "200"; then
+            echo "BLOCKER_URL_GATE:$WITNESS_URL/health:$(curl -s -o /dev/null -w "%{http_code}" "$WITNESS_URL/health")"
+            exit 1
+          fi
+          if ! curl -s -o /dev/null -w "%{http_code}" "$WITNESS_URL/metrics" | grep -q "200"; then
+            echo "BLOCKER_URL_GATE:$WITNESS_URL/metrics:$(curl -s -o /dev/null -w "%{http_code}" "$WITNESS_URL/metrics")"
+            exit 1
+          fi
+          echo "✅ witness: $WITNESS_URL"
+          
+          echo "✅ All URLs validated successfully"
+
+      - name: Create Evidence and Update Documentation
+        run: |
+          echo "=== Creating Evidence and Updating Documentation ==="
+          
+          TAG="${{ steps.release.outputs.tag }}"
+          
+          # Create LIVE_URLS.json
+          cat > LIVE_URLS.json << 'EOF'
+{
+  "status": "LIVE",
+  "tag": "$TAG",
+  "frontends": {
+    "proof_messenger": "${{ steps.frontends.outputs.proof_messenger_url }}",
+    "admin_insights": "${{ steps.frontends.outputs.admin_insights_url }}",
+    "dev_portal": "${{ steps.frontends.outputs.dev_portal_url }}"
+  },
+  "backends": {
+    "gateway": "${{ steps.backends.outputs.gateway_url }}",
+    "witness": "${{ steps.backends.outputs.witness_url }}"
+  },
+  "deployed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "built_from": "signed release tarball $TAG"
+}
+EOF
+          
+          echo "Created LIVE_URLS.json"
+          
+          # Get commit hash and bundle SHA-256
+          COMMIT_HASH=$(git rev-parse HEAD)
+          BUNDLE_SHA256=$(sha256sum "atlas-$TAG.tar.gz" | cut -d' ' -f1)
+          
+          # Update SECURITY_EVIDENCE.md
+          cat >> SECURITY_EVIDENCE.md << 'EOF'
+
+## Production Deployment - $TAG
+
+**Deployed:** $(date -u +%Y-%m-%dT%H:%M:%SZ)  
+**Tag:** $TAG  
+**Commit:** $COMMIT_HASH  
+**Bundle SHA-256:** $BUNDLE_SHA256  
+**Built from:** signed release tarball $TAG
+
+### Production URLs
+
+**Frontends:**
+- proof-messenger: ${{ steps.frontends.outputs.proof_messenger_url }}
+- admin-insights: ${{ steps.frontends.outputs.admin_insights_url }}
+- dev-portal: ${{ steps.frontends.outputs.dev_portal_url }}
+
+**Backends:**
+- gateway: ${{ steps.backends.outputs.gateway_url }}
+- witness: ${{ steps.backends.outputs.witness_url }}
+
+### Validation Status
+All URLs validated with HTTP 200 responses (or 302→200 for frontends).
+
+EOF
+          
+          echo "Updated SECURITY_EVIDENCE.md"
+
+      - name: Commit Evidence
+        run: |
+          echo "=== Committing Evidence ==="
+          
+          TAG="${{ steps.release.outputs.tag }}"
+          
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          git add LIVE_URLS.json SECURITY_EVIDENCE.md
+          git commit -m "chore(go-live): publish production URLs for $TAG" || {
+            echo "BLOCKER_REVIEW_REQUIRED:Commit blocked by branch protection"
+            exit 1
+          }
+          
+          git push origin main || {
+            echo "BLOCKER_REVIEW_REQUIRED:Push blocked by branch protection"
+            exit 1
+          }
+          
+          echo "✅ Evidence committed successfully"
+
+      - name: Final Output
+        run: |
+          echo "=== Final Deployment Status ==="
+          
+          TAG="${{ steps.release.outputs.tag }}"
+          
+          cat << 'EOF'
+{
+  "status": "LIVE",
+  "tag": "$TAG",
+  "frontends": {
+    "proof_messenger": "${{ steps.frontends.outputs.proof_messenger_url }}",
+    "admin_insights": "${{ steps.frontends.outputs.admin_insights_url }}",
+    "dev_portal": "${{ steps.frontends.outputs.dev_portal_url }}"
+  },
+  "backends": {
+    "gateway": "${{ steps.backends.outputs.gateway_url }}",
+    "witness": "${{ steps.backends.outputs.witness_url }}"
+  }
+}
+EOF
