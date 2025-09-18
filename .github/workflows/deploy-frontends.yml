@@ -141,12 +141,12 @@ jobs:
       run: |
         # GitHub tarballs extract repository contents directly to current directory
         EXTRACTED_DIR="."
-        cd "$EXTRACTED_DIR/apps/proof-messenger"
+        cd "$EXTRACTED_DIR"
         vercel --token ${{ secrets.VERCEL_TOKEN }} \
           --scope ${{ secrets.VERCEL_ORG_ID }} \
           --prod \
           --yes \
-          --cwd .
+          --cwd apps/proof-messenger
       env:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -155,12 +155,12 @@ jobs:
       run: |
         # GitHub tarballs extract repository contents directly to current directory
         EXTRACTED_DIR="."
-        cd "$EXTRACTED_DIR/apps/admin-insights"
+        cd "$EXTRACTED_DIR"
         vercel --token ${{ secrets.VERCEL_TOKEN }} \
           --scope ${{ secrets.VERCEL_ORG_ID }} \
           --prod \
           --yes \
-          --cwd .
+          --cwd apps/admin-insights
       env:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -170,12 +170,12 @@ jobs:
         if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
           # GitHub tarballs extract repository contents directly to current directory
           EXTRACTED_DIR="."
-          cd "$EXTRACTED_DIR/apps/dev-portal"
+          cd "$EXTRACTED_DIR"
         vercel --token ${{ secrets.VERCEL_TOKEN }} \
           --scope ${{ secrets.VERCEL_ORG_ID }} \
           --prod \
           --yes \
-          --cwd .
+          --cwd apps/dev-portal
         else
           echo "Skipping dev-portal deployment - VERCEL_PROJECT_ID_DEVPORTAL not configured"
         fi
