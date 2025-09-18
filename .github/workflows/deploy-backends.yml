@@ -1,0 +1,285 @@
+name: Deploy Backends
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy'
+        required: true
+        default: 'v20250918-0020'
+      rollback_to_tag:
+        description: 'Rollback to specific tag (optional)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-backends:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Determine release tag
+      id: tag
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ -n "${{ github.event.inputs.rollback_to_tag }}" ]; then
+            echo "tag=${{ github.event.inputs.rollback_to_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Download signed release tarball
+      run: |
+        TAG="${{ steps.tag.outputs.tag }}"
+        echo "Downloading release tarball for tag: $TAG"
+        curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/octet-stream" \
+          -o "atlas-${TAG}.tar.gz" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/assets/$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | jq -r '.assets[] | select(.name | contains("tar.gz")) | .id')"
+        
+    - name: Extract release tarball
+      run: |
+        TAG="${{ steps.tag.outputs.tag }}"
+        echo "Extracting release tarball: atlas-${TAG}.tar.gz"
+        tar -xzf "atlas-${TAG}.tar.gz"
+        ls -la
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9.0.0
+        
+    - name: Install dependencies
+      run: |
+        cd atlas-*
+        pnpm install --frozen-lockfile
+        
+    - name: Build gateway service
+      run: |
+        cd atlas-*
+        cd services/gateway
+        pnpm build
+        
+    - name: Build witness service
+      run: |
+        cd atlas-*
+        cd services/witness-node
+        pnpm build
+        
+    - name: Install Fly.io CLI
+      run: |
+        curl -L https://fly.io/install.sh | sh
+        echo "$HOME/.fly/bin" >> $GITHUB_PATH
+        
+    - name: Login to Fly.io
+      run: |
+        echo "${{ secrets.FLY_API_TOKEN }}" | flyctl auth login --stdin
+        
+    - name: Deploy gateway to Fly.io
+      run: |
+        cd atlas-*/services/gateway
+        
+        # Create fly.toml if it doesn't exist
+        cat > fly.toml << EOF
+        app = "atlas-gateway"
+        primary_region = "sjc"
+        
+        [build]
+        
+        [env]
+        NODE_ENV = "production"
+        PORT = "8080"
+        
+        [[services]]
+        internal_port = 8080
+        protocol = "tcp"
+        
+        [[services.ports]]
+        port = 80
+        handlers = ["http"]
+        
+        [[services.ports]]
+        port = 443
+        handlers = ["tls", "http"]
+        
+        [services.concurrency]
+        type = "connections"
+        hard_limit = 1000
+        soft_limit = 1000
+        
+        [[services.tcp_checks]]
+        interval = "15s"
+        timeout = "2s"
+        grace_period = "1s"
+        EOF
+        
+        # Deploy the gateway
+        flyctl deploy --remote-only --no-cache
+        
+    - name: Deploy witness to Fly.io
+      run: |
+        cd atlas-*/services/witness-node
+        
+        # Create fly.toml if it doesn't exist
+        cat > fly.toml << EOF
+        app = "atlas-witness"
+        primary_region = "sjc"
+        
+        [build]
+        
+        [env]
+        NODE_ENV = "production"
+        PORT = "8080"
+        
+        [[services]]
+        internal_port = 8080
+        protocol = "tcp"
+        
+        [[services.ports]]
+        port = 80
+        handlers = ["http"]
+        
+        [[services.ports]]
+        port = 443
+        handlers = ["tls", "http"]
+        
+        [services.concurrency]
+        type = "connections"
+        hard_limit = 1000
+        soft_limit = 1000
+        
+        [[services.tcp_checks]]
+        interval = "15s"
+        timeout = "2s"
+        grace_period = "1s"
+        EOF
+        
+        # Deploy the witness
+        flyctl deploy --remote-only --no-cache
+        
+    - name: Scale services
+      run: |
+        # Scale gateway to minimum 1 instance
+        flyctl scale count 1 --app atlas-gateway
+        
+        # Scale witness to minimum 1 instance
+        flyctl scale count 1 --app atlas-witness
+        
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for services to be ready..."
+        sleep 30
+        
+        # Check gateway health
+        for i in {1..10}; do
+          if curl -f https://atlas-gateway.fly.dev/health; then
+            echo "✅ Gateway is healthy"
+            break
+          else
+            echo "⏳ Waiting for gateway... ($i/10)"
+            sleep 10
+          fi
+        done
+        
+        # Check witness health
+        for i in {1..10}; do
+          if curl -f https://atlas-witness.fly.dev/health; then
+            echo "✅ Witness is healthy"
+            break
+          else
+            echo "⏳ Waiting for witness... ($i/10)"
+            sleep 10
+          fi
+        done
+        
+    - name: Verify health endpoints
+      run: |
+        echo "Verifying health endpoints..."
+        
+        # Verify gateway health
+        GATEWAY_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" https://atlas-gateway.fly.dev/health)
+        if [ "$GATEWAY_HEALTH" = "200" ]; then
+          echo "✅ Gateway health: $GATEWAY_HEALTH"
+        else
+          echo "❌ Gateway health: $GATEWAY_HEALTH"
+          exit 1
+        fi
+        
+        # Verify witness health
+        WITNESS_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" https://atlas-witness.fly.dev/health)
+        if [ "$WITNESS_HEALTH" = "200" ]; then
+          echo "✅ Witness health: $WITNESS_HEALTH"
+        else
+          echo "❌ Witness health: $WITNESS_HEALTH"
+          exit 1
+        fi
+        
+    - name: Verify metrics endpoints
+      run: |
+        echo "Verifying metrics endpoints..."
+        
+        # Verify gateway metrics
+        GATEWAY_METRICS=$(curl -s -o /dev/null -w "%{http_code}" https://atlas-gateway.fly.dev/metrics)
+        if [ "$GATEWAY_METRICS" = "200" ]; then
+          echo "✅ Gateway metrics: $GATEWAY_METRICS"
+        else
+          echo "❌ Gateway metrics: $GATEWAY_METRICS"
+          exit 1
+        fi
+        
+        # Verify witness metrics
+        WITNESS_METRICS=$(curl -s -o /dev/null -w "%{http_code}" https://atlas-witness.fly.dev/metrics)
+        if [ "$WITNESS_METRICS" = "200" ]; then
+          echo "✅ Witness metrics: $WITNESS_METRICS"
+        else
+          echo "❌ Witness metrics: $WITNESS_METRICS"
+          exit 1
+        fi
+        
+    - name: Generate LIVE_URLS.json
+      run: |
+        cat > LIVE_URLS.json << EOF
+        {
+          "status": "LIVE",
+          "tag": "${{ steps.tag.outputs.tag }}",
+          "backends": {
+            "gateway": "https://atlas-gateway.fly.dev",
+            "witness": "https://atlas-witness.fly.dev"
+          },
+          "deployment_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "workflow_run_id": "${{ github.run_id }}"
+        }
+        EOF
+        
+        echo "Generated LIVE_URLS.json:"
+        cat LIVE_URLS.json
+        
+    - name: Upload LIVE_URLS.json
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-live-urls
+        path: LIVE_URLS.json
