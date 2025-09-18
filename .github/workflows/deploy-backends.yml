@@ -96,19 +96,24 @@ jobs:
         
     - name: Install dependencies
       run: |
-        cd atlas-*
+        # Find the extracted directory
+        EXTRACTED_DIR=$(find . -maxdepth 1 -name "atlas-*" -type d | head -1)
+        echo "Extracted directory: $EXTRACTED_DIR"
+        cd "$EXTRACTED_DIR"
         pnpm install --frozen-lockfile
         
     - name: Build gateway service
       run: |
-        cd atlas-*
-        cd services/gateway
+        # Find the extracted directory
+        EXTRACTED_DIR=$(find . -maxdepth 1 -name "atlas-*" -type d | head -1)
+        cd "$EXTRACTED_DIR/services/gateway"
         pnpm build
         
     - name: Build witness service
       run: |
-        cd atlas-*
-        cd services/witness-node
+        # Find the extracted directory
+        EXTRACTED_DIR=$(find . -maxdepth 1 -name "atlas-*" -type d | head -1)
+        cd "$EXTRACTED_DIR/services/witness-node"
         pnpm build
         
     - name: Install Fly.io CLI
@@ -122,7 +127,9 @@ jobs:
         
     - name: Deploy gateway to Fly.io
       run: |
-        cd atlas-*/services/gateway
+        # Find the extracted directory
+        EXTRACTED_DIR=$(find . -maxdepth 1 -name "atlas-*" -type d | head -1)
+        cd "$EXTRACTED_DIR/services/gateway"
         
         # Create fly.toml if it doesn't exist
         cat > fly.toml << EOF
@@ -163,7 +170,9 @@ jobs:
         
     - name: Deploy witness to Fly.io
       run: |
-        cd atlas-*/services/witness-node
+        # Find the extracted directory
+        EXTRACTED_DIR=$(find . -maxdepth 1 -name "atlas-*" -type d | head -1)
+        cd "$EXTRACTED_DIR/services/witness-node"
         
         # Create fly.toml if it doesn't exist
         cat > fly.toml << EOF
