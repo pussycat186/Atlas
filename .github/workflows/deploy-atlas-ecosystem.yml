@@ -258,7 +258,7 @@ jobs:
         # Deploy proof-messenger
         echo "Deploying proof-messenger..."
         cd apps/proof-messenger
-        vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes
         vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
         PROOF_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes)
         echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
@@ -267,7 +267,7 @@ jobs:
         # Deploy admin-insights
         echo "Deploying admin-insights..."
         cd apps/admin-insights
-        vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes
         vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
         INSIGHTS_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes)
         echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
@@ -277,7 +277,7 @@ jobs:
         if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
           echo "Deploying dev-portal..."
           cd apps/dev-portal
-          vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+          vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes
           vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
           DEVPORTAL_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes)
           echo "dev_portal_url=$DEVPORTAL_URL" >> $GITHUB_OUTPUT
