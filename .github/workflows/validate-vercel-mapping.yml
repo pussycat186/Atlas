@@ -65,6 +65,7 @@ jobs:
         else
           echo "proof_messenger_valid=false" >> $GITHUB_OUTPUT
           echo "✗ VERCEL_PROJECT_ID_PROOF not configured"
+          echo "proof_messenger_root=not_configured" >> $GITHUB_OUTPUT
         fi
         
         # Check admin-insights project
@@ -82,6 +83,7 @@ jobs:
         else
           echo "admin_insights_valid=false" >> $GITHUB_OUTPUT
           echo "✗ VERCEL_PROJECT_ID_INSIGHTS not configured"
+          echo "admin_insights_root=not_configured" >> $GITHUB_OUTPUT
         fi
         
         # Check dev-portal project (optional)
@@ -99,6 +101,7 @@ jobs:
         else
           echo "dev_portal_valid=false" >> $GITHUB_OUTPUT
           echo "ℹ VERCEL_PROJECT_ID_DEVPORTAL not configured (optional)"
+          echo "dev_portal_root=not_configured" >> $GITHUB_OUTPUT
         fi
         
         # Check if any required projects are misconfigured
