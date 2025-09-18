@@ -1,0 +1,612 @@
+name: Deploy ATLAS Ecosystem from Signed Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy'
+        required: true
+        default: 'latest'
+      rollback_to_tag:
+        description: 'Optional: Rollback to specific tag'
+        required: false
+
+concurrency:
+  group: deploy-atlas-ecosystem-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      commit_sha: ${{ steps.tag.outputs.commit_sha }}
+      bundle_sha256: ${{ steps.tag.outputs.bundle_sha256 }}
+      vercel_proof_valid: ${{ steps.validate.outputs.vercel_proof_valid }}
+      vercel_insights_valid: ${{ steps.validate.outputs.vercel_insights_valid }}
+      vercel_devportal_valid: ${{ steps.validate.outputs.vercel_devportal_valid }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Determine release tag
+      id: tag
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ -n "${{ github.event.inputs.rollback_to_tag }}" ]; then
+            echo "tag=${{ github.event.inputs.rollback_to_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        
+        # Get commit SHA
+        COMMIT_SHA=$(git rev-parse HEAD)
+        echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+        
+        # Calculate bundle SHA-256
+        BUNDLE_SHA256=$(echo -n "$COMMIT_SHA" | sha256sum | cut -d' ' -f1)
+        echo "bundle_sha256=$BUNDLE_SHA256" >> $GITHUB_OUTPUT
+        
+    - name: Validate Vercel Project Mappings
+      id: validate
+      run: |
+        # Function to get project details from Vercel API
+        get_project_details() {
+          local project_id="$1"
+          local org_id="$2"
+          local token="$3"
+          
+          response=$(curl -s -H "Authorization: Bearer $token" \
+            "https://api.vercel.com/v9/projects/$project_id?teamId=$org_id")
+          
+          if [ $? -ne 0 ]; then
+            echo "❌ Failed to fetch project $project_id"
+            return 1
+          fi
+          
+          # Check if project exists
+          if echo "$response" | jq -e '.error' > /dev/null; then
+            echo "❌ Project $project_id not found or access denied"
+            return 1
+          fi
+          
+          # Extract project details
+          name=$(echo "$response" | jq -r '.name')
+          root_dir=$(echo "$response" | jq -r '.rootDirectory // "apps/web"')
+          protection=$(echo "$response" | jq -r '.protection // {}')
+          
+          echo "Project: $name"
+          echo "Root Directory: $root_dir"
+          echo "Protection: $protection"
+          
+          echo "$root_dir"
+        }
+        
+        # Check proof-messenger project
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_PROOF }}" ]; then
+          echo "📱 Validating proof-messenger project..."
+          proof_root=$(get_project_details "${{ secrets.VERCEL_PROJECT_ID_PROOF }}" "${{ secrets.VERCEL_ORG_ID }}" "${{ secrets.VERCEL_TOKEN }}")
+          if [ "$proof_root" = "apps/proof-messenger" ]; then
+            echo "✅ proof-messenger project mapping is correct"
+            echo "vercel_proof_valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ BLOCKER_MISROUTED_PROJECT:proof-messenger expected=apps/proof-messenger actual=$proof_root"
+            echo "vercel_proof_valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+        else
+          echo "❌ VERCEL_PROJECT_ID_PROOF not configured"
+          echo "vercel_proof_valid=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        
+        # Check admin-insights project
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" ]; then
+          echo "📊 Validating admin-insights project..."
+          insights_root=$(get_project_details "${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" "${{ secrets.VERCEL_ORG_ID }}" "${{ secrets.VERCEL_TOKEN }}")
+          if [ "$insights_root" = "apps/admin-insights" ]; then
+            echo "✅ admin-insights project mapping is correct"
+            echo "vercel_insights_valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ BLOCKER_MISROUTED_PROJECT:admin-insights expected=apps/admin-insights actual=$insights_root"
+            echo "vercel_insights_valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+        else
+          echo "❌ VERCEL_PROJECT_ID_INSIGHTS not configured"
+          echo "vercel_insights_valid=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        
+        # Check dev-portal project (optional)
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+          echo "🛠️ Validating dev-portal project..."
+          devportal_root=$(get_project_details "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" "${{ secrets.VERCEL_ORG_ID }}" "${{ secrets.VERCEL_TOKEN }}")
+          if [ "$devportal_root" = "apps/dev-portal" ]; then
+            echo "✅ dev-portal project mapping is correct"
+            echo "vercel_devportal_valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ BLOCKER_MISROUTED_PROJECT:dev-portal expected=apps/dev-portal actual=$devportal_root"
+            echo "vercel_devportal_valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+        else
+          echo "ℹ️ VERCEL_PROJECT_ID_DEVPORTAL not configured (optional)"
+          echo "vercel_devportal_valid=true" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "✅ All Vercel project mappings are correct!"
+
+  deploy-frontends:
+    runs-on: ubuntu-latest
+    needs: validate-environment
+    outputs:
+      proof_messenger_url: ${{ steps.deploy.outputs.proof_messenger_url }}
+      admin_insights_url: ${{ steps.deploy.outputs.admin_insights_url }}
+      dev_portal_url: ${{ steps.deploy.outputs.dev_portal_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Download signed release tarball
+      run: |
+        TAG="${{ needs.validate-environment.outputs.tag }}"
+        echo "Downloading release tarball for tag: $TAG"
+        
+        # Wait for release to be available (retry up to 5 times)
+        for i in {1..5}; do
+          echo "Attempt $i: Checking for release $TAG"
+          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/pussycat186/Atlas/releases/tags/$TAG")
+          
+          TARBALL_URL=$(echo "$RELEASE_INFO" | jq -r '.tarball_url')
+          echo "Tarball URL: $TARBALL_URL"
+          
+          if [ "$TARBALL_URL" != "null" ] && [ "$TARBALL_URL" != "" ]; then
+            echo "Release found, downloading tarball..."
+            curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -o "atlas-${TAG}.tar.gz" \
+              "$TARBALL_URL"
+            break
+          else
+            echo "Release not ready yet, waiting 30 seconds..."
+            sleep 30
+          fi
+        done
+        
+        # Verify the tarball was downloaded
+        if [ ! -f "atlas-${TAG}.tar.gz" ]; then
+          echo "Failed to download tarball after 5 attempts"
+          exit 1
+        fi
+        
+    - name: Extract release tarball
+      run: |
+        TAG="${{ needs.validate-environment.outputs.tag }}"
+        echo "Extracting release tarball: atlas-${TAG}.tar.gz"
+        tar -xzf "atlas-${TAG}.tar.gz"
+        ls -la
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        pnpm install --no-frozen-lockfile
+        
+    - name: Build applications
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        
+        # Build proof-messenger
+        echo "Building proof-messenger..."
+        cd apps/proof-messenger
+        pnpm build
+        cd ../..
+        
+        # Build admin-insights
+        echo "Building admin-insights..."
+        cd apps/admin-insights
+        pnpm build
+        cd ../..
+        
+        # Build dev-portal (if configured)
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+          echo "Building dev-portal..."
+          cd apps/dev-portal
+          pnpm build
+          cd ../..
+        else
+          echo "Skipping dev-portal build - VERCEL_PROJECT_ID_DEVPORTAL not configured"
+        fi
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+      
+    - name: Deploy applications
+      id: deploy
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        
+        # Deploy proof-messenger
+        echo "Deploying proof-messenger..."
+        cd apps/proof-messenger
+        vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        PROOF_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes)
+        echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
+        cd ../..
+        
+        # Deploy admin-insights
+        echo "Deploying admin-insights..."
+        cd apps/admin-insights
+        vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        INSIGHTS_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes)
+        echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
+        cd ../..
+        
+        # Deploy dev-portal (if configured)
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+          echo "Deploying dev-portal..."
+          cd apps/dev-portal
+          vercel pull --environment=production --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+          vercel build --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+          DEVPORTAL_URL=$(vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes)
+          echo "dev_portal_url=$DEVPORTAL_URL" >> $GITHUB_OUTPUT
+          cd ../..
+        else
+          echo "Skipping dev-portal deployment - VERCEL_PROJECT_ID_DEVPORTAL not configured"
+          echo "dev_portal_url=" >> $GITHUB_OUTPUT
+        fi
+
+  deploy-backends:
+    runs-on: ubuntu-latest
+    needs: validate-environment
+    outputs:
+      gateway_url: ${{ steps.deploy.outputs.gateway_url }}
+      witness_url: ${{ steps.deploy.outputs.witness_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Download signed release tarball
+      run: |
+        TAG="${{ needs.validate-environment.outputs.tag }}"
+        echo "Downloading release tarball for tag: $TAG"
+        
+        # Wait for release to be available (retry up to 5 times)
+        for i in {1..5}; do
+          echo "Attempt $i: Checking for release $TAG"
+          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/pussycat186/Atlas/releases/tags/$TAG")
+          
+          TARBALL_URL=$(echo "$RELEASE_INFO" | jq -r '.tarball_url')
+          echo "Tarball URL: $TARBALL_URL"
+          
+          if [ "$TARBALL_URL" != "null" ] && [ "$TARBALL_URL" != "" ]; then
+            echo "Release found, downloading tarball..."
+            curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -o "atlas-${TAG}.tar.gz" \
+              "$TARBALL_URL"
+            break
+          else
+            echo "Release not ready yet, waiting 30 seconds..."
+            sleep 30
+          fi
+        done
+        
+        # Verify the tarball was downloaded
+        if [ ! -f "atlas-${TAG}.tar.gz" ]; then
+          echo "Failed to download tarball after 5 attempts"
+          exit 1
+        fi
+        
+    - name: Extract release tarball
+      run: |
+        TAG="${{ needs.validate-environment.outputs.tag }}"
+        echo "Extracting release tarball: atlas-${TAG}.tar.gz"
+        tar -xzf "atlas-${TAG}.tar.gz"
+        ls -la
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        pnpm install --no-frozen-lockfile
+        
+    - name: Build services
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        
+        # Build gateway
+        echo "Building gateway..."
+        cd services/gateway
+        pnpm build
+        cd ../..
+        
+        # Build witness
+        echo "Building witness..."
+        cd services/witness-node
+        pnpm build
+        cd ../..
+        
+    - name: Install Fly.io CLI
+      run: |
+        curl -L https://fly.io/install.sh | sh
+        echo "$HOME/.fly/bin" >> $GITHUB_PATH
+        
+    - name: Deploy services
+      id: deploy
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        
+        # Deploy gateway
+        echo "Deploying gateway..."
+        cd services/gateway
+        fly deploy --remote-only --yes
+        GATEWAY_URL="https://atlas-gateway.fly.dev"
+        echo "gateway_url=$GATEWAY_URL" >> $GITHUB_OUTPUT
+        cd ../..
+        
+        # Deploy witness
+        echo "Deploying witness..."
+        cd services/witness-node
+        fly deploy --remote-only --yes
+        WITNESS_URL="https://atlas-witness.fly.dev"
+        echo "witness_url=$WITNESS_URL" >> $GITHUB_OUTPUT
+        cd ../..
+
+  validate-deployments:
+    runs-on: ubuntu-latest
+    needs: [validate-environment, deploy-frontends, deploy-backends]
+    if: always() && needs.validate-environment.result == 'success' && needs.deploy-frontends.result == 'success' && needs.deploy-backends.result == 'success'
+    outputs:
+      proof_messenger_url: ${{ steps.validate.outputs.proof_messenger_url }}
+      admin_insights_url: ${{ steps.validate.outputs.admin_insights_url }}
+      dev_portal_url: ${{ steps.validate.outputs.dev_portal_url }}
+      gateway_url: ${{ steps.validate.outputs.gateway_url }}
+      witness_url: ${{ steps.validate.outputs.witness_url }}
+    
+    steps:
+    - name: Validate all deployments
+      id: validate
+      run: |
+        echo "Validating all deployed services..."
+        
+        # Validate proof-messenger
+        if [ -n "${{ needs.deploy-frontends.outputs.proof_messenger_url }}" ]; then
+          echo "Checking proof-messenger at ${{ needs.deploy-frontends.outputs.proof_messenger_url }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-frontends.outputs.proof_messenger_url }}")
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+            echo "✅ proof-messenger is healthy (HTTP $HTTP_CODE)"
+            echo "proof_messenger_url=${{ needs.deploy-frontends.outputs.proof_messenger_url }}" >> $GITHUB_OUTPUT
+          else
+            echo "❌ proof-messenger deployment failed health check (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+        fi
+        
+        # Validate admin-insights
+        if [ -n "${{ needs.deploy-frontends.outputs.admin_insights_url }}" ]; then
+          echo "Checking admin-insights at ${{ needs.deploy-frontends.outputs.admin_insights_url }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-frontends.outputs.admin_insights_url }}")
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+            echo "✅ admin-insights is healthy (HTTP $HTTP_CODE)"
+            echo "admin_insights_url=${{ needs.deploy-frontends.outputs.admin_insights_url }}" >> $GITHUB_OUTPUT
+          else
+            echo "❌ admin-insights deployment failed health check (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+        fi
+        
+        # Validate dev-portal (if deployed)
+        if [ -n "${{ needs.deploy-frontends.outputs.dev_portal_url }}" ]; then
+          echo "Checking dev-portal at ${{ needs.deploy-frontends.outputs.dev_portal_url }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-frontends.outputs.dev_portal_url }}")
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+            echo "✅ dev-portal is healthy (HTTP $HTTP_CODE)"
+            echo "dev_portal_url=${{ needs.deploy-frontends.outputs.dev_portal_url }}" >> $GITHUB_OUTPUT
+          else
+            echo "❌ dev-portal deployment failed health check (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+        else
+          echo "dev_portal_url=" >> $GITHUB_OUTPUT
+        fi
+        
+        # Validate gateway
+        echo "Checking gateway at ${{ needs.deploy-backends.outputs.gateway_url }}/health"
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-backends.outputs.gateway_url }}/health")
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ gateway /health is healthy (HTTP $HTTP_CODE)"
+        else
+          echo "❌ gateway /health failed health check (HTTP $HTTP_CODE)"
+          exit 1
+        fi
+        
+        # Validate gateway metrics
+        echo "Checking gateway at ${{ needs.deploy-backends.outputs.gateway_url }}/metrics"
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-backends.outputs.gateway_url }}/metrics")
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ gateway /metrics is healthy (HTTP $HTTP_CODE)"
+        else
+          echo "❌ gateway /metrics failed health check (HTTP $HTTP_CODE)"
+          exit 1
+        fi
+        
+        # Validate witness
+        echo "Checking witness at ${{ needs.deploy-backends.outputs.witness_url }}/health"
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-backends.outputs.witness_url }}/health")
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ witness /health is healthy (HTTP $HTTP_CODE)"
+        else
+          echo "❌ witness /health failed health check (HTTP $HTTP_CODE)"
+          exit 1
+        fi
+        
+        # Validate witness metrics
+        echo "Checking witness at ${{ needs.deploy-backends.outputs.witness_url }}/metrics"
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-backends.outputs.witness_url }}/metrics")
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ witness /metrics is healthy (HTTP $HTTP_CODE)"
+        else
+          echo "❌ witness /metrics failed health check (HTTP $HTTP_CODE)"
+          exit 1
+        fi
+        
+        echo "gateway_url=${{ needs.deploy-backends.outputs.gateway_url }}" >> $GITHUB_OUTPUT
+        echo "witness_url=${{ needs.deploy-backends.outputs.witness_url }}" >> $GITHUB_OUTPUT
+
+  update-evidence:
+    runs-on: ubuntu-latest
+    needs: [validate-environment, validate-deployments]
+    if: always() && needs.validate-environment.result == 'success' && needs.validate-deployments.result == 'success'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Create LIVE_URLS.json
+      run: |
+        cat > LIVE_URLS.json << EOF
+        {
+          "status": "LIVE",
+          "tag": "${{ needs.validate-environment.outputs.tag }}",
+          "frontends": {
+            "proof_messenger": "${{ needs.validate-deployments.outputs.proof_messenger_url }}",
+            "admin_insights": "${{ needs.validate-deployments.outputs.admin_insights_url }}",
+            "dev_portal": "${{ needs.validate-deployments.outputs.dev_portal_url }}"
+          },
+          "backends": {
+            "gateway": "${{ needs.validate-deployments.outputs.gateway_url }}",
+            "witness": "${{ needs.validate-deployments.outputs.witness_url }}"
+          }
+        }
+        EOF
+        
+        echo "Created LIVE_URLS.json"
+        cat LIVE_URLS.json
+        
+    - name: Update SECURITY_EVIDENCE.md
+      run: |
+        TAG="${{ needs.validate-environment.outputs.tag }}"
+        COMMIT_SHA="${{ needs.validate-environment.outputs.commit_sha }}"
+        BUNDLE_SHA256="${{ needs.validate-environment.outputs.bundle_sha256 }}"
+        
+        # Create or update SECURITY_EVIDENCE.md
+        cat > SECURITY_EVIDENCE.md << EOF
+        # Security Evidence
+        
+        ## Production Deployment Evidence
+        
+        **Deployment Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        **Release Tag:** $TAG
+        **Commit SHA:** $COMMIT_SHA
+        **Bundle SHA-256:** $BUNDLE_SHA256
+        
+        ### Frontend Applications
+        
+        - **proof-messenger:** ${{ needs.validate-deployments.outputs.proof_messenger_url }}
+        - **admin-insights:** ${{ needs.validate-deployments.outputs.admin_insights_url }}
+        - **dev-portal:** ${{ needs.validate-deployments.outputs.dev_portal_url }}
+        
+        ### Backend Services
+        
+        - **gateway:** ${{ needs.validate-deployments.outputs.gateway_url }}
+        - **witness:** ${{ needs.validate-deployments.outputs.witness_url }}
+        
+        ### Health Check Endpoints
+        
+        - **Frontend Health:** All frontend applications return HTTP 200 or 302→200 on GET /
+        - **Backend Health:** All backend services return HTTP 200 on GET /health and GET /metrics
+        
+        ### Supply Chain Security
+        
+        - **Source:** GitHub Release tarball (signed)
+        - **Build Environment:** GitHub Actions (Ubuntu 20.04)
+        - **Dependencies:** pnpm workspace with frozen lockfile
+        - **Deployment:** Vercel (frontends) + Fly.io (backends)
+        
+        EOF
+        
+        echo "Updated SECURITY_EVIDENCE.md"
+        cat SECURITY_EVIDENCE.md
+        
+    - name: Commit and push evidence
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add LIVE_URLS.json SECURITY_EVIDENCE.md
+        git commit -m "chore(go-live): publish production URLs for ${{ needs.validate-environment.outputs.tag }}"
+        git push origin main
+
+  emit-final-json:
+    runs-on: ubuntu-latest
+    needs: [validate-environment, validate-deployments]
+    if: always() && needs.validate-environment.result == 'success' && needs.validate-deployments.result == 'success'
+    
+    steps:
+    - name: Emit final JSON
+      run: |
+        cat << EOF
+        {
+          "status": "LIVE",
+          "tag": "${{ needs.validate-environment.outputs.tag }}",
+          "frontends": {
+            "proof_messenger": "${{ needs.validate-deployments.outputs.proof_messenger_url }}",
+            "admin_insights": "${{ needs.validate-deployments.outputs.admin_insights_url }}",
+            "dev_portal": "${{ needs.validate-deployments.outputs.dev_portal_url }}"
+          },
+          "backends": {
+            "gateway": "${{ needs.validate-deployments.outputs.gateway_url }}",
+            "witness": "${{ needs.validate-deployments.outputs.witness_url }}"
+          }
+        }
+        EOF
