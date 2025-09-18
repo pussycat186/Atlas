@@ -143,6 +143,8 @@ jobs:
         echo "Deploying proof-messenger..."
         cd apps/proof-messenger
         vercel pull --yes --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        # Ensure dependencies are installed
+        pnpm install --no-frozen-lockfile
         vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod
         PROOF_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
         echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
@@ -152,6 +154,8 @@ jobs:
         echo "Deploying admin-insights..."
         cd apps/admin-insights
         vercel pull --yes --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        # Ensure dependencies are installed
+        pnpm install --no-frozen-lockfile
         vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod
         INSIGHTS_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
         echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
