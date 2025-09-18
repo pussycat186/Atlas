@@ -99,7 +99,7 @@ jobs:
         # GitHub tarballs extract repository contents directly to current directory
         EXTRACTED_DIR="."
         cd "$EXTRACTED_DIR"
-        pnpm install --frozen-lockfile
+        pnpm install --no-frozen-lockfile
         
     - name: Build applications
       run: |
