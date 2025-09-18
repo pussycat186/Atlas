@@ -1,0 +1,227 @@
+name: Deploy Frontends (Fixed)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy'
+        required: true
+        default: 'latest'
+      rollback_to_tag:
+        description: 'Optional: Rollback to specific tag'
+        required: false
+
+concurrency:
+  group: deploy-frontends-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-frontends:
+    runs-on: ubuntu-latest
+    outputs:
+      proof_messenger_url: ${{ steps.deploy.outputs.proof_messenger_url }}
+      admin_insights_url: ${{ steps.deploy.outputs.admin_insights_url }}
+      dev_portal_url: ${{ steps.deploy.outputs.dev_portal_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Determine release tag
+      id: tag
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ -n "${{ github.event.inputs.rollback_to_tag }}" ]; then
+            echo "tag=${{ github.event.inputs.rollback_to_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Download signed release tarball
+      run: |
+        TAG="${{ steps.tag.outputs.tag }}"
+        echo "Downloading release tarball for tag: $TAG"
+        
+        # Wait for release to be available (retry up to 5 times)
+        for i in {1..5}; do
+          echo "Attempt $i: Checking for release $TAG"
+          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/pussycat186/Atlas/releases/tags/$TAG")
+          
+          TARBALL_URL=$(echo "$RELEASE_INFO" | jq -r '.tarball_url')
+          echo "Tarball URL: $TARBALL_URL"
+          
+          if [ "$TARBALL_URL" != "null" ] && [ "$TARBALL_URL" != "" ]; then
+            echo "Release found, downloading tarball..."
+            curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -o "atlas-${TAG}.tar.gz" \
+              "$TARBALL_URL"
+            break
+          else
+            echo "Release not ready yet, waiting 30 seconds..."
+            sleep 30
+          fi
+        done
+        
+        # Verify the tarball was downloaded
+        if [ ! -f "atlas-${TAG}.tar.gz" ]; then
+          echo "Failed to download tarball after 5 attempts"
+          exit 1
+        fi
+        
+    - name: Extract release tarball
+      run: |
+        TAG="${{ steps.tag.outputs.tag }}"
+        echo "Extracting release tarball: atlas-${TAG}.tar.gz"
+        tar -xzf "atlas-${TAG}.tar.gz"
+        ls -la
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        pnpm install --frozen-lockfile
+        
+    - name: Build applications
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        
+        # Build proof-messenger
+        echo "Building proof-messenger..."
+        cd apps/proof-messenger
+        pnpm build
+        cd ../..
+        
+        # Build admin-insights
+        echo "Building admin-insights..."
+        cd apps/admin-insights
+        pnpm build
+        cd ../..
+        
+        # Build dev-portal (if configured)
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+          echo "Building dev-portal..."
+          cd apps/dev-portal
+          pnpm build
+          cd ../..
+        else
+          echo "Skipping dev-portal build - VERCEL_PROJECT_ID_DEVPORTAL not configured"
+        fi
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+      
+    - name: Deploy applications
+      id: deploy
+      run: |
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
+        cd "$EXTRACTED_DIR"
+        
+        # Deploy proof-messenger
+        echo "Deploying proof-messenger..."
+        cd apps/proof-messenger
+        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        PROOF_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
+        echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
+        cd ../..
+        
+        # Deploy admin-insights
+        echo "Deploying admin-insights..."
+        cd apps/admin-insights
+        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        INSIGHTS_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
+        echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
+        cd ../..
+        
+        # Deploy dev-portal (if configured)
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+          echo "Deploying dev-portal..."
+          cd apps/dev-portal
+          vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+          DEVPORTAL_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
+          echo "dev_portal_url=$DEVPORTAL_URL" >> $GITHUB_OUTPUT
+          cd ../..
+        else
+          echo "Skipping dev-portal deployment - VERCEL_PROJECT_ID_DEVPORTAL not configured"
+          echo "dev_portal_url=" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Verify deployments
+      run: |
+        echo "Verifying deployments..."
+        
+        # Verify proof-messenger
+        if [ -n "${{ steps.deploy.outputs.proof_messenger_url }}" ]; then
+          echo "Checking proof-messenger at ${{ steps.deploy.outputs.proof_messenger_url }}"
+          curl -f -s "${{ steps.deploy.outputs.proof_messenger_url }}" > /dev/null || {
+            echo "❌ proof-messenger deployment failed health check"
+            exit 1
+          }
+          echo "✅ proof-messenger is healthy"
+        fi
+        
+        # Verify admin-insights
+        if [ -n "${{ steps.deploy.outputs.admin_insights_url }}" ]; then
+          echo "Checking admin-insights at ${{ steps.deploy.outputs.admin_insights_url }}"
+          curl -f -s "${{ steps.deploy.outputs.admin_insights_url }}" > /dev/null || {
+            echo "❌ admin-insights deployment failed health check"
+            exit 1
+          }
+          echo "✅ admin-insights is healthy"
+        fi
+        
+        # Verify dev-portal (if deployed)
+        if [ -n "${{ steps.deploy.outputs.dev_portal_url }}" ]; then
+          echo "Checking dev-portal at ${{ steps.deploy.outputs.dev_portal_url }}"
+          curl -f -s "${{ steps.deploy.outputs.dev_portal_url }}" > /dev/null || {
+            echo "❌ dev-portal deployment failed health check"
+            exit 1
+          }
+          echo "✅ dev-portal is healthy"
+        fi
+        
+    - name: Generate LIVE_URLS.json
+      run: |
+        cat > LIVE_URLS.json << EOF
+        {
+          "status": "LIVE",
+          "tag": "${{ steps.tag.outputs.tag }}",
+          "frontends": {
+            "proof_messenger": "${{ steps.deploy.outputs.proof_messenger_url }}",
+            "admin_insights": "${{ steps.deploy.outputs.admin_insights_url }}",
+            "dev_portal": "${{ steps.deploy.outputs.dev_portal_url }}"
+          }
+        }
+        EOF
+        
+        echo "Generated LIVE_URLS.json:"
+        cat LIVE_URLS.json
+        
+    - name: Upload LIVE_URLS.json
+      uses: actions/upload-artifact@v4
+      with:
+        name: live-urls-frontends
+        path: LIVE_URLS.json
