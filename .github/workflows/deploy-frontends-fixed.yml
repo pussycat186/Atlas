@@ -143,7 +143,7 @@ jobs:
         echo "Deploying proof-messenger..."
         cd apps/proof-messenger
         vercel pull --yes --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
-        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod
         PROOF_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
         echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
         cd ../..
@@ -152,7 +152,7 @@ jobs:
         echo "Deploying admin-insights..."
         cd apps/admin-insights
         vercel pull --yes --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
-        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod
         INSIGHTS_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
         echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
         cd ../..
@@ -162,7 +162,7 @@ jobs:
           echo "Deploying dev-portal..."
           cd apps/dev-portal
           vercel pull --yes --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
-          vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+          vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod
           DEVPORTAL_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
           echo "dev_portal_url=$DEVPORTAL_URL" >> $GITHUB_OUTPUT
           cd ../..
