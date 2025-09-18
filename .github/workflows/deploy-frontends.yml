@@ -90,12 +90,15 @@ jobs:
         cd apps/admin-insights
         pnpm build
         
-    - name: Build dev-portal (if VERCEL_PROJECT_ID_DEVPORTAL exists)
-      if: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL != '' }}
+    - name: Build dev-portal
       run: |
-        cd atlas-*
-        cd apps/dev-portal
-        pnpm build
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+          cd atlas-*
+          cd apps/dev-portal
+          pnpm build
+        else
+          echo "Skipping dev-portal build - VERCEL_PROJECT_ID_DEVPORTAL not configured"
+        fi
         
     - name: Install Vercel CLI
       run: npm install -g vercel@latest
@@ -122,15 +125,18 @@ jobs:
       env:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
         
-    - name: Deploy dev-portal to Vercel (if configured)
-      if: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL != '' }}
+    - name: Deploy dev-portal to Vercel
       run: |
-        cd atlas-*/apps/dev-portal
-        vercel --token ${{ secrets.VERCEL_TOKEN }} \
-          --scope ${{ secrets.VERCEL_ORG_ID }} \
-          --prod \
-          --confirm \
-          --name atlas-dev-portal
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+          cd atlas-*/apps/dev-portal
+          vercel --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_ORG_ID }} \
+            --prod \
+            --confirm \
+            --name atlas-dev-portal
+        else
+          echo "Skipping dev-portal deployment - VERCEL_PROJECT_ID_DEVPORTAL not configured"
+        fi
       env:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
         
@@ -144,7 +150,7 @@ jobs:
         echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
         echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
         
-        if [ "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" != "" ]; then
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
           DEV_PORTAL_URL=$(vercel ls --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} atlas-dev-portal --json | jq -r '.[0].url' | sed 's/^/https:\/\//')
           echo "dev_portal_url=$DEV_PORTAL_URL" >> $GITHUB_OUTPUT
         else
