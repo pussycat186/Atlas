@@ -96,23 +96,23 @@ jobs:
         
     - name: Install dependencies
       run: |
-        # Find the extracted directory (GitHub tarballs extract to repo-name-commit format)
-        EXTRACTED_DIR=$(find . -maxdepth 1 -name "pussycat186-Atlas-*" -type d | head -1)
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
         echo "Extracted directory: $EXTRACTED_DIR"
         cd "$EXTRACTED_DIR"
         pnpm install --frozen-lockfile
         
     - name: Build gateway service
       run: |
-        # Find the extracted directory (GitHub tarballs extract to repo-name-commit format)
-        EXTRACTED_DIR=$(find . -maxdepth 1 -name "pussycat186-Atlas-*" -type d | head -1)
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
         cd "$EXTRACTED_DIR/services/gateway"
         pnpm build
         
     - name: Build witness service
       run: |
-        # Find the extracted directory (GitHub tarballs extract to repo-name-commit format)
-        EXTRACTED_DIR=$(find . -maxdepth 1 -name "pussycat186-Atlas-*" -type d | head -1)
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
         cd "$EXTRACTED_DIR/services/witness-node"
         pnpm build
         
@@ -127,8 +127,8 @@ jobs:
         
     - name: Deploy gateway to Fly.io
       run: |
-        # Find the extracted directory (GitHub tarballs extract to repo-name-commit format)
-        EXTRACTED_DIR=$(find . -maxdepth 1 -name "pussycat186-Atlas-*" -type d | head -1)
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
         cd "$EXTRACTED_DIR/services/gateway"
         
         # Create fly.toml if it doesn't exist
@@ -170,8 +170,8 @@ jobs:
         
     - name: Deploy witness to Fly.io
       run: |
-        # Find the extracted directory (GitHub tarballs extract to repo-name-commit format)
-        EXTRACTED_DIR=$(find . -maxdepth 1 -name "pussycat186-Atlas-*" -type d | head -1)
+        # GitHub tarballs extract repository contents directly to current directory
+        EXTRACTED_DIR="."
         cd "$EXTRACTED_DIR/services/witness-node"
         
         # Create fly.toml if it doesn't exist
