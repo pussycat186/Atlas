@@ -1,0 +1,113 @@
+name: Validate Vercel Project Mapping
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to validate'
+        required: true
+        default: 'latest'
+
+jobs:
+  validate-mapping:
+    runs-on: ubuntu-latest
+    outputs:
+      proof_messenger_valid: ${{ steps.validate.outputs.proof_messenger_valid }}
+      admin_insights_valid: ${{ steps.validate.outputs.admin_insights_valid }}
+      dev_portal_valid: ${{ steps.validate.outputs.dev_portal_valid }}
+      proof_messenger_root: ${{ steps.validate.outputs.proof_messenger_root }}
+      admin_insights_root: ${{ steps.validate.outputs.admin_insights_root }}
+      dev_portal_root: ${{ steps.validate.outputs.dev_portal_root }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Validate Vercel Project Mappings
+      id: validate
+      run: |
+        echo "Validating Vercel project mappings..."
+        
+        # Function to get project root directory from Vercel API
+        get_project_root() {
+          local project_id="$1"
+          local org_id="$2"
+          local token="$3"
+          
+          echo "Checking project $project_id..."
+          response=$(curl -s -H "Authorization: Bearer $token" \
+            "https://api.vercel.com/v9/projects/$project_id?teamId=$org_id")
+          
+          if [ $? -ne 0 ]; then
+            echo "Failed to fetch project $project_id"
+            return 1
+          fi
+          
+          root_dir=$(echo "$response" | jq -r '.rootDirectory // "apps/web"')
+          echo "Project $project_id root directory: $root_dir"
+          echo "$root_dir"
+        }
+        
+        # Check proof-messenger project
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_PROOF }}" ]; then
+          proof_root=$(get_project_root "${{ secrets.VERCEL_PROJECT_ID_PROOF }}" "${{ secrets.VERCEL_ORG_ID }}" "${{ secrets.VERCEL_TOKEN }}")
+          if [ "$proof_root" = "apps/proof-messenger" ]; then
+            echo "proof_messenger_valid=true" >> $GITHUB_OUTPUT
+            echo "✓ proof-messenger project mapping is correct"
+          else
+            echo "proof_messenger_valid=false" >> $GITHUB_OUTPUT
+            echo "✗ proof-messenger project mapping is incorrect: expected=apps/proof-messenger actual=$proof_root"
+            echo "BLOCKER_MISROUTED_PROJECT:proof-messenger expected=apps/proof-messenger actual=$proof_root" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "proof_messenger_root=$proof_root" >> $GITHUB_OUTPUT
+        else
+          echo "proof_messenger_valid=false" >> $GITHUB_OUTPUT
+          echo "✗ VERCEL_PROJECT_ID_PROOF not configured"
+        fi
+        
+        # Check admin-insights project
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" ]; then
+          insights_root=$(get_project_root "${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" "${{ secrets.VERCEL_ORG_ID }}" "${{ secrets.VERCEL_TOKEN }}")
+          if [ "$insights_root" = "apps/admin-insights" ]; then
+            echo "admin_insights_valid=true" >> $GITHUB_OUTPUT
+            echo "✓ admin-insights project mapping is correct"
+          else
+            echo "admin_insights_valid=false" >> $GITHUB_OUTPUT
+            echo "✗ admin-insights project mapping is incorrect: expected=apps/admin-insights actual=$insights_root"
+            echo "BLOCKER_MISROUTED_PROJECT:admin-insights expected=apps/admin-insights actual=$insights_root" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "admin_insights_root=$insights_root" >> $GITHUB_OUTPUT
+        else
+          echo "admin_insights_valid=false" >> $GITHUB_OUTPUT
+          echo "✗ VERCEL_PROJECT_ID_INSIGHTS not configured"
+        fi
+        
+        # Check dev-portal project (optional)
+        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
+          devportal_root=$(get_project_root "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" "${{ secrets.VERCEL_ORG_ID }}" "${{ secrets.VERCEL_TOKEN }}")
+          if [ "$devportal_root" = "apps/dev-portal" ]; then
+            echo "dev_portal_valid=true" >> $GITHUB_OUTPUT
+            echo "✓ dev-portal project mapping is correct"
+          else
+            echo "dev_portal_valid=false" >> $GITHUB_OUTPUT
+            echo "✗ dev-portal project mapping is incorrect: expected=apps/dev-portal actual=$devportal_root"
+            echo "BLOCKER_MISROUTED_PROJECT:dev-portal expected=apps/dev-portal actual=$devportal_root" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "dev_portal_root=$devportal_root" >> $GITHUB_OUTPUT
+        else
+          echo "dev_portal_valid=false" >> $GITHUB_OUTPUT
+          echo "ℹ VERCEL_PROJECT_ID_DEVPORTAL not configured (optional)"
+        fi
+        
+        # Check if any required projects are misconfigured
+        if [ "${{ steps.validate.outputs.proof_messenger_valid }}" = "false" ] || [ "${{ steps.validate.outputs.admin_insights_valid }}" = "false" ]; then
+          echo "❌ Required Vercel projects are misconfigured. Please fix the project root directories in Vercel dashboard."
+          exit 1
+        fi
+        
+        echo "✅ All required Vercel project mappings are correct!"
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
