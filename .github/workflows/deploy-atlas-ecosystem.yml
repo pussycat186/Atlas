@@ -79,16 +79,17 @@ jobs:
             return 1
           fi
           
-          # Extract project details
-          name=$(echo "$response" | jq -r '.name')
-          root_dir=$(echo "$response" | jq -r '.rootDirectory // "apps/web"')
-          protection=$(echo "$response" | jq -r '.protection // {}')
-          
-          echo "Project: $name"
-          echo "Root Directory: $root_dir"
-          echo "Protection: $protection"
-          
-          echo "$root_dir"
+        # Extract project details
+        name=$(echo "$response" | jq -r '.name')
+        root_dir=$(echo "$response" | jq -r '.rootDirectory // "apps/web"')
+        protection=$(echo "$response" | jq -r '.protection // {}')
+        
+        echo "Project: $name" >&2
+        echo "Root Directory: $root_dir" >&2
+        echo "Protection: $protection" >&2
+        
+        # Return only the root directory
+        echo "$root_dir"
         }
         
         # Check proof-messenger project
