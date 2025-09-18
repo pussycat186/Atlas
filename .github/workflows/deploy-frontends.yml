@@ -145,10 +145,11 @@ jobs:
         vercel --token ${{ secrets.VERCEL_TOKEN }} \
           --scope ${{ secrets.VERCEL_ORG_ID }} \
           --prod \
-          --confirm \
+          --yes \
           --name atlas-proof-messenger
       env:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         
     - name: Deploy admin-insights to Vercel
       run: |
@@ -158,27 +159,29 @@ jobs:
         vercel --token ${{ secrets.VERCEL_TOKEN }} \
           --scope ${{ secrets.VERCEL_ORG_ID }} \
           --prod \
-          --confirm \
+          --yes \
           --name atlas-admin-insights
       env:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         
     - name: Deploy dev-portal to Vercel
       run: |
         if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
-          # Find the extracted directory
-          EXTRACTED_DIR=$(find . -maxdepth 1 -name "atlas-*" -type d | head -1)
+          # GitHub tarballs extract repository contents directly to current directory
+          EXTRACTED_DIR="."
           cd "$EXTRACTED_DIR/apps/dev-portal"
           vercel --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_ORG_ID }} \
             --prod \
-            --confirm \
+            --yes \
             --name atlas-dev-portal
         else
           echo "Skipping dev-portal deployment - VERCEL_PROJECT_ID_DEVPORTAL not configured"
         fi
       env:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         
     - name: Get Vercel deployment URLs
       id: urls
