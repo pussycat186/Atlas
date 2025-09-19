@@ -93,6 +93,35 @@ const nextConfig = {
     ATLAS_GATEWAY_URL: process.env.ATLAS_GATEWAY_URL || 'http://localhost:3000',
     ATLAS_DRIVE_URL: process.env.ATLAS_DRIVE_URL || 'http://localhost:3004',
   },
+  // Enable static generation for better performance
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+  // Add caching headers for static assets
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=60, stale-while-revalidate=300',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
