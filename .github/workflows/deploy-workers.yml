@@ -49,6 +49,8 @@ jobs:
           export CLOUDFLARE_API_TOKEN="${{ secrets.CLOUDFLARE_API_TOKEN }}"
 
       - name: Deploy Workers Gateway
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           cd workers/gateway
           # Set account ID in wrangler.toml
