@@ -1,0 +1,16 @@
+COSIGN KEYLESS VERIFICATION
+============================
+
+Status: BLOCKER - Cosign not installed
+Required: Install cosign CLI tool
+Command: cosign verify-blob --certificate-identity=* --certificate-oidc-issuer=* <artifact>
+
+Artifacts to verify:
+- atlas-ecosystem-sbom-oneshot.json
+- apps/proof-messenger/.next/
+- apps/admin-insights/.next/
+- apps/dev-portal/.next/
+
+BLOCKER: Missing cosign installation and OIDC configuration
+Secret required: COSIGN_PRIVATE_KEY or OIDC_TOKEN
+

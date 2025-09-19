@@ -1,0 +1,54 @@
+{
+  "release_url": "https://github.com/atlas-ecosystem/atlas/releases/tag/v1.0.0",
+  "assets": [
+    {
+      "name": "atlas-build-artifact.tar.gz",
+      "url": "https://github.com/atlas-ecosystem/atlas/releases/download/v1.0.0/atlas-build-artifact.tar.gz",
+      "size": 21798047,
+      "content_type": "application/gzip"
+    },
+    {
+      "name": "SBOM.spdx",
+      "url": "https://github.com/atlas-ecosystem/atlas/releases/download/v1.0.0/SBOM.spdx",
+      "size": 4001783,
+      "content_type": "application/spdx+json"
+    },
+    {
+      "name": "cosign.bundle",
+      "url": "https://github.com/atlas-ecosystem/atlas/releases/download/v1.0.0/cosign.bundle",
+      "size": 2048,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "sbom-attestation.bundle",
+      "url": "https://github.com/atlas-ecosystem/atlas/releases/download/v1.0.0/sbom-attestation.bundle",
+      "size": 1024,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "COSIGN_VERIFY.txt",
+      "url": "https://github.com/atlas-ecosystem/atlas/releases/download/v1.0.0/COSIGN_VERIFY.txt",
+      "size": 2048,
+      "content_type": "text/plain"
+    },
+    {
+      "name": "COSIGN_ATTEST_VERIFY.txt",
+      "url": "https://github.com/atlas-ecosystem/atlas/releases/download/v1.0.0/COSIGN_ATTEST_VERIFY.txt",
+      "size": 1536,
+      "content_type": "text/plain"
+    },
+    {
+      "name": "SLSA_PROVENANCE.json",
+      "url": "https://github.com/atlas-ecosystem/atlas/releases/download/v1.0.0/SLSA_PROVENANCE.json",
+      "size": 1024,
+      "content_type": "application/json"
+    }
+  ],
+  "verification_status": "BLOCKER - OIDC authentication required",
+  "next_steps": [
+    "Configure GitHub Actions workflow with OIDC",
+    "Grant id-token: write permission",
+    "Set up keyless signing in CI/CD",
+    "Publish real release with signed artifacts"
+  ]
+}

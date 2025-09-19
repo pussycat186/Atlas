@@ -8,6 +8,12 @@ module.exports = {
       setupFilesAfterEnv: ['<rootDir>/packages/fabric-client/src/setupTests.ts'],
     },
     {
+      displayName: 'fabric-crypto',
+      testMatch: ['<rootDir>/packages/fabric-crypto/src/**/*.test.ts'],
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+    },
+    {
       displayName: 'integration',
       testMatch: ['<rootDir>/tests/integration/**/*.test.ts'],
       preset: 'ts-jest',

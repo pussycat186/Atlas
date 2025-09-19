@@ -57,7 +57,7 @@ export class WitnessLedger {
       ledger_ts: new Date().toISOString(),
     };
 
-    const ndjsonLine = JSON.stringify(ledgerEntry) + '\n';
+    const ndjsonLine = `${JSON.stringify(ledgerEntry)  }\n`;
     
     // Append to main ledger
     await fs.appendFile(this.ledgerPath, ndjsonLine);
