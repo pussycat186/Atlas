@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+// @legacy - These tests are for the old Atlas v12 UI and need to be migrated to the new Atlas Proof Messenger interface
 test.describe('Atlas v12 Web App', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the web app (assuming it's running on port 3006)

@@ -1,7 +1,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
-export let options = {
+export const options = {
   stages: [
     // Warm-up phase (15-30s)
     { duration: '20s', target: 100 },
@@ -16,7 +16,7 @@ export let options = {
 
 export default function () {
   // Test the gateway health endpoint
-  let response = http.get('http://localhost:3000/health');
+  const response = http.get('http://localhost:3000/health');
   
   check(response, {
     'status is 200': (r) => r.status === 200,
@@ -24,7 +24,7 @@ export default function () {
   });
   
   // Test the metrics endpoint
-  let metricsResponse = http.get('http://localhost:3000/metrics');
+  const metricsResponse = http.get('http://localhost:3000/metrics');
   
   check(metricsResponse, {
     'metrics status is 200': (r) => r.status === 200,

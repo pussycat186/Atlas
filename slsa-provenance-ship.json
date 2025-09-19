@@ -1,0 +1,14 @@
+{
+  "status": "BLOCKER - SLSA provenance generation requires build system integration",
+  "required_integration": "GitHub Actions SLSA generator",
+  "workflow_file": ".github/workflows/slsa-generator.yml",
+  "artifacts": [
+    "atlas-ecosystem-sbom-ship.json",
+    "apps/proof-messenger/.next/",
+    "apps/admin-insights/.next/",
+    "apps/dev-portal/.next/"
+  ],
+  "blocker": "Missing SLSA build system integration and permissions",
+  "secret_required": "SLSA_GITHUB_TOKEN"
+}
+

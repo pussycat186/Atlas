@@ -1,0 +1,10 @@
+<testsuites id="" name="" tests="3" failures="0" skipped="0" errors="0" time="2.925913">
+<testsuite name="atlas-proof-messenger.spec.ts" timestamp="2025-09-19T05:06:06.001Z" hostname="chromium" tests="3" failures="0" skipped="0" time="4.995" errors="0">
+<testcase name="Atlas Proof Messenger - Accessibility › should have proper heading hierarchy" classname="atlas-proof-messenger.spec.ts" time="1.493">
+</testcase>
+<testcase name="Atlas Proof Messenger - Accessibility › should have proper form labels and controls" classname="atlas-proof-messenger.spec.ts" time="1.757">
+</testcase>
+<testcase name="Atlas Proof Messenger - Accessibility › should have proper color contrast for status badges" classname="atlas-proof-messenger.spec.ts" time="1.745">
+</testcase>
+</testsuite>
+</testsuites>

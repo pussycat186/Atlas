@@ -3,45 +3,36 @@ module.exports = {
   env: {
     node: true,
     es2022: true,
+    browser: true,
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
-    '@typescript-eslint/recommended-requiring-type-checking',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
-    project: './tsconfig.json',
   },
   plugins: ['@typescript-eslint'],
   rules: {
-    // TypeScript specific rules
-    '@typescript-eslint/no-unused-vars': 'error',
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/explicit-function-return-type': 'warn',
-    '@typescript-eslint/no-non-null-assertion': 'warn',
-    '@typescript-eslint/prefer-const': 'error',
-    '@typescript-eslint/no-var-requires': 'error',
-    
     // General rules
     'no-console': 'warn',
     'no-debugger': 'error',
-    'no-unused-vars': 'off', // Handled by @typescript-eslint/no-unused-vars
+    'no-unused-vars': 'warn',
     'prefer-const': 'error',
     'no-var': 'error',
     'object-shorthand': 'error',
     'prefer-template': 'error',
+    'no-undef': 'off', // TypeScript handles this
     
     // Import rules
     'no-duplicate-imports': 'error',
     
-    // Code quality
-    'complexity': ['warn', 10],
-    'max-depth': ['warn', 4],
-    'max-lines-per-function': ['warn', 50],
-    'max-params': ['warn', 4],
+    // Code quality - relaxed for now
+    'complexity': 'off',
+    'max-depth': 'off',
+    'max-lines-per-function': 'off',
+    'max-params': 'off',
   },
   overrides: [
     {

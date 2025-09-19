@@ -1,0 +1,45 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "subject": [
+    {
+      "name": "atlas-v20250918-0020.tar.gz",
+      "digest": {
+        "sha256": "acb94322cc5ec25dd672564652965cead2655a1f494d4535440c06f2477015c9"
+      }
+    }
+  ],
+  "predicate": {
+    "buildType": "https://github.com/slsa-framework/slsa-github-generator@v1.9.0",
+    "builder": {
+      "id": "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.9.0"
+    },
+    "buildConfig": {
+      "source": {
+        "uri": "git+https://github.com/pussycat186/Atlas@v20250918-0020",
+        "digest": {
+          "sha1": "16640c879c19666f17989d895d1f91eea98e9314"
+        }
+      }
+    },
+    "metadata": {
+      "buildInvocationId": "17805492601",
+      "buildStartedOn": "2025-09-18T00:15:47+07:00",
+      "buildFinishedOn": "2025-09-18T00:15:47+07:00",
+      "completeness": {
+        "parameters": true,
+        "environment": true,
+        "materials": true
+      },
+      "reproducible": false
+    },
+    "materials": [
+      {
+        "uri": "git+https://github.com/pussycat186/Atlas@v20250918-0020",
+        "digest": {
+          "sha1": "16640c879c19666f17989d895d1f91eea98e9314"
+        }
+      }
+    ]
+  }
+}

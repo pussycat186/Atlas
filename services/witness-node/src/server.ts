@@ -144,7 +144,7 @@ export class WitnessServer {
 
         // Stream each entry as NDJSON
         for (const entry of entries) {
-          const ndjsonLine = JSON.stringify(entry) + '\n';
+          const ndjsonLine = `${JSON.stringify(entry)  }\n`;
           reply.raw.write(ndjsonLine);
         }
         

@@ -108,14 +108,14 @@ export class WitnessClient {
           witness_id: witnessId,
           status: 'active' as const,
           last_seen: new Date().toISOString(),
-          region: region,
+          region,
         };
       } else {
         return {
           witness_id: witnessId,
           status: 'error' as const,
           last_seen: new Date().toISOString(),
-          region: region,
+          region,
         };
       }
     });

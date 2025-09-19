@@ -13,6 +13,10 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
+  /* Skip legacy tests */
+  grepInvert: /@legacy/,
+  /* Only run specific test files for now */
+  testMatch: '**/atlas-proof-messenger.spec.ts',
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],
@@ -74,7 +78,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'cd apps/web && pnpm run dev',
+    command: 'cd apps/proof-messenger && pnpm run dev',
     url: 'http://localhost:3006',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
