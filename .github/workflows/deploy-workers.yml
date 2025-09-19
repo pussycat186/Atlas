@@ -51,11 +51,9 @@ jobs:
       - name: Deploy Workers Gateway
         run: |
           cd workers/gateway
-          wrangler deploy src/index.js \
-            --name atlas-gateway \
-            --account-id ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} \
-            --minify \
-            --compatibility-date 2025-01-19
+          # Set account ID in wrangler.toml
+          sed -i "s/# account_id = \"your-account-id\"/account_id = \"${{ secrets.CLOUDFLARE_ACCOUNT_ID }}\"/" wrangler.toml
+          wrangler deploy --minify
         id: deploy
 
       - name: Parse deployment URL
