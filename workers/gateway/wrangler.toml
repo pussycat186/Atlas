@@ -1,0 +1,19 @@
+name = "atlas-gateway"
+main = "src/index.js"
+compatibility_date = "2025-01-19"
+
+# Account ID will be provided via CLI/CI
+# account_id = "your-account-id"
+
+# Workers configuration
+[env.production]
+name = "atlas-gateway"
+
+# Performance optimizations
+[build]
+command = ""
+
+# No external bindings needed for this simple implementation
+# [[kv_namespaces]]
+# binding = "ATLAS_KV"
+# id = "your-kv-namespace-id"

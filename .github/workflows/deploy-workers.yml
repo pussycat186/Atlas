@@ -1,0 +1,161 @@
+name: Deploy Cloudflare Workers Backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'prod/*'
+      - 'main'
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: deploy-workers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-workers:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Secrets smoke test
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "BLOCKER_MISSING_SECRET: CLOUDFLARE_API_TOKEN"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "BLOCKER_MISSING_SECRET: CLOUDFLARE_ACCOUNT_ID"
+            exit 1
+          fi
+          echo "✅ All required secrets are present"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Wrangler CLI
+        run: npm install -g wrangler@latest
+
+      - name: Authenticate with Cloudflare
+        run: |
+          wrangler auth login --api-token ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy Workers Gateway
+        run: |
+          cd workers/gateway
+          wrangler deploy src/index.js \
+            --name atlas-gateway \
+            --account-id ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} \
+            --minify \
+            --compatibility-date 2025-01-19
+        id: deploy
+
+      - name: Parse deployment URL
+        run: |
+          # Extract the workers.dev URL from wrangler output
+          DEPLOY_OUTPUT="${{ steps.deploy.outputs.stdout }}"
+          WORKERS_URL=$(echo "$DEPLOY_OUTPUT" | grep -o 'https://[^[:space:]]*\.workers\.dev' | head -1)
+          
+          if [ -z "$WORKERS_URL" ]; then
+            echo "BLOCKER_DEPLOY_WORKERS: Failed to extract workers.dev URL from deployment output"
+            exit 1
+          fi
+          
+          echo "WORKERS_URL=$WORKERS_URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $WORKERS_URL"
+
+      - name: Test health endpoints
+        run: |
+          WORKERS_URL="${{ steps.deploy.outputs.WORKERS_URL }}"
+          
+          # Test /health endpoint
+          HEALTH_RESPONSE=$(curl -s -w "%{http_code}" "$WORKERS_URL/health")
+          HEALTH_CODE="${HEALTH_RESPONSE: -3}"
+          if [ "$HEALTH_CODE" != "200" ]; then
+            echo "BLOCKER_HEALTHCHECK: gateway /health returned $HEALTH_CODE"
+            exit 1
+          fi
+          
+          # Test /health-lite endpoint
+          LITE_RESPONSE=$(curl -s -w "%{http_code}" "$WORKERS_URL/health-lite")
+          LITE_CODE="${LITE_RESPONSE: -3}"
+          if [ "$LITE_CODE" != "200" ]; then
+            echo "BLOCKER_HEALTHCHECK: gateway /health-lite returned $LITE_CODE"
+            exit 1
+          fi
+          
+          # Test /metrics endpoint
+          METRICS_RESPONSE=$(curl -s -w "%{http_code}" "$WORKERS_URL/metrics")
+          METRICS_CODE="${METRICS_RESPONSE: -3}"
+          if [ "$METRICS_CODE" != "200" ]; then
+            echo "BLOCKER_HEALTHCHECK: gateway /metrics returned $METRICS_CODE"
+            exit 1
+          fi
+          
+          echo "✅ All health checks passed"
+
+      - name: Update LIVE_URLS.json
+        run: |
+          WORKERS_URL="${{ steps.deploy.outputs.WORKERS_URL }}"
+          
+          # Create or update LIVE_URLS.json
+          if [ -f "LIVE_URLS.json" ]; then
+            # Update existing file
+            jq --arg url "$WORKERS_URL" '.backends.gateway = $url' LIVE_URLS.json > LIVE_URLS.tmp && mv LIVE_URLS.tmp LIVE_URLS.json
+          else
+            # Create new file
+            cat > LIVE_URLS.json << EOF
+          {
+            "frontends": {
+              "proof_messenger": null,
+              "admin_insights": null,
+              "dev_portal": null
+            },
+            "backends": {
+              "gateway": "$WORKERS_URL",
+              "witness": null
+            },
+            "deployed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "deployment_id": "${{ github.run_id }}"
+          }
+          EOF
+          fi
+          
+          echo "Updated LIVE_URLS.json:"
+          cat LIVE_URLS.json
+
+      - name: Commit LIVE_URLS.json
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add LIVE_URLS.json
+          git commit -m "feat: deploy workers gateway backend
+
+          - Deployed atlas-gateway to Cloudflare Workers
+          - URL: ${{ steps.deploy.outputs.WORKERS_URL }}
+          - Endpoints: /health, /health-lite, /metrics
+          - All health checks passed" || echo "No changes to commit"
+
+      - name: Upload LIVE_URLS.json artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-urls
+          path: LIVE_URLS.json
+          retention-days: 30
+
+      - name: Output deployment summary
+        run: |
+          echo "🚀 Workers Gateway Deployed Successfully"
+          echo "URL: ${{ steps.deploy.outputs.WORKERS_URL }}"
+          echo "Health: ${{ steps.deploy.outputs.WORKERS_URL }}/health"
+          echo "Health Lite: ${{ steps.deploy.outputs.WORKERS_URL }}/health-lite"
+          echo "Metrics: ${{ steps.deploy.outputs.WORKERS_URL }}/metrics"

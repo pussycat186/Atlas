@@ -1,0 +1,14 @@
+{
+  "frontends": {
+    "proof_messenger": null,
+    "admin_insights": null,
+    "dev_portal": null
+  },
+  "backends": {
+    "gateway": null,
+    "witness": null
+  },
+  "deployed_at": null,
+  "deployment_id": null,
+  "status": "PENDING"
+}

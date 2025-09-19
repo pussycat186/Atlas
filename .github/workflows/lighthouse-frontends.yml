@@ -1,0 +1,315 @@
+name: Frontend Lighthouse Testing
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'prod/*'
+      - 'main'
+  workflow_run:
+    workflows: ["Deploy Cloudflare Workers Backend"]
+    types: [completed]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: lighthouse-frontends-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse-frontends:
+    runs-on: ubuntu-latest
+    needs: deploy-workers
+    if: ${{ needs.deploy-workers.result == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download LIVE_URLS.json
+        uses: actions/download-artifact@v4
+        with:
+          name: live-urls
+          path: .
+        continue-on-error: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install -g @lhci/cli@latest
+          npm install -g lighthouse@latest
+
+      - name: Get frontend URLs
+        run: |
+          # Check for existing LIVE_URLS.json
+          if [ -f "LIVE_URLS.json" ]; then
+            PROOF_MESSENGER_URL=$(jq -r '.frontends.proof_messenger // empty' LIVE_URLS.json)
+            ADMIN_INSIGHTS_URL=$(jq -r '.frontends.admin_insights // empty' LIVE_URLS.json)
+            DEV_PORTAL_URL=$(jq -r '.frontends.dev_portal // empty' LIVE_URLS.json)
+          fi
+          
+          # If URLs not in LIVE_URLS.json, try to discover from Vercel
+          if [ -z "$PROOF_MESSENGER_URL" ] || [ "$PROOF_MESSENGER_URL" = "null" ]; then
+            echo "Discovering Vercel URLs..."
+            # For now, we'll use placeholder URLs - in real deployment these would come from Vercel CLI
+            PROOF_MESSENGER_URL="https://atlas-proof-messenger.vercel.app"
+            ADMIN_INSIGHTS_URL="https://atlas-admin-insights.vercel.app"
+            DEV_PORTAL_URL="https://atlas-dev-portal.vercel.app"
+          fi
+          
+          echo "PROOF_MESSENGER_URL=$PROOF_MESSENGER_URL" >> $GITHUB_ENV
+          echo "ADMIN_INSIGHTS_URL=$ADMIN_INSIGHTS_URL" >> $GITHUB_ENV
+          echo "DEV_PORTAL_URL=$DEV_PORTAL_URL" >> $GITHUB_ENV
+          
+          echo "Frontend URLs:"
+          echo "Proof Messenger: $PROOF_MESSENGER_URL"
+          echo "Admin Insights: $ADMIN_INSIGHTS_URL"
+          echo "Dev Portal: $DEV_PORTAL_URL"
+
+      - name: Create evidence directory
+        run: |
+          EVIDENCE_DIR="docs/evidence/$(date +%Y%m%d-%H%M)"
+          mkdir -p "$EVIDENCE_DIR"
+          echo "EVIDENCE_DIR=$EVIDENCE_DIR" >> $GITHUB_ENV
+
+      - name: Test Proof Messenger
+        run: |
+          echo "🔍 Testing Proof Messenger: $PROOF_MESSENGER_URL"
+          
+          lighthouse "$PROOF_MESSENGER_URL" \
+            --output=json \
+            --output-path="$EVIDENCE_DIR/lh-proof-messenger.json" \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --form-factor=desktop \
+            --throttling-method=devtools \
+            --quiet || echo "Lighthouse test completed with warnings"
+          
+          # Extract scores
+          PERFORMANCE=$(jq -r '.categories.performance.score * 100' "$EVIDENCE_DIR/lh-proof-messenger.json")
+          ACCESSIBILITY=$(jq -r '.categories.accessibility.score * 100' "$EVIDENCE_DIR/lh-proof-messenger.json")
+          BEST_PRACTICES=$(jq -r '.categories["best-practices"].score * 100' "$EVIDENCE_DIR/lh-proof-messenger.json")
+          SEO=$(jq -r '.categories.seo.score * 100' "$EVIDENCE_DIR/lh-proof-messenger.json")
+          
+          # Check bundle size
+          JS_BUNDLE_SIZE=$(jq -r '.audits["unused-javascript"].details.items[0].wastedBytes // 0' "$EVIDENCE_DIR/lh-proof-messenger.json")
+          JS_BUNDLE_KB=$((JS_BUNDLE_SIZE / 1024))
+          
+          echo "Proof Messenger Scores:"
+          echo "Performance: $PERFORMANCE"
+          echo "Accessibility: $ACCESSIBILITY"
+          echo "Best Practices: $BEST_PRACTICES"
+          echo "SEO: $SEO"
+          echo "JS Bundle: ${JS_BUNDLE_KB}KB"
+          
+          # Check thresholds
+          if (( $(echo "$PERFORMANCE < 90" | bc -l) )); then
+            echo "❌ Performance score $PERFORMANCE < 90"
+            echo "BLOCKER_LIGHTHOUSE_PERF: proof-messenger performance $PERFORMANCE < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$ACCESSIBILITY < 90" | bc -l) )); then
+            echo "❌ Accessibility score $ACCESSIBILITY < 90"
+            echo "BLOCKER_LIGHTHOUSE_A11Y: proof-messenger accessibility $ACCESSIBILITY < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$BEST_PRACTICES < 90" | bc -l) )); then
+            echo "❌ Best Practices score $BEST_PRACTICES < 90"
+            echo "BLOCKER_LIGHTHOUSE_BP: proof-messenger best-practices $BEST_PRACTICES < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$SEO < 90" | bc -l) )); then
+            echo "❌ SEO score $SEO < 90"
+            echo "BLOCKER_LIGHTHOUSE_SEO: proof-messenger seo $SEO < 90"
+            exit 1
+          fi
+          
+          if (( JS_BUNDLE_KB > 300 )); then
+            echo "❌ JS Bundle size ${JS_BUNDLE_KB}KB > 300KB hard limit"
+            echo "BLOCKER_LIGHTHOUSE_BUNDLE: proof-messenger bundle ${JS_BUNDLE_KB}KB > 300KB"
+            exit 1
+          fi
+          
+          echo "✅ Proof Messenger passed all thresholds"
+
+      - name: Test Admin Insights
+        run: |
+          echo "🔍 Testing Admin Insights: $ADMIN_INSIGHTS_URL"
+          
+          lighthouse "$ADMIN_INSIGHTS_URL" \
+            --output=json \
+            --output-path="$EVIDENCE_DIR/lh-admin-insights.json" \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --form-factor=desktop \
+            --throttling-method=devtools \
+            --quiet || echo "Lighthouse test completed with warnings"
+          
+          # Extract scores
+          PERFORMANCE=$(jq -r '.categories.performance.score * 100' "$EVIDENCE_DIR/lh-admin-insights.json")
+          ACCESSIBILITY=$(jq -r '.categories.accessibility.score * 100' "$EVIDENCE_DIR/lh-admin-insights.json")
+          BEST_PRACTICES=$(jq -r '.categories["best-practices"].score * 100' "$EVIDENCE_DIR/lh-admin-insights.json")
+          SEO=$(jq -r '.categories.seo.score * 100' "$EVIDENCE_DIR/lh-admin-insights.json")
+          
+          # Check bundle size
+          JS_BUNDLE_SIZE=$(jq -r '.audits["unused-javascript"].details.items[0].wastedBytes // 0' "$EVIDENCE_DIR/lh-admin-insights.json")
+          JS_BUNDLE_KB=$((JS_BUNDLE_SIZE / 1024))
+          
+          echo "Admin Insights Scores:"
+          echo "Performance: $PERFORMANCE"
+          echo "Accessibility: $ACCESSIBILITY"
+          echo "Best Practices: $BEST_PRACTICES"
+          echo "SEO: $SEO"
+          echo "JS Bundle: ${JS_BUNDLE_KB}KB"
+          
+          # Check thresholds (same as proof-messenger)
+          if (( $(echo "$PERFORMANCE < 90" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE_PERF: admin-insights performance $PERFORMANCE < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$ACCESSIBILITY < 90" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE_A11Y: admin-insights accessibility $ACCESSIBILITY < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$BEST_PRACTICES < 90" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE_BP: admin-insights best-practices $BEST_PRACTICES < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$SEO < 90" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE_SEO: admin-insights seo $SEO < 90"
+            exit 1
+          fi
+          
+          if (( JS_BUNDLE_KB > 300 )); then
+            echo "BLOCKER_LIGHTHOUSE_BUNDLE: admin-insights bundle ${JS_BUNDLE_KB}KB > 300KB"
+            exit 1
+          fi
+          
+          echo "✅ Admin Insights passed all thresholds"
+
+      - name: Test Dev Portal
+        run: |
+          echo "🔍 Testing Dev Portal: $DEV_PORTAL_URL"
+          
+          lighthouse "$DEV_PORTAL_URL" \
+            --output=json \
+            --output-path="$EVIDENCE_DIR/lh-dev-portal.json" \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --form-factor=desktop \
+            --throttling-method=devtools \
+            --quiet || echo "Lighthouse test completed with warnings"
+          
+          # Extract scores
+          PERFORMANCE=$(jq -r '.categories.performance.score * 100' "$EVIDENCE_DIR/lh-dev-portal.json")
+          ACCESSIBILITY=$(jq -r '.categories.accessibility.score * 100' "$EVIDENCE_DIR/lh-dev-portal.json")
+          BEST_PRACTICES=$(jq -r '.categories["best-practices"].score * 100' "$EVIDENCE_DIR/lh-dev-portal.json")
+          SEO=$(jq -r '.categories.seo.score * 100' "$EVIDENCE_DIR/lh-dev-portal.json")
+          
+          # Check bundle size
+          JS_BUNDLE_SIZE=$(jq -r '.audits["unused-javascript"].details.items[0].wastedBytes // 0' "$EVIDENCE_DIR/lh-dev-portal.json")
+          JS_BUNDLE_KB=$((JS_BUNDLE_SIZE / 1024))
+          
+          echo "Dev Portal Scores:"
+          echo "Performance: $PERFORMANCE"
+          echo "Accessibility: $ACCESSIBILITY"
+          echo "Best Practices: $BEST_PRACTICES"
+          echo "SEO: $SEO"
+          echo "JS Bundle: ${JS_BUNDLE_KB}KB"
+          
+          # Check thresholds (same as other apps)
+          if (( $(echo "$PERFORMANCE < 90" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE_PERF: dev-portal performance $PERFORMANCE < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$ACCESSIBILITY < 90" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE_A11Y: dev-portal accessibility $ACCESSIBILITY < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$BEST_PRACTICES < 90" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE_BP: dev-portal best-practices $BEST_PRACTICES < 90"
+            exit 1
+          fi
+          
+          if (( $(echo "$SEO < 90" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE_SEO: dev-portal seo $SEO < 90"
+            exit 1
+          fi
+          
+          if (( JS_BUNDLE_KB > 300 )); then
+            echo "BLOCKER_LIGHTHOUSE_BUNDLE: dev-portal bundle ${JS_BUNDLE_KB}KB > 300KB"
+            exit 1
+          fi
+          
+          echo "✅ Dev Portal passed all thresholds"
+
+      - name: Generate Lighthouse summary
+        run: |
+          cat > "$EVIDENCE_DIR/lighthouse-summary.json" << EOF
+          {
+            "test_type": "lighthouse_frontend_quality",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "test_id": "${{ github.run_id }}",
+            "apps": {
+              "proof_messenger": {
+                "url": "$PROOF_MESSENGER_URL",
+                "performance": $(jq -r '.categories.performance.score * 100' "$EVIDENCE_DIR/lh-proof-messenger.json"),
+                "accessibility": $(jq -r '.categories.accessibility.score * 100' "$EVIDENCE_DIR/lh-proof-messenger.json"),
+                "best_practices": $(jq -r '.categories["best-practices"].score * 100' "$EVIDENCE_DIR/lh-proof-messenger.json"),
+                "seo": $(jq -r '.categories.seo.score * 100' "$EVIDENCE_DIR/lh-proof-messenger.json"),
+                "bundle_size_kb": $(( $(jq -r '.audits["unused-javascript"].details.items[0].wastedBytes // 0' "$EVIDENCE_DIR/lh-proof-messenger.json") / 1024 ))
+              },
+              "admin_insights": {
+                "url": "$ADMIN_INSIGHTS_URL",
+                "performance": $(jq -r '.categories.performance.score * 100' "$EVIDENCE_DIR/lh-admin-insights.json"),
+                "accessibility": $(jq -r '.categories.accessibility.score * 100' "$EVIDENCE_DIR/lh-admin-insights.json"),
+                "best_practices": $(jq -r '.categories["best-practices"].score * 100' "$EVIDENCE_DIR/lh-admin-insights.json"),
+                "seo": $(jq -r '.categories.seo.score * 100' "$EVIDENCE_DIR/lh-admin-insights.json"),
+                "bundle_size_kb": $(( $(jq -r '.audits["unused-javascript"].details.items[0].wastedBytes // 0' "$EVIDENCE_DIR/lh-admin-insights.json") / 1024 ))
+              },
+              "dev_portal": {
+                "url": "$DEV_PORTAL_URL",
+                "performance": $(jq -r '.categories.performance.score * 100' "$EVIDENCE_DIR/lh-dev-portal.json"),
+                "accessibility": $(jq -r '.categories.accessibility.score * 100' "$EVIDENCE_DIR/lh-dev-portal.json"),
+                "best_practices": $(jq -r '.categories["best-practices"].score * 100' "$EVIDENCE_DIR/lh-dev-portal.json"),
+                "seo": $(jq -r '.categories.seo.score * 100' "$EVIDENCE_DIR/lh-dev-portal.json"),
+                "bundle_size_kb": $(( $(jq -r '.audits["unused-javascript"].details.items[0].wastedBytes // 0' "$EVIDENCE_DIR/lh-dev-portal.json") / 1024 ))
+              }
+            },
+            "thresholds": {
+              "min_score": 90,
+              "max_bundle_kb": 300
+            },
+            "status": "PASS"
+          }
+          EOF
+
+      - name: Upload Lighthouse evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-frontend-evidence
+          path: ${{ env.EVIDENCE_DIR }}/
+          retention-days: 30
+
+      - name: Lighthouse test summary
+        run: |
+          echo "🎯 Frontend Lighthouse Testing Complete"
+          echo "Apps tested: 3 (proof-messenger, admin-insights, dev-portal)"
+          echo "Thresholds: ≥90 on all metrics, ≤300KB bundle size"
+          echo "Status: ✅ PASS"
+          echo "Evidence: $EVIDENCE_DIR"

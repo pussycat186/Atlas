@@ -1,0 +1,243 @@
+name: Backend Performance Testing (k6)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'prod/*'
+      - 'main'
+  workflow_run:
+    workflows: ["Deploy Cloudflare Workers Backend"]
+    types: [completed]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: perf-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  perf-backend:
+    runs-on: ubuntu-latest
+    needs: deploy-workers
+    if: ${{ needs.deploy-workers.result == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download LIVE_URLS.json
+        uses: actions/download-artifact@v4
+        with:
+          name: live-urls
+          path: .
+        continue-on-error: true
+
+      - name: Get backend URL
+        run: |
+          if [ -f "LIVE_URLS.json" ]; then
+            BASE_URL=$(jq -r '.backends.gateway' LIVE_URLS.json)
+          else
+            echo "LIVE_URLS.json not found, checking for existing deployment..."
+            # Try to get URL from previous workflow or environment
+            BASE_URL="${{ env.BACKEND_URL }}"
+          fi
+          
+          if [ -z "$BASE_URL" ] || [ "$BASE_URL" = "null" ]; then
+            echo "BLOCKER_MISSING_URL: No backend URL found in LIVE_URLS.json or environment"
+            exit 1
+          fi
+          
+          echo "BASE_URL=$BASE_URL" >> $GITHUB_ENV
+          echo "Testing backend at: $BASE_URL"
+
+      - name: Verify backend is accessible
+        run: |
+          # Quick health check before performance testing
+          HEALTH_RESPONSE=$(curl -s -w "%{http_code}" "$BASE_URL/health-lite")
+          HEALTH_CODE="${HEALTH_RESPONSE: -3}"
+          if [ "$HEALTH_CODE" != "200" ]; then
+            echo "BLOCKER_HEALTHCHECK: backend $BASE_URL/health-lite returned $HEALTH_CODE"
+            exit 1
+          fi
+          echo "✅ Backend is accessible and responding"
+
+      - name: Setup k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Create k6 performance test
+        run: |
+          cat > perf-gate.js << 'EOF'
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          import { Rate } from 'k6/metrics';
+
+          // Custom metrics
+          const errorRate = new Rate('error_rate');
+
+          export const options = {
+            scenarios: {
+              constant_arrival_rate: {
+                executor: 'constant-arrival-rate',
+                rate: 500, // 500 requests per second
+                timeUnit: '1s',
+                duration: '60s', // 60 second test
+                preAllocatedVUs: 100, // Pre-allocate VUs
+                maxVUs: 1000, // Maximum VUs
+                startTime: '25s', // 25 second warm-up
+              },
+            },
+            thresholds: {
+              http_req_failed: ['rate<=0.01'], // Error rate <= 1%
+              http_req_duration: ['p(95)<=200'], // 95th percentile <= 200ms
+              error_rate: ['rate<=0.01'], // Custom error rate <= 1%
+            },
+          };
+
+          export default function () {
+            const baseUrl = __ENV.BASE_URL;
+            if (!baseUrl) {
+              throw new Error('BASE_URL environment variable is required');
+            }
+
+            const url = `${baseUrl}/health-lite`;
+            const params = {
+              headers: {
+                'User-Agent': 'k6-performance-test/1.0',
+              },
+              timeout: '10s',
+            };
+
+            const response = http.get(url, params);
+            
+            const success = check(response, {
+              'status is 200': (r) => r.status === 200,
+              'response time < 200ms': (r) => r.timings.duration < 200,
+              'response time < 500ms': (r) => r.timings.duration < 500,
+              'response time < 1000ms': (r) => r.timings.duration < 1000,
+            });
+
+            errorRate.add(!success);
+            
+            // Small sleep to prevent overwhelming the backend
+            sleep(0.001);
+          }
+
+          export function handleSummary(data) {
+            return {
+              'perf-results.json': JSON.stringify(data, null, 2),
+            };
+          }
+          EOF
+
+      - name: Run k6 performance test
+        run: |
+          echo "🚀 Starting k6 performance test..."
+          echo "Target: $BASE_URL/health-lite"
+          echo "Rate: 500 RPS for 60 seconds (25s warm-up)"
+          echo "Thresholds: p95≤200ms, error rate≤1%"
+          
+          k6 run -e BASE_URL="$BASE_URL" perf-gate.js --out json=perf-results.json
+
+      - name: Parse k6 results
+        run: |
+          if [ ! -f "perf-results.json" ]; then
+            echo "BLOCKER_K6_RESULTS: k6 results file not found"
+            exit 1
+          fi
+          
+          # Extract key metrics
+          ACHIEVED_RPS=$(jq -r '.metrics.http_reqs.values.rate' perf-results.json)
+          P95_MS=$(jq -r '.metrics.http_req_duration.values.p95' perf-results.json)
+          ERROR_RATE=$(jq -r '.metrics.http_req_failed.values.rate' perf-results.json)
+          ERROR_PCT=$(echo "$ERROR_RATE * 100" | bc -l | xargs printf "%.2f")
+          
+          echo "📊 Performance Results:"
+          echo "Achieved RPS: $ACHIEVED_RPS"
+          echo "P95 Latency: ${P95_MS}ms"
+          echo "Error Rate: ${ERROR_PCT}%"
+          
+          # Check thresholds
+          P95_THRESHOLD=200
+          ERROR_THRESHOLD=0.01
+          
+          if (( $(echo "$P95_MS > $P95_THRESHOLD" | bc -l) )); then
+            echo "❌ P95 latency ${P95_MS}ms exceeds threshold ${P95_THRESHOLD}ms"
+            echo "BLOCKER_K6_P95: P95 latency ${P95_MS}ms > ${P95_THRESHOLD}ms threshold"
+            exit 1
+          fi
+          
+          if (( $(echo "$ERROR_RATE > $ERROR_THRESHOLD" | bc -l) )); then
+            echo "❌ Error rate ${ERROR_PCT}% exceeds threshold 1%"
+            echo "BLOCKER_K6_ERROR: Error rate ${ERROR_PCT}% > 1% threshold"
+            exit 1
+          fi
+          
+          echo "✅ All performance thresholds met!"
+          
+          # Save results for evidence
+          cat > backend-k6.json << EOF
+          {
+            "test_type": "k6_performance",
+            "target": "workers_backend",
+            "url": "$BASE_URL/health-lite",
+            "configuration": {
+              "executor": "constant-arrival-rate",
+              "rate_rps": 500,
+              "duration_seconds": 60,
+              "warmup_seconds": 25,
+              "max_vus": 1000
+            },
+            "thresholds": {
+              "p95_latency_ms": 200,
+              "error_rate_percent": 1.0
+            },
+            "results": {
+              "achieved_rps": $ACHIEVED_RPS,
+              "p95_latency_ms": $P95_MS,
+              "error_rate_percent": $ERROR_PCT,
+              "total_requests": $(jq -r '.metrics.http_reqs.values.count' perf-results.json),
+              "total_duration_ms": $(jq -r '.metrics.iteration_duration.values.avg' perf-results.json)
+            },
+            "status": "PASS",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "test_id": "${{ github.run_id }}"
+          }
+          EOF
+
+      - name: Create evidence directory
+        run: |
+          EVIDENCE_DIR="docs/evidence/$(date +%Y%m%d-%H%M)"
+          mkdir -p "$EVIDENCE_DIR"
+          echo "EVIDENCE_DIR=$EVIDENCE_DIR" >> $GITHUB_ENV
+
+      - name: Save performance evidence
+        run: |
+          cp backend-k6.json "$EVIDENCE_DIR/"
+          cp perf-results.json "$EVIDENCE_DIR/"
+          echo "📁 Evidence saved to: $EVIDENCE_DIR"
+
+      - name: Upload performance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-performance-evidence
+          path: |
+            ${{ env.EVIDENCE_DIR }}/
+            backend-k6.json
+          retention-days: 30
+
+      - name: Performance test summary
+        run: |
+          echo "🎯 Backend Performance Test Complete"
+          echo "Target: Workers Backend ($BASE_URL)"
+          echo "Rate: 500 RPS for 60 seconds"
+          echo "Results: ✅ PASS"
+          echo "P95: $(jq -r '.results.p95_latency_ms' backend-k6.json)ms"
+          echo "Error Rate: $(jq -r '.results.error_rate_percent' backend-k6.json)%"
+          echo "Evidence: $EVIDENCE_DIR"
