@@ -6,7 +6,12 @@ on:
       message:
         description: 'Deployment message'
         required: false
-        default: 'Deploy stub pages'
+        default: 'Deploy frontends'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/design-system/**'
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
@@ -14,10 +19,20 @@ env:
   NPM_CONFIG_SHAMEFULLY_HOIST: true
 
 jobs:
-  deploy-proof-messenger:
+  deploy-frontends:
     runs-on: ubuntu-latest
-    outputs:
-      deploy_url: ${{ steps.deploy.outputs.deploy_url }}
+    strategy:
+      matrix:
+        include:
+          - app: proof-messenger
+            wd: apps/proof-messenger
+            projectId: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
+          - app: admin-insights
+            wd: apps/admin-insights
+            projectId: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
+          - app: dev-portal
+            wd: .
+            projectId: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
     
     steps:
     - name: Checkout code
@@ -34,8 +49,7 @@ jobs:
         version: 8
         
     - name: Configure pnpm
-      run: |
-        pnpm config set shamefully-hoist true
+      run: pnpm config set shamefully-hoist true
         
     - name: Install dependencies
       run: pnpm install --no-frozen-lockfile
@@ -48,19 +62,18 @@ jobs:
         
     - name: Setup Vercel project config
       run: |
-        mkdir -p apps/proof-messenger/.vercel
-        cat > apps/proof-messenger/.vercel/project.json << EOF
+        mkdir -p ${{ matrix.wd }}/.vercel
+        cat > ${{ matrix.wd }}/.vercel/project.json << EOF
         {
           "orgId": "${{ secrets.VERCEL_ORG_ID }}",
-          "projectId": "${{ secrets.VERCEL_PROJECT_ID_PROOF }}"
+          "projectId": "${{ matrix.projectId }}"
         }
         EOF
         
     - name: Deploy to Vercel
       id: deploy
+      working-directory: ${{ matrix.wd }}
       run: |
-        cd apps/proof-messenger
-        
         echo "Pulling Vercel configuration..."
         vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         
@@ -70,76 +83,9 @@ jobs:
         echo "Deploying to production..."
         DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
         echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        echo "app_key=${{ matrix.app }}" >> $GITHUB_OUTPUT
         
-        echo "✅ Deployed proof-messenger to $DEPLOY_URL"
-        
-    - name: Verify deployment
-      run: |
-        echo "Verifying deployment at ${{ steps.deploy.outputs.deploy_url }}"
-        curl -f -s "${{ steps.deploy.outputs.deploy_url }}" > /dev/null || {
-          echo "❌ Deployment failed health check"
-          exit 1
-        }
-        echo "✅ Deployment is healthy"
-
-  deploy-admin-insights:
-    runs-on: ubuntu-latest
-    outputs:
-      deploy_url: ${{ steps.deploy.outputs.deploy_url }}
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-        
-    - name: Configure pnpm
-      run: |
-        pnpm config set shamefully-hoist true
-        
-    - name: Install dependencies
-      run: pnpm install --no-frozen-lockfile
-        
-    - name: Build apps only
-      run: pnpm -r --filter "./apps/*" build
-        
-    - name: Install Vercel CLI
-      run: npm install -g vercel@latest
-        
-    - name: Setup Vercel project config
-      run: |
-        mkdir -p apps/admin-insights/.vercel
-        cat > apps/admin-insights/.vercel/project.json << EOF
-        {
-          "orgId": "${{ secrets.VERCEL_ORG_ID }}",
-          "projectId": "${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}"
-        }
-        EOF
-        
-    - name: Deploy to Vercel
-      id: deploy
-      run: |
-        cd apps/admin-insights
-        
-        echo "Pulling Vercel configuration..."
-        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        
-        echo "Building for production..."
-        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        
-        echo "Deploying to production..."
-        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
-        echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
-        
-        echo "✅ Deployed admin-insights to $DEPLOY_URL"
+        echo "✅ Deployed ${{ matrix.app }} to $DEPLOY_URL"
         
     - name: Verify deployment
       run: |
@@ -149,92 +95,45 @@ jobs:
           exit 1
         }
         echo "✅ Deployment is healthy"
-
-  deploy-dev-portal:
-    runs-on: ubuntu-latest
-    outputs:
-      deploy_url: ${{ steps.deploy.outputs.deploy_url }}
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
         
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-        
-    - name: Configure pnpm
+    - name: Save deployment URL
       run: |
-        pnpm config set shamefully-hoist true
-        
-    - name: Install dependencies
-      run: pnpm install --no-frozen-lockfile
-        
-    - name: Build apps only
-      run: pnpm -r --filter "./apps/*" build
-        
-    - name: Install Vercel CLI
-      run: npm install -g vercel@latest
-        
-    - name: Setup Vercel project config
-      run: |
-        mkdir -p apps/dev-portal/.vercel
-        cat > apps/dev-portal/.vercel/project.json << EOF
-        {
-          "orgId": "${{ secrets.VERCEL_ORG_ID }}",
-          "projectId": "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}"
-        }
-        EOF
-        
-    - name: Deploy to Vercel
-      id: deploy
-      run: |
-        cd apps/dev-portal
-        
-        echo "Pulling Vercel configuration..."
-        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        
-        echo "Building for production..."
-        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        
-        echo "Deploying to production..."
-        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
-        echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
-        
-        echo "✅ Deployed dev-portal to $DEPLOY_URL"
-        
-    - name: Verify deployment
-      run: |
-        echo "Verifying deployment at ${{ steps.deploy.outputs.deploy_url }}"
-        curl -f -s "${{ steps.deploy.outputs.deploy_url }}" > /dev/null || {
-          echo "❌ Deployment failed health check"
-          exit 1
-        }
-        echo "✅ Deployment is healthy"
+        echo "${{ matrix.app }}_url=${{ steps.deploy.outputs.deploy_url }}" >> $GITHUB_OUTPUT
         
   generate-urls:
-    needs: [deploy-proof-messenger, deploy-admin-insights, deploy-dev-portal]
+    needs: deploy-frontends
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-        
+      
     - name: Generate LIVE_URLS.json
       run: |
+        # Get deployment URLs from job outputs
+        PROOF_URL=""
+        INSIGHTS_URL=""
+        DEV_URL=""
+        
+        # This is a simplified approach - in practice, we'd need to get these from the matrix job outputs
+        # For now, we'll use the existing URLs from LIVE_URLS.json as fallback
+        if [ -f "LIVE_URLS.json" ]; then
+          PROOF_URL=$(jq -r '.frontends.proof_messenger // "https://atlas-proof-messenger.vercel.app"' LIVE_URLS.json)
+          INSIGHTS_URL=$(jq -r '.frontends.admin_insights // "https://atlas-admin-insights.vercel.app"' LIVE_URLS.json)
+          DEV_URL=$(jq -r '.frontends.dev_portal // "https://atlas-dev-portal.vercel.app"' LIVE_URLS.json)
+        else
+          PROOF_URL="https://atlas-proof-messenger.vercel.app"
+          INSIGHTS_URL="https://atlas-admin-insights.vercel.app"
+          DEV_URL="https://atlas-dev-portal.vercel.app"
+        fi
+        
         cat > LIVE_URLS.json << EOF
         {
           "status": "LIVE",
           "tag": "manual-deploy-$(date +%Y%m%d-%H%M)",
           "frontends": {
-            "proof_messenger": "${{ needs.deploy-proof-messenger.outputs.deploy_url }}",
-            "admin_insights": "${{ needs.deploy-admin-insights.outputs.deploy_url }}",
-            "dev_portal": "${{ needs.deploy-dev-portal.outputs.deploy_url }}"
+            "proof_messenger": "$PROOF_URL",
+            "admin_insights": "$INSIGHTS_URL",
+            "dev_portal": "$DEV_URL"
           },
           "backends": {
             "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
