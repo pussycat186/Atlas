@@ -1,0 +1,99 @@
+{
+  "timestamp": "2025-09-20T04:14:34.669Z",
+  "total_apps": 3,
+  "results": [
+    {
+      "app": "proof_messenger",
+      "baseUrl": "https://atlas-proof-messenger.vercel.app",
+      "timestamp": "2025-09-20T04:14:34.669Z",
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Messages",
+          "absoluteUrl": "https://atlas-proof-messenger.vercel.app/",
+          "type": "navigation"
+        },
+        {
+          "href": "/receipts",
+          "text": "Receipts",
+          "absoluteUrl": "https://atlas-proof-messenger.vercel.app/receipts",
+          "type": "navigation"
+        },
+        {
+          "href": "/evidence",
+          "text": "Evidence",
+          "absoluteUrl": "https://atlas-proof-messenger.vercel.app/evidence",
+          "type": "navigation"
+        },
+        {
+          "href": "/settings",
+          "text": "Settings",
+          "absoluteUrl": "https://atlas-proof-messenger.vercel.app/settings",
+          "type": "navigation"
+        }
+      ]
+    },
+    {
+      "app": "admin_insights",
+      "baseUrl": "https://atlas-admin-insights.vercel.app",
+      "timestamp": "2025-09-20T04:14:34.669Z",
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Dashboard",
+          "absoluteUrl": "https://atlas-admin-insights.vercel.app/",
+          "type": "navigation"
+        },
+        {
+          "href": "/metrics",
+          "text": "Metrics",
+          "absoluteUrl": "https://atlas-admin-insights.vercel.app/metrics",
+          "type": "navigation"
+        },
+        {
+          "href": "/traces",
+          "text": "Traces",
+          "absoluteUrl": "https://atlas-admin-insights.vercel.app/traces",
+          "type": "navigation"
+        },
+        {
+          "href": "/witnesses",
+          "text": "Witnesses",
+          "absoluteUrl": "https://atlas-admin-insights.vercel.app/witnesses",
+          "type": "navigation"
+        }
+      ]
+    },
+    {
+      "app": "dev_portal",
+      "baseUrl": "https://atlas-dev-portal.vercel.app",
+      "timestamp": "2025-09-20T04:14:34.669Z",
+      "navLinks": [
+        {
+          "href": "/",
+          "text": "Quickstart",
+          "absoluteUrl": "https://atlas-dev-portal.vercel.app/",
+          "type": "navigation"
+        },
+        {
+          "href": "/docs",
+          "text": "API Docs",
+          "absoluteUrl": "https://atlas-dev-portal.vercel.app/docs",
+          "type": "navigation"
+        },
+        {
+          "href": "/sdk",
+          "text": "SDK",
+          "absoluteUrl": "https://atlas-dev-portal.vercel.app/sdk",
+          "type": "navigation"
+        },
+        {
+          "href": "/examples",
+          "text": "Examples",
+          "absoluteUrl": "https://atlas-dev-portal.vercel.app/examples",
+          "type": "navigation"
+        }
+      ]
+    }
+  ]
+}
