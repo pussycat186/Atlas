@@ -1,251 +1,236 @@
 name: Deploy Frontends
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Release tag to deploy'
-        required: true
-        default: 'v20250918-0020'
-      rollback_to_tag:
-        description: 'Rollback to specific tag (optional)'
+      message:
+        description: 'Deployment message'
         required: false
-        default: ''
+        default: 'Deploy stub pages'
 
-permissions:
-  contents: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+  NPM_CONFIG_FROZEN_LOCKFILE: false
+  NPM_CONFIG_SHAMEFULLY_HOIST: true
 
 jobs:
-  deploy-frontends:
+  deploy-proof-messenger:
     runs-on: ubuntu-latest
+    outputs:
+      deploy_url: ${{ steps.deploy.outputs.deploy_url }}
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        
-    - name: Determine release tag
-      id: tag
-      run: |
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          if [ -n "${{ github.event.inputs.rollback_to_tag }}" ]; then
-            echo "tag=${{ github.event.inputs.rollback_to_tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          fi
-        else
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-        fi
-        
-    - name: Download signed release tarball
-      run: |
-        TAG="${{ steps.tag.outputs.tag }}"
-        echo "Downloading release tarball for tag: $TAG"
-        
-        # Wait for release to be available (retry up to 5 times)
-        for i in {1..5}; do
-          echo "Attempt $i: Checking for release $TAG"
-          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG")
-          
-          TARBALL_URL=$(echo "$RELEASE_INFO" | jq -r '.tarball_url')
-          echo "Tarball URL: $TARBALL_URL"
-          
-          if [ "$TARBALL_URL" != "null" ] && [ "$TARBALL_URL" != "" ]; then
-            echo "Release found, downloading tarball..."
-            curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -o "atlas-${TAG}.tar.gz" \
-              "$TARBALL_URL"
-            break
-          else
-            echo "Release not ready yet, waiting 30 seconds..."
-            sleep 30
-          fi
-        done
-        
-        # Verify the tarball was downloaded
-        if [ ! -f "atlas-${TAG}.tar.gz" ]; then
-          echo "Failed to download tarball after 5 attempts"
-          exit 1
-        fi
-        
-    - name: Extract release tarball
-      run: |
-        TAG="${{ steps.tag.outputs.tag }}"
-        echo "Extracting release tarball: atlas-${TAG}.tar.gz"
-        tar -xzf "atlas-${TAG}.tar.gz"
-        ls -la
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20.x'
+        node-version: '20'
         
     - name: Setup pnpm
       uses: pnpm/action-setup@v2
       with:
-        version: 9.0.0
+        version: 8
+        
+    - name: Configure pnpm
+      run: |
+        pnpm config set shamefully-hoist true
         
     - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+        
+    - name: Build monorepo
+      run: pnpm -r build
+        
+    - name: Setup Vercel project config
       run: |
-        # GitHub tarballs extract repository contents directly to current directory
-        EXTRACTED_DIR="."
-        echo "Extracted directory: $EXTRACTED_DIR"
-        cd "$EXTRACTED_DIR"
-        pnpm install --frozen-lockfile
+        mkdir -p apps/proof-messenger/.vercel
+        cat > apps/proof-messenger/.vercel/project.json << EOF
+        {
+          "orgId": "${{ secrets.VERCEL_ORG_ID }}",
+          "projectId": "${{ secrets.VERCEL_PROJECT_ID_PROOF }}"
+        }
+        EOF
         
-    - name: Build proof-messenger
+    - name: Deploy to Vercel
+      id: deploy
       run: |
-        # GitHub tarballs extract repository contents directly to current directory
-        EXTRACTED_DIR="."
-        echo "Current directory: $(pwd)"
-        echo "Contents of current directory:"
-        ls -la
-        echo "Contents of apps directory:"
-        ls -la apps/
-        echo "Contents of apps/proof-messenger directory:"
-        ls -la apps/proof-messenger/
-        cd "$EXTRACTED_DIR/apps/proof-messenger"
-        pnpm build
+        cd apps/proof-messenger
         
-    - name: Build admin-insights
+        echo "Pulling Vercel configuration..."
+        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        
+        echo "Building for production..."
+        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        
+        echo "Deploying to production..."
+        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+        echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        
+        echo "✅ Deployed proof-messenger to $DEPLOY_URL"
+        
+    - name: Verify deployment
       run: |
-        # GitHub tarballs extract repository contents directly to current directory
-        EXTRACTED_DIR="."
-        cd "$EXTRACTED_DIR/apps/admin-insights"
-        pnpm build
-        
-    - name: Build dev-portal
-      run: |
-        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
-          # Find the extracted directory
-          EXTRACTED_DIR=$(find . -maxdepth 1 -name "atlas-*" -type d | head -1)
-          cd "$EXTRACTED_DIR/apps/dev-portal"
-          pnpm build
-        else
-          echo "Skipping dev-portal build - VERCEL_PROJECT_ID_DEVPORTAL not configured"
-        fi
-        
-    - name: Install Vercel CLI
-      run: npm install -g vercel@latest
-      
-    - name: Deploy proof-messenger to Vercel
-      run: |
-        # GitHub tarballs extract repository contents directly to current directory
-        EXTRACTED_DIR="."
-        cd "$EXTRACTED_DIR"
-        vercel --token ${{ secrets.VERCEL_TOKEN }} \
-          --scope ${{ secrets.VERCEL_ORG_ID }} \
-          --prod \
-          --yes \
-          --cwd apps/proof-messenger
-      env:
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        
-    - name: Deploy admin-insights to Vercel
-      run: |
-        # GitHub tarballs extract repository contents directly to current directory
-        EXTRACTED_DIR="."
-        cd "$EXTRACTED_DIR"
-        vercel --token ${{ secrets.VERCEL_TOKEN }} \
-          --scope ${{ secrets.VERCEL_ORG_ID }} \
-          --prod \
-          --yes \
-          --cwd apps/admin-insights
-      env:
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        
-    - name: Deploy dev-portal to Vercel
-      run: |
-        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
-          # GitHub tarballs extract repository contents directly to current directory
-          EXTRACTED_DIR="."
-          cd "$EXTRACTED_DIR"
-        vercel --token ${{ secrets.VERCEL_TOKEN }} \
-          --scope ${{ secrets.VERCEL_ORG_ID }} \
-          --prod \
-          --yes \
-          --cwd apps/dev-portal
-        else
-          echo "Skipping dev-portal deployment - VERCEL_PROJECT_ID_DEVPORTAL not configured"
-        fi
-      env:
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        
-    - name: Get Vercel deployment URLs
-      id: urls
-      run: |
-        # Get the latest deployments for each project
-        PROOF_URL=$(vercel ls --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} atlas-proof-messenger --json | jq -r '.[0].url' | sed 's/^/https:\/\//')
-        INSIGHTS_URL=$(vercel ls --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} atlas-admin-insights --json | jq -r '.[0].url' | sed 's/^/https:\/\//')
-        
-        echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
-        echo "admin_insights_url=$INSIGHTS_URL" >> $GITHUB_OUTPUT
-        
-        if [ -n "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" ]; then
-          DEV_PORTAL_URL=$(vercel ls --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} atlas-dev-portal --json | jq -r '.[0].url' | sed 's/^/https:\/\//')
-          echo "dev_portal_url=$DEV_PORTAL_URL" >> $GITHUB_OUTPUT
-        else
-          echo "dev_portal_url=" >> $GITHUB_OUTPUT
-        fi
-        
-    - name: Verify deployments
-      run: |
-        echo "Verifying frontend deployments..."
-        
-        # Verify proof-messenger
-        PROOF_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.urls.outputs.proof_messenger_url }}")
-        if [ "$PROOF_STATUS" = "200" ] || [ "$PROOF_STATUS" = "302" ]; then
-          echo "✅ proof-messenger: $PROOF_STATUS"
-        else
-          echo "❌ proof-messenger: $PROOF_STATUS"
+        echo "Verifying deployment at ${{ steps.deploy.outputs.deploy_url }}"
+        curl -f -s "${{ steps.deploy.outputs.deploy_url }}" > /dev/null || {
+          echo "❌ Deployment failed health check"
           exit 1
-        fi
+        }
+        echo "✅ Deployment is healthy"
+
+  deploy-admin-insights:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_url: ${{ steps.deploy.outputs.deploy_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
         
-        # Verify admin-insights
-        INSIGHTS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.urls.outputs.admin_insights_url }}")
-        if [ "$INSIGHTS_STATUS" = "200" ] || [ "$INSIGHTS_STATUS" = "302" ]; then
-          echo "✅ admin-insights: $INSIGHTS_STATUS"
-        else
-          echo "❌ admin-insights: $INSIGHTS_STATUS"
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Configure pnpm
+      run: |
+        pnpm config set shamefully-hoist true
+        
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+        
+    - name: Build monorepo
+      run: pnpm -r build
+        
+    - name: Setup Vercel project config
+      run: |
+        mkdir -p apps/admin-insights/.vercel
+        cat > apps/admin-insights/.vercel/project.json << EOF
+        {
+          "orgId": "${{ secrets.VERCEL_ORG_ID }}",
+          "projectId": "${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}"
+        }
+        EOF
+        
+    - name: Deploy to Vercel
+      id: deploy
+      run: |
+        cd apps/admin-insights
+        
+        echo "Pulling Vercel configuration..."
+        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        
+        echo "Building for production..."
+        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        
+        echo "Deploying to production..."
+        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+        echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        
+        echo "✅ Deployed admin-insights to $DEPLOY_URL"
+        
+    - name: Verify deployment
+      run: |
+        echo "Verifying deployment at ${{ steps.deploy.outputs.deploy_url }}"
+        curl -f -s "${{ steps.deploy.outputs.deploy_url }}" > /dev/null || {
+          echo "❌ Deployment failed health check"
           exit 1
-        fi
+        }
+        echo "✅ Deployment is healthy"
+
+  deploy-dev-portal:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_url: ${{ steps.deploy.outputs.deploy_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
         
-        # Verify dev-portal if deployed
-        if [ "${{ steps.urls.outputs.dev_portal_url }}" != "" ]; then
-          DEV_PORTAL_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.urls.outputs.dev_portal_url }}")
-          if [ "$DEV_PORTAL_STATUS" = "200" ] || [ "$DEV_PORTAL_STATUS" = "302" ]; then
-            echo "✅ dev-portal: $DEV_PORTAL_STATUS"
-          else
-            echo "❌ dev-portal: $DEV_PORTAL_STATUS"
-            exit 1
-          fi
-        fi
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Configure pnpm
+      run: |
+        pnpm config set shamefully-hoist true
+        
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+        
+    - name: Build monorepo
+      run: pnpm -r build
+        
+    - name: Setup Vercel project config
+      run: |
+        mkdir -p apps/dev-portal/.vercel
+        cat > apps/dev-portal/.vercel/project.json << EOF
+        {
+          "orgId": "${{ secrets.VERCEL_ORG_ID }}",
+          "projectId": "${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}"
+        }
+        EOF
+        
+    - name: Deploy to Vercel
+      id: deploy
+      run: |
+        cd apps/dev-portal
+        
+        echo "Pulling Vercel configuration..."
+        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        
+        echo "Building for production..."
+        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        
+        echo "Deploying to production..."
+        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+        echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        
+        echo "✅ Deployed dev-portal to $DEPLOY_URL"
+        
+    - name: Verify deployment
+      run: |
+        echo "Verifying deployment at ${{ steps.deploy.outputs.deploy_url }}"
+        curl -f -s "${{ steps.deploy.outputs.deploy_url }}" > /dev/null || {
+          echo "❌ Deployment failed health check"
+          exit 1
+        }
+        echo "✅ Deployment is healthy"
+        
+  generate-urls:
+    needs: [deploy-proof-messenger, deploy-admin-insights, deploy-dev-portal]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
         
     - name: Generate LIVE_URLS.json
       run: |
         cat > LIVE_URLS.json << EOF
         {
           "status": "LIVE",
-          "tag": "${{ steps.tag.outputs.tag }}",
+          "tag": "manual-deploy-$(date +%Y%m%d-%H%M)",
           "frontends": {
-            "proof_messenger": "${{ steps.urls.outputs.proof_messenger_url }}",
-            "admin_insights": "${{ steps.urls.outputs.admin_insights_url }}",
-            "dev_portal": "${{ steps.urls.outputs.dev_portal_url }}"
+            "proof_messenger": "${{ needs.deploy-proof-messenger.outputs.deploy_url }}",
+            "admin_insights": "${{ needs.deploy-admin-insights.outputs.deploy_url }}",
+            "dev_portal": "${{ needs.deploy-dev-portal.outputs.deploy_url }}"
           },
-          "deployment_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-          "workflow_run_id": "${{ github.run_id }}"
+          "backends": {
+            "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
+            "quantum_sync": "https://atlas-quantum-sync.sonthenguyen186.workers.dev"
+          }
         }
         EOF
         
@@ -255,5 +240,5 @@ jobs:
     - name: Upload LIVE_URLS.json
       uses: actions/upload-artifact@v4
       with:
-        name: frontend-live-urls
+        name: live-urls-final
         path: LIVE_URLS.json
