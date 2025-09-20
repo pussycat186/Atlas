@@ -40,8 +40,8 @@ jobs:
     - name: Install dependencies
       run: pnpm install --no-frozen-lockfile
         
-    - name: Build monorepo
-      run: pnpm -r build
+    - name: Build apps only
+      run: pnpm -r --filter "./apps/*" build
         
     - name: Setup Vercel project config
       run: |
@@ -105,8 +105,8 @@ jobs:
     - name: Install dependencies
       run: pnpm install --no-frozen-lockfile
         
-    - name: Build monorepo
-      run: pnpm -r build
+    - name: Build apps only
+      run: pnpm -r --filter "./apps/*" build
         
     - name: Setup Vercel project config
       run: |
@@ -170,8 +170,8 @@ jobs:
     - name: Install dependencies
       run: pnpm install --no-frozen-lockfile
         
-    - name: Build monorepo
-      run: pnpm -r build
+    - name: Build apps only
+      run: pnpm -r --filter "./apps/*" build
         
     - name: Setup Vercel project config
       run: |
