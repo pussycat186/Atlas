@@ -31,7 +31,7 @@ jobs:
             wd: apps/admin-insights
             projectId: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
           - app: dev-portal
-            wd: .
+            wd: apps/dev-portal
             projectId: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
     
     steps:
