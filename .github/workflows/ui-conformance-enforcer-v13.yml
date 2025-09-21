@@ -39,6 +39,12 @@ jobs:
             dev-portal)      echo "pid=${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" >> $GITHUB_OUTPUT;;
           esac
 
+      - name: Pull Vercel project settings
+        working-directory: apps/${{ matrix.app }}
+        env:
+          VERCEL_PROJECT_ID: ${{ steps.proj.outputs.pid }}
+        run: npx vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+
       - name: Build
         working-directory: apps/${{ matrix.app }}
         run: npx vercel build --prod --token "$VERCEL_TOKEN"
