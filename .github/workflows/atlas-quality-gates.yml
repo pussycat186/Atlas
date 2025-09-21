@@ -31,20 +31,23 @@ jobs:
       
     - name: Run Lighthouse Basic
       run: |
-        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/basic
-        npx lighthouse https://atlas-proof-messenger.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/basic/proof.json --chrome-flags="--headless"
-        npx lighthouse https://atlas-admin-insights.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/basic/admin.json --chrome-flags="--headless"
-        npx lighthouse https://atlas-dev-portal.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/basic/dev.json --chrome-flags="--headless"
+        TIMESTAMP=$(date +%Y%m%d-%H%M)
+        mkdir -p docs/evidence/$TIMESTAMP/lighthouse/basic
+        npx lighthouse https://atlas-proof-messenger.vercel.app --output=json --output-path=docs/evidence/$TIMESTAMP/lighthouse/basic/proof.json --chrome-flags="--headless"
+        npx lighthouse https://atlas-admin-insights.vercel.app --output=json --output-path=docs/evidence/$TIMESTAMP/lighthouse/basic/admin.json --chrome-flags="--headless"
+        npx lighthouse https://atlas-dev-portal.vercel.app --output=json --output-path=docs/evidence/$TIMESTAMP/lighthouse/basic/dev.json --chrome-flags="--headless"
         
     - name: Run Playwright Basic
       run: |
-        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/playwright/basic
-        npx playwright test tests/basic.spec.ts --config=playwright.config.ts --reporter=html --output-dir=docs/evidence/$(date +%Y%m%d-%H%M)/playwright/basic
+        TIMESTAMP=$(date +%Y%m%d-%H%M)
+        mkdir -p docs/evidence/$TIMESTAMP/playwright/basic
+        npx playwright test tests/basic.spec.ts --config=playwright.config.ts --reporter=html --output-dir=docs/evidence/$TIMESTAMP/playwright/basic
         
     - name: Run k6 Basic
       run: |
-        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/k6/basic
-        k6 run k6-simple-test.js --out json=docs/evidence/$(date +%Y%m%d-%H%M)/k6/basic/results.json
+        TIMESTAMP=$(date +%Y%m%d-%H%M)
+        mkdir -p docs/evidence/$TIMESTAMP/k6/basic
+        k6 run k6-simple-test.js --out json=docs/evidence/$TIMESTAMP/k6/basic/results.json
 
   verify-pro:
     runs-on: ubuntu-latest
@@ -67,20 +70,23 @@ jobs:
       
     - name: Run Lighthouse Pro
       run: |
-        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/pro
-        npx lighthouse https://atlas-proof-messenger.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/pro/proof.json --chrome-flags="--headless"
-        npx lighthouse https://atlas-admin-insights.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/pro/admin.json --chrome-flags="--headless"
-        npx lighthouse https://atlas-dev-portal.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/pro/dev.json --chrome-flags="--headless"
+        TIMESTAMP=$(date +%Y%m%d-%H%M)
+        mkdir -p docs/evidence/$TIMESTAMP/lighthouse/pro
+        npx lighthouse https://atlas-proof-messenger.vercel.app --output=json --output-path=docs/evidence/$TIMESTAMP/lighthouse/pro/proof.json --chrome-flags="--headless"
+        npx lighthouse https://atlas-admin-insights.vercel.app --output=json --output-path=docs/evidence/$TIMESTAMP/lighthouse/pro/admin.json --chrome-flags="--headless"
+        npx lighthouse https://atlas-dev-portal.vercel.app --output=json --output-path=docs/evidence/$TIMESTAMP/lighthouse/pro/dev.json --chrome-flags="--headless"
         
     - name: Run Playwright Pro
       run: |
-        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/playwright/pro
-        npx playwright test tests/pro.spec.ts --config=playwright.config.ts --reporter=html --output-dir=docs/evidence/$(date +%Y%m%d-%H%M)/playwright/pro
+        TIMESTAMP=$(date +%Y%m%d-%H%M)
+        mkdir -p docs/evidence/$TIMESTAMP/playwright/pro
+        npx playwright test tests/pro.spec.ts --config=playwright.config.ts --reporter=html --output-dir=docs/evidence/$TIMESTAMP/playwright/pro
         
     - name: Run k6 Pro
       run: |
-        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/k6/pro
-        k6 run k6-simple-test.js --out json=docs/evidence/$(date +%Y%m%d-%H%M)/k6/pro/results.json
+        TIMESTAMP=$(date +%Y%m%d-%H%M)
+        mkdir -p docs/evidence/$TIMESTAMP/k6/pro
+        k6 run k6-simple-test.js --out json=docs/evidence/$TIMESTAMP/k6/pro/results.json
 
   update-live-urls:
     runs-on: ubuntu-latest
