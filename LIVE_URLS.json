@@ -25,5 +25,5 @@
     "accessibility": "WCAG 2.2 compliant with prefers-reduced-motion support"
   },
   "evidence": "docs/evidence//",
-  "commit": "4eff6404d0c66c74fa18628f866aa2b2bb78fa10"
+  "commit": "2be1e8a6d87f092cc090c875c1056a0dbc8c4568"
 }
