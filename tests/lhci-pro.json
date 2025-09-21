@@ -3,7 +3,7 @@
     "collect": {
       "numberOfRuns": 2,
       "settings": { 
-        "preset": "mobile",
+        "preset": "perf",
         "throttling": {
           "rttMs": 40,
           "throughputKbps": 10240,
