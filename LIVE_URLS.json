@@ -1,6 +1,6 @@
 {
-  "status": "CI_GREEN_A11Y_FIXES_DEPLOYED",
-  "tag": "a11y-enforcer-20250921-1043",
+  "status": "CI_GREEN_DEPLOYED_BASIC&PRO",
+  "tag": "quality-gates-20250921-1615",
   "frontends": {
     "proof_messenger": "https://atlas-proof-messenger.vercel.app",
     "admin_insights": "https://atlas-admin-insights.vercel.app",
@@ -8,53 +8,6 @@
   },
   "backends": {
     "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
-    "quantum_sync": "https://atlas-quantum-sync.sonthenguyen186.workers.dev"
-  },
-  "lighthouse": {
-    "proof": {
-      "a11y": 100,
-      "perf": 100,
-      "bp": 96,
-      "seo": 100
-    },
-    "admin": {
-      "a11y": 92,
-      "perf": 100,
-      "bp": 96,
-      "seo": 100
-    },
-    "dev": {
-      "a11y": 86,
-      "perf": 100,
-      "bp": 96,
-      "seo": 100
-    }
-  },
-  "accessibility_fixes": {
-    "status": "implemented_and_deployed",
-    "deployment_status": "successful",
-    "changes": [
-      "Enhanced color contrast with proper dark mode support (text-gray-900/text-gray-600)",
-      "Fixed heading hierarchy (h1->h2->h3 instead of h1->h2->h2)",
-      "Added comprehensive aria-label attributes to all buttons",
-      "Implemented proper landmark structure with main/header elements",
-      "Enhanced focus management with visible focus rings",
-      "Added touch target utilities for 24x24px minimum size",
-      "Replaced custom CSS variables with standard Tailwind classes",
-      "Fixed all build errors and syntax issues",
-      "Committed and pushed all accessibility improvements"
-    ],
-    "expected_scores": {
-      "admin_insights": "≥95 (from 92) - 3+ point improvement expected",
-      "dev_portal": "≥95 (from 86) - 9+ point improvement expected"
-    },
-    "deployment_status": "All apps successfully deployed to Vercel Production"
-  },
-  "ci_status": {
-    "build": "PASSING",
-    "deploy_frontends": "TRIGGERED",
-    "vercel_deployment": "SUCCESSFUL"
-  },
-  "evidence": "docs/evidence/20250921-1043/",
-  "notes": "All accessibility fixes implemented, committed, and deployed. Apps are live and accessible. Fresh Lighthouse audits show improvements but may need time to reflect deployed changes. All CI workflows are green and deployments successful."
+    "witnesses": ["https://atlas-witness-1.sonthenguyen186.workers.dev", "https://atlas-witness-2.sonthenguyen186.workers.dev"]
+  }
 }
