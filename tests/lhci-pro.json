@@ -1,0 +1,27 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 2,
+      "settings": { 
+        "preset": "mobile",
+        "throttling": {
+          "rttMs": 40,
+          "throughputKbps": 10240,
+          "cpuSlowdownMultiplier": 1
+        }
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", {"minScore": 0.95}],
+        "categories:accessibility": ["error", {"minScore": 0.95}],
+        "categories:best-practices": ["error", {"minScore": 1.0}],
+        "categories:seo": ["error", {"minScore": 1.0}],
+        "total-byte-weight": ["error", {"maxNumericValue": 250000}],
+        "unused-javascript": "warn",
+        "unused-css-rules": "warn",
+        "render-blocking-resources": "warn"
+      }
+    }
+  }
+}

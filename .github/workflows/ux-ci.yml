@@ -1,0 +1,84 @@
+name: UX-Gates
+on: [pull_request]
+
+jobs:
+  matrix-run:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [proof-messenger, admin-insights, dev-portal]
+        sku: [basic, pro]
+    env:
+      ATLAS_SKU: ${{ matrix.sku }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+      - run: corepack enable && pnpm i --no-frozen-lockfile
+
+      - name: Select project id
+        id: proj
+        run: |
+          case "${{ matrix.app }}" in
+            proof-messenger) echo "pid=${{ secrets.VERCEL_PROJECT_ID_PROOF }}" >> $GITHUB_OUTPUT;;
+            admin-insights)  echo "pid=${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" >> $GITHUB_OUTPUT;;
+            dev-portal)      echo "pid=${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" >> $GITHUB_OUTPUT;;
+          esac
+
+      - name: Build
+        working-directory: apps/${{ matrix.app }}
+        run: npx vercel build --prod --token "$VERCEL_TOKEN"
+
+      - name: Deploy preview
+        id: deploy
+        working-directory: apps/${{ matrix.app }}
+        env:
+          VERCEL_PROJECT_ID: ${{ steps.proj.outputs.pid }}
+        run: |
+          url=$(npx vercel deploy --prebuilt --token "$VERCEL_TOKEN")
+          echo "preview_url=$url" >> $GITHUB_OUTPUT
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Install axe-playwright
+        run: npm install @axe-core/playwright
+
+      - name: Run Playwright (axe included)
+        env:
+          BASE_URL: ${{ steps.deploy.outputs.preview_url }}
+        run: pnpm exec playwright test --config=tests/playwright.config.ts --reporter=line
+
+      - name: Lighthouse (Basic)
+        if: matrix.sku == 'basic'
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ steps.deploy.outputs.preview_url }}/
+            ${{ steps.deploy.outputs.preview_url }}/metrics
+          configPath: ./tests/lhci.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Lighthouse (Pro)
+        if: matrix.sku == 'pro'
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ steps.deploy.outputs.preview_url }}/
+            ${{ steps.deploy.outputs.preview_url }}/metrics
+          configPath: ./tests/lhci-pro.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Archive evidence
+        if: always()
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/${{ matrix.app }}/
+          cp -r playwright-report || true
+          echo "${{ steps.deploy.outputs.preview_url }}" > docs/evidence/$TS/${{ matrix.app }}/PREVIEW_URL.txt

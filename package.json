@@ -6,7 +6,8 @@
   "workspaces": [
     "apps/*",
     "services/*",
-    "packages/*"
+    "packages/*",
+    "packages/config"
   ],
   "scripts": {
     "clean": "rimraf packages/**/dist services/**/dist apps/**/dist || true",
@@ -32,6 +33,7 @@
     "k8s:delete": "helm uninstall atlas"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@playwright/test": "^1.55.0",
     "@types/jest": "^29.5.8",
     "@types/node": "^20.19.13",

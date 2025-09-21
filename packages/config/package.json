@@ -1,0 +1,17 @@
+{
+  "name": "@atlas/config",
+  "version": "1.0.0",
+  "description": "Atlas configuration utilities for live URLs and environment management",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0"
+  }
+}

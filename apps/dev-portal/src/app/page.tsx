@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { getGatewayUrl } from '@atlas/config';
 // import { CommandPalette, type Command } from '@atlas/design-system';
 import { 
   Code, 
@@ -18,7 +19,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-const codeExamples = {
+const codeExamples = (gatewayUrl: string) => ({
   javascript: `// Install the Atlas SDK
 npm install @atlas/fabric-client
 
@@ -26,7 +27,7 @@ npm install @atlas/fabric-client
 import { AtlasClient } from '@atlas/fabric-client';
 
 const client = new AtlasClient({
-  gatewayUrl: 'https://atlas-gateway.sonthenguyen186.workers.dev',
+  gatewayUrl: '${gatewayUrl}',
   idempotencyKey: 'optional-key'
 });
 
@@ -46,7 +47,7 @@ pip install atlas-fabric-client
 from atlas_fabric_client import AtlasClient
 
 client = AtlasClient(
-    gateway_url='https://atlas-gateway.sonthenguyen186.workers.dev',
+    gateway_url='${gatewayUrl}',
     idempotency_key='optional-key'
 )
 
@@ -60,7 +61,7 @@ print(f'Record submitted: {record.id}')
 print(f'Receipt: {record.receipt}')`,
 
   curl: `# Submit a record via REST API
-curl -X POST https://atlas-gateway.sonthenguyen186.workers.dev/record \\
+curl -X POST ${gatewayUrl}/record \\
   -H "Content-Type: application/json" \\
   -H "X-Idempotency-Key: optional-key" \\
   -d '{
@@ -82,7 +83,7 @@ curl -X POST https://atlas-gateway.sonthenguyen186.workers.dev/record \\
     "verifyResult": true
   }
 }`
-};
+});
 
 const features = [
   {
@@ -139,6 +140,14 @@ export default function DeveloperPortal() {
   const [selectedLanguage, setSelectedLanguage] = useState<'javascript' | 'python' | 'curl'>('javascript');
   const [copiedCode, setCopiedCode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  
+  const [gatewayUrl, setGatewayUrl] = useState('https://atlas-gateway.sonthenguyen186.workers.dev');
+  
+  useEffect(() => {
+    getGatewayUrl().then(setGatewayUrl);
+  }, []);
+  
+  const examples = codeExamples(gatewayUrl);
 
   // Command palette commands - temporarily disabled
   // const commands: Command[] = [
@@ -271,10 +280,10 @@ export default function DeveloperPortal() {
           <div className="space-y-6">
             {/* Language Tabs */}
             <div className="flex space-x-2 border-b" data-testid="language-tabs" role="tablist" aria-label="Code example language selection">
-              {Object.keys(codeExamples).map((lang) => (
+              {Object.keys(examples).map((lang) => (
                 <button
                   key={lang}
-                  onClick={() => setSelectedLanguage(lang as keyof typeof codeExamples)}
+                  onClick={() => setSelectedLanguage(lang as keyof typeof examples)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                     selectedLanguage === lang
                       ? 'border-blue-600 text-blue-600'
@@ -301,7 +310,7 @@ export default function DeveloperPortal() {
                 }}
               >
                 <pre className="text-sm text-gray-100">
-                  <code className="transition-all duration-300">{codeExamples[selectedLanguage]}</code>
+                  <code className="transition-all duration-300">{examples[selectedLanguage]}</code>
                 </pre>
                 {/* Code execution indicator */}
                 <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -315,8 +324,9 @@ export default function DeveloperPortal() {
                 size="sm"
                 variant="outline"
                 className="absolute top-2 right-2 bg-gray-800 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 hover:scale-105"
-                onClick={() => copyToClipboard(codeExamples[selectedLanguage])}
+                onClick={() => copyToClipboard(examples[selectedLanguage])}
                 aria-label="Copy code to clipboard"
+                data-testid={selectedLanguage === 'javascript' ? 'copy-javascript' : selectedLanguage === 'curl' ? 'copy-curl' : 'copy-python'}
               >
                 <Copy className="h-4 w-4 mr-2" />
                 {copiedCode ? 'Copied!' : 'Copy'}

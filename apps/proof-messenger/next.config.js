@@ -90,8 +90,8 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    ATLAS_GATEWAY_URL: process.env.ATLAS_GATEWAY_URL || 'http://localhost:3000',
-    ATLAS_DRIVE_URL: process.env.ATLAS_DRIVE_URL || 'http://localhost:3004',
+    ATLAS_GATEWAY_URL: process.env.ATLAS_GATEWAY_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev',
+    ATLAS_DRIVE_URL: process.env.ATLAS_DRIVE_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev',
   },
   // Enable static generation for better performance
   output: 'export',
@@ -142,11 +142,11 @@ const nextConfig = {
     return [
       {
         source: '/api/gateway/:path*',
-        destination: `${process.env.ATLAS_GATEWAY_URL || 'http://localhost:3000'}/:path*`,
+        destination: `${process.env.ATLAS_GATEWAY_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev'}/:path*`,
       },
       {
         source: '/api/drive/:path*',
-        destination: `${process.env.ATLAS_DRIVE_URL || 'http://localhost:3004'}/:path*`,
+        destination: `${process.env.ATLAS_DRIVE_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev'}/:path*`,
       },
     ];
   },

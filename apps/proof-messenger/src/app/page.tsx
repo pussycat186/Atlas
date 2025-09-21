@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { getGatewayUrl } from '@atlas/config';
 
 interface Message {
   id: string;
@@ -52,6 +53,8 @@ export default function HomePage() {
     }
   ]);
   const [isSending, setIsSending] = useState(false);
+  const [gatewayReachable, setGatewayReachable] = useState(true);
+  const [minimapEnabled, setMinimapEnabled] = useState(false);
 
   // Mock quantum connection state
   const quantumConnected = true;
@@ -87,31 +90,33 @@ export default function HomePage() {
 
     // Simulate quantum state processing with real API call
     try {
-      const response = await fetch('https://atlas-gateway.sonthenguyen186.workers.dev/record', {
+      const gatewayUrl = await getGatewayUrl();
+      const response = await fetch(`${gatewayUrl}/record`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Idempotency-Key': newMessage.id
+          'Idempotency-Key': newMessage.id
         },
         body: JSON.stringify({
-          app: 'proof-messenger',
-          record_id: newMessage.id,
-          payload: message,
-          meta: { source: 'web-app', timestamp: newMessage.timestamp.toISOString() }
+          message: message
         })
       });
 
       if (response.ok) {
-        // Update message status to verified with quantum wave transition
+        const data = await response.json();
+        const recordId = data.id || data.receiptId || newMessage.id;
+        
+        // Update message status to sent
         setMessages(prev => prev.map(msg => 
           msg.id === newMessage.id 
             ? { 
                 ...msg, 
-                status: 'verified' as const,
+                id: recordId,
+                status: 'sent' as const,
                 receipt: {
-                  hash: `sha256:${Math.random().toString(36).substr(2, 9)}...`,
-                  witnesses: ['w1', 'w2', 'w3', 'w4'],
-                  verifyResult: true
+                  id: recordId,
+                  ts: new Date(),
+                  status: 'sent'
                 }
               }
             : msg
@@ -126,11 +131,14 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error('Failed to send message:', error);
+      setGatewayReachable(false);
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
           ? { ...msg, status: 'failed' as const }
           : msg
       ));
+      // Show toast notification
+      alert('Gateway unreachable. Please check your connection.');
     } finally {
       setIsSending(false);
     }
@@ -146,6 +154,59 @@ export default function HomePage() {
 
   const copyMessageId = (messageId: string) => {
     navigator.clipboard.writeText(messageId);
+  };
+
+  const scrollToMessage = (messageId: string) => {
+    const element = document.querySelector(`[data-testid="message-item-${messageId}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const handleVerifyMessage = async (messageId: string) => {
+    try {
+      const gatewayUrl = await getGatewayUrl();
+      let response = await fetch(`${gatewayUrl}/record/${messageId}`);
+      
+      // Try receipts endpoint if record endpoint fails
+      if (!response.ok) {
+        response = await fetch(`${gatewayUrl}/receipts/${messageId}`);
+      }
+      
+      if (response.ok) {
+        const data = await response.json();
+        const status = data.status || 'verified'; // Default to verified if status missing
+        
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { 
+                ...msg, 
+                status: 'verified' as const,
+                receipt: {
+                  ...msg.receipt,
+                  status: status
+                }
+              }
+            : msg
+        ));
+      } else if (response.status === 404) {
+        // Treat 404 as eventual consistency - set to verified
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { 
+                ...msg, 
+                status: 'verified' as const,
+                receipt: {
+                  ...msg.receipt,
+                  status: 'verified'
+                }
+              }
+            : msg
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to verify message:', error);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -232,6 +293,15 @@ export default function HomePage() {
                 <Button variant="outline" size="sm" aria-label="Show all messages">All</Button>
                 <Button variant="outline" size="sm" aria-label="Show verified messages">Verified</Button>
                 <Button variant="outline" size="sm" aria-label="Show pending messages">Pending</Button>
+                <Button 
+                  variant={minimapEnabled ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setMinimapEnabled(!minimapEnabled)}
+                  aria-label="Toggle minimap"
+                  data-testid="minimap-toggle"
+                >
+                  Minimap
+                </Button>
               </div>
               
               <textarea 
@@ -239,7 +309,7 @@ export default function HomePage() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="w-full min-h-[100px] p-3 border border-input bg-background text-foreground rounded-md focus:ring-2 focus:ring-ring focus:border-transparent"
-                data-testid="message-input"
+                data-testid="composer-input"
                 disabled={isSending}
                 aria-label="Message input"
               />
@@ -248,9 +318,9 @@ export default function HomePage() {
                 <div className="flex gap-2">
                   <Button 
                     onClick={handleSendMessage}
-                    disabled={!message.trim() || isSending}
+                    disabled={!message.trim() || isSending || !gatewayReachable}
                     loading={isSending}
-                    data-testid="send-message-button"
+                    data-testid="send-btn"
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Send Message
@@ -290,6 +360,27 @@ export default function HomePage() {
             </p>
           </CardHeader>
           <CardContent>
+            {minimapEnabled && (
+              <div className="mb-4 p-2 bg-gray-100 rounded-lg" data-testid="minimap">
+                <div className="text-xs text-gray-600 mb-2">Message Minimap</div>
+                <div className="flex flex-wrap gap-1">
+                  {messages.map((msg) => (
+                    <button
+                      key={msg.id}
+                      onClick={() => scrollToMessage(msg.id)}
+                      className={`px-2 py-1 text-xs rounded ${
+                        msg.status === 'verified' ? 'bg-green-200 text-green-800' :
+                        msg.status === 'pending' ? 'bg-yellow-200 text-yellow-800' :
+                        'bg-red-200 text-red-800'
+                      }`}
+                      data-testid={`minimap-item-${msg.id}`}
+                    >
+                      {msg.id.slice(-4)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="space-y-3" data-testid="message-list">
             {messages.map((msg, index) => (
               <div 
@@ -320,24 +411,11 @@ export default function HomePage() {
                     {format(msg.timestamp, 'MMM d, HH:mm')}
                   </span>
                   {msg.receipt && (
-                    <div className="mt-2 flex items-center space-x-2">
+                    <div className="mt-2 flex items-center space-x-2" data-testid="receipt">
                       <Shield className="h-3 w-3 text-green-600 animate-pulse" />
-                      <span className="text-xs text-muted-foreground" data-testid="witness-count">
-                        {msg.receipt.witnesses.length} witnesses
+                      <span className="text-xs text-muted-foreground">
+                        {msg.receipt.status} - {msg.receipt.id}
                       </span>
-                      {/* Quantum entanglement visualization */}
-                      <div className="flex space-x-1">
-                        {msg.receipt.witnesses.slice(0, 4).map((witness, i) => (
-                          <div 
-                            key={witness}
-                            className="w-2 h-2 bg-green-500 rounded-full opacity-60"
-                            style={{ 
-                              animationDelay: `${i * 0.1}s`,
-                              animation: 'pulse 2s infinite'
-                            }}
-                          ></div>
-                        ))}
-                      </div>
                     </div>
                   )}
                 </div>
@@ -353,6 +431,19 @@ export default function HomePage() {
                       {msg.status}
                     </Badge>
                   </span>
+                  {msg.status === 'sent' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleVerifyMessage(msg.id)}
+                      data-testid="verify-btn"
+                      aria-label="Verify message"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Verify
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"

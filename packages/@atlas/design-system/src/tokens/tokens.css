@@ -36,10 +36,10 @@
   --letter-spacing-normal: 0em;
 
   /* Color Roles - Light Theme (WCAG AA compliant) */
-  --bg: #ffffff;
-  --surface: #f9fafb;
-  --fg: #000000; /* Maximum contrast for WCAG AAA */
-  --muted: #000000; /* Maximum contrast for WCAG AAA */
+  --bg: #f7f7fb; /* Light theme background */
+  --surface: #ffffffcc; /* Off-white surface with 80% opacity */
+  --fg: #111827; /* Dark text for contrast */
+  --muted: #475569; /* Muted text color */
   --primary: #1d4ed8; /* Enhanced contrast blue */
   --success: #047857; /* Enhanced contrast green */
   --warn: #b45309; /* Enhanced contrast yellow */
@@ -48,9 +48,9 @@
   
   /* Semantic color variations - Enhanced contrast for WCAG AA */
   --bg-secondary: #f3f4f6;
-  --fg-secondary: #1f2937; /* Increased contrast for better readability */
-  --fg-tertiary: #374151; /* Increased contrast from #6b7280 */
-  --border: #d1d5db;
+  --fg-secondary: #111827; /* Dark text for better readability */
+  --fg-tertiary: #475569; /* Muted text color */
+  --border: #e5e7eb; /* Light theme border */
   --border-focus: #2563eb;
   
   /* Specific color fixes for failing elements */
@@ -88,10 +88,10 @@
   --z-toast: 1080;
 }
 
-/* Dark Theme (WCAG AA compliant) */
+/* Dark Theme (WCAG AA compliant) - Neon on ink */
 [data-theme="dark"] {
-  --bg: #0B0F1A; /* Improved dark background */
-  --surface: #1f2937;
+  --bg: #0b0f14; /* Neon on ink background */
+  --surface: #1a1f2e;
   --fg: #ffffff;
   --muted: #d1d5db;
   --primary: #3b82f6;
@@ -100,7 +100,7 @@
   --danger: #ef4444;
   --focus: #3b82f6;
   
-  --bg-secondary: #374151;
+  --bg-secondary: #1a1f2e;
   --fg-secondary: #9ca3af;
   --fg-tertiary: #6b7280;
   --border: #374151;
