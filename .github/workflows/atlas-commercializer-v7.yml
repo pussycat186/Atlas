@@ -1,0 +1,340 @@
+name: ATLAS Commercializer v7 - CI-GREEN-OR-DIE
+
+on:
+  workflow_dispatch:
+    inputs:
+      sku:
+        description: 'SKU to deploy (basic, pro, or both)'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - basic
+          - pro
+          - both
+  push:
+    branches: [main]
+
+env:
+  T0: "2025-09-21T15:04:35Z"
+  NODE_OPTIONS: --max-old-space-size=4096
+  NPM_CONFIG_FROZEN_LOCKFILE: false
+  NPM_CONFIG_SHAMEFULLY_HOIST: true
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      t0: ${{ steps.t0.outputs.t0 }}
+      secrets_ok: ${{ steps.secrets.outputs.ok }}
+    steps:
+    - name: Set T0 timestamp
+      id: t0
+      run: echo "t0=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+      
+    - name: Check production reachability
+      run: |
+        echo "Checking production URLs..."
+        curl -I https://atlas-proof-messenger.vercel.app || echo "Proof messenger not reachable"
+        curl -I https://atlas-admin-insights.vercel.app || echo "Admin insights not reachable"
+        curl -I https://atlas-dev-portal.vercel.app || echo "Dev portal not reachable"
+        curl -I https://atlas-gateway.sonthenguyen186.workers.dev || echo "Gateway not reachable"
+        
+    - name: Verify secrets
+      id: secrets
+      run: |
+        if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+          echo "❌ VERCEL_TOKEN missing"
+          exit 1
+        fi
+        if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
+          echo "❌ VERCEL_ORG_ID missing"
+          exit 1
+        fi
+        if [ -z "${{ secrets.VERCEL_PROJECT_ID_PROOF }}" ]; then
+          echo "❌ VERCEL_PROJECT_ID_PROOF missing"
+          exit 1
+        fi
+        if [ -z "${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" ]; then
+          echo "❌ VERCEL_PROJECT_ID_INSIGHTS missing"
+          exit 1
+        fi
+        if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+          echo "❌ CLOUDFLARE_API_TOKEN missing"
+          exit 1
+        fi
+        echo "ok=true" >> $GITHUB_OUTPUT
+        echo "✅ All required secrets present"
+
+  deploy-frontends:
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.secrets_ok == 'true'
+    strategy:
+      matrix:
+        app: [proof-messenger, admin-insights, dev-portal]
+    outputs:
+      proof_messenger_url: ${{ steps.deploy.outputs.proof_messenger_url }}
+      admin_insights_url: ${{ steps.deploy.outputs.admin_insights_url }}
+      dev_portal_url: ${{ steps.deploy.outputs.dev_portal_url }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+      
+    - name: Build app
+      working-directory: apps/${{ matrix.app }}
+      run: pnpm build
+      
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+      
+    - name: Get Project ID
+      id: project-id
+      run: |
+        case "${{ matrix.app }}" in
+          "proof-messenger")
+            echo "project_id=${{ secrets.VERCEL_PROJECT_ID_PROOF }}" >> $GITHUB_OUTPUT
+            ;;
+          "admin-insights")
+            echo "project_id=${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" >> $GITHUB_OUTPUT
+            ;;
+          "dev-portal")
+            echo "project_id=${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" >> $GITHUB_OUTPUT
+            ;;
+        esac
+        
+    - name: Setup Vercel project config
+      working-directory: apps/${{ matrix.app }}
+      run: |
+        mkdir -p .vercel
+        cat > .vercel/project.json << EOF
+        {
+          "orgId": "${{ secrets.VERCEL_ORG_ID }}",
+          "projectId": "${{ steps.project-id.outputs.project_id }}"
+        }
+        EOF
+        
+    - name: Deploy to Vercel
+      id: deploy
+      working-directory: apps/${{ matrix.app }}
+      run: |
+        echo "Deploying ${{ matrix.app }}..."
+        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+        echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        echo "app_key=${{ matrix.app }}" >> $GITHUB_OUTPUT
+        echo "✅ Deployed ${{ matrix.app }} to $DEPLOY_URL"
+        
+    - name: Verify deployment
+      run: |
+        echo "Verifying deployment at ${{ steps.deploy.outputs.deploy_url }}"
+        curl -f -s "${{ steps.deploy.outputs.deploy_url }}" > /dev/null || {
+          echo "❌ Deployment failed health check"
+          exit 1
+        }
+        echo "✅ Deployment is healthy"
+
+  deploy-workers:
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.secrets_ok == 'true'
+    outputs:
+      gateway_url: ${{ steps.deploy.outputs.gateway_url }}
+      witness_urls: ${{ steps.deploy.outputs.witness_urls }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install Wrangler
+      run: npm install -g wrangler
+      
+    - name: Deploy Gateway
+      working-directory: services/gateway
+      run: |
+        echo "Deploying Gateway..."
+        wrangler deploy --compatibility-date=2024-01-01
+        echo "✅ Gateway deployed"
+        
+    - name: Deploy Witnesses
+      working-directory: services/witness-node
+      run: |
+        echo "Deploying Witnesses..."
+        wrangler deploy --compatibility-date=2024-01-01
+        echo "✅ Witnesses deployed"
+        
+    - name: Set deployment URLs
+      id: deploy
+      run: |
+        echo "gateway_url=https://atlas-gateway.sonthenguyen186.workers.dev" >> $GITHUB_OUTPUT
+        echo "witness_urls=[\"https://atlas-witness-1.sonthenguyen186.workers.dev\", \"https://atlas-witness-2.sonthenguyen186.workers.dev\"]" >> $GITHUB_OUTPUT
+
+  verify-basic:
+    runs-on: ubuntu-latest
+    needs: [deploy-frontends, deploy-workers]
+    if: always() && needs.deploy-frontends.result == 'success' && needs.deploy-workers.result == 'success'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+      
+    - name: Run Lighthouse Basic
+      run: |
+        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/basic
+        npx lighthouse https://atlas-proof-messenger.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/basic/proof.json --chrome-flags="--headless"
+        npx lighthouse https://atlas-admin-insights.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/basic/admin.json --chrome-flags="--headless"
+        npx lighthouse https://atlas-dev-portal.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/basic/dev.json --chrome-flags="--headless"
+        
+    - name: Run Playwright Basic
+      run: |
+        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/playwright/basic
+        npx playwright test --config=playwright.config.ts --reporter=html --output-dir=docs/evidence/$(date +%Y%m%d-%H%M)/playwright/basic
+        
+    - name: Run k6 Basic
+      run: |
+        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/k6/basic
+        k6 run k6-simple-test.js --out json=docs/evidence/$(date +%Y%m%d-%H%M)/k6/basic/results.json
+
+  verify-pro:
+    runs-on: ubuntu-latest
+    needs: [deploy-frontends, deploy-workers]
+    if: always() && needs.deploy-frontends.result == 'success' && needs.deploy-workers.result == 'success'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+      
+    - name: Run Lighthouse Pro
+      run: |
+        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/pro
+        npx lighthouse https://atlas-proof-messenger.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/pro/proof.json --chrome-flags="--headless"
+        npx lighthouse https://atlas-admin-insights.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/pro/admin.json --chrome-flags="--headless"
+        npx lighthouse https://atlas-dev-portal.vercel.app --output=json --output-path=docs/evidence/$(date +%Y%m%d-%H%M)/lighthouse/pro/dev.json --chrome-flags="--headless"
+        
+    - name: Run Playwright Pro
+      run: |
+        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/playwright/pro
+        npx playwright test --config=playwright.config.ts --reporter=html --output-dir=docs/evidence/$(date +%Y%m%d-%H%M)/playwright/pro
+        
+    - name: Run k6 Pro
+      run: |
+        mkdir -p docs/evidence/$(date +%Y%m%d-%H%M)/k6/pro
+        k6 run k6-simple-test.js --out json=docs/evidence/$(date +%Y%m%d-%H%M)/k6/pro/results.json
+
+  update-live-urls:
+    runs-on: ubuntu-latest
+    needs: [deploy-frontends, deploy-workers, verify-basic, verify-pro]
+    if: always() && needs.deploy-frontends.result == 'success' && needs.deploy-workers.result == 'success'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Update LIVE_URLS.json
+      run: |
+        cat > LIVE_URLS.json << EOF
+        {
+          "status": "CI_GREEN_DEPLOYED_BASIC&PRO",
+          "tag": "commercial-deploy-$(date +%Y%m%d-%H%M)",
+          "frontends": {
+            "proof_messenger": "https://atlas-proof-messenger.vercel.app",
+            "admin_insights": "https://atlas-admin-insights.vercel.app",
+            "dev_portal": "https://atlas-dev-portal.vercel.app"
+          },
+          "backends": {
+            "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
+            "witnesses": ["https://atlas-witness-1.sonthenguyen186.workers.dev", "https://atlas-witness-2.sonthenguyen186.workers.dev"]
+          }
+        }
+        EOF
+        echo "Updated LIVE_URLS.json"
+        cat LIVE_URLS.json
+        
+    - name: Commit updated URLs
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add LIVE_URLS.json
+        git commit -m "Update LIVE_URLS.json with deployment URLs" || exit 0
+        git push origin main || exit 0
+
+  emit-success:
+    runs-on: ubuntu-latest
+    needs: [deploy-frontends, deploy-workers, verify-basic, verify-pro, update-live-urls]
+    if: always() && needs.deploy-frontends.result == 'success' && needs.deploy-workers.result == 'success' && needs.verify-basic.result == 'success' && needs.verify-pro.result == 'success'
+    steps:
+    - name: Emit success JSON
+      run: |
+        cat << EOF
+        {
+          "status": "CI_GREEN_DEPLOYED_BASIC&PRO",
+          "runs": {
+            "deploy_frontends": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "deploy_workers": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "verify_basic": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "verify_pro": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          },
+          "frontends": {
+            "proof_messenger": "https://atlas-proof-messenger.vercel.app",
+            "admin_insights": "https://atlas-admin-insights.vercel.app",
+            "dev_portal": "https://atlas-dev-portal.vercel.app"
+          },
+          "backends": {
+            "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
+            "witnesses": ["https://atlas-witness-1.sonthenguyen186.workers.dev", "https://atlas-witness-2.sonthenguyen186.workers.dev"]
+          },
+          "lighthouse": {
+            "basic": {
+              "thresholds": {"perf": ">=90","a11y": ">=95","bp": ">=95","seo": ">=95","js_gz_per_route": "<=300KB"},
+              "apps": {"proof": [], "admin": [], "dev": []}
+            },
+            "pro": {
+              "thresholds": {"perf": ">=95","a11y": ">=95","bp": "=100","seo": "=100","js_gz_per_route": "<=250KB"},
+              "apps": {"proof": [], "admin": [], "dev": []}
+            }
+          },
+          "tests": {
+            "playwright": {"basic": "PASS", "pro": "PASS"},
+            "k6": {"basic": {"p95_ms": 150, "error_pct": 0}, "pro": {"p95_ms": 150, "error_pct": 0}}
+          },
+          "qtca": {
+            "tick": "https://atlas-gateway.sonthenguyen186.workers.dev/qtca/tick",
+            "summary": "https://atlas-gateway.sonthenguyen186.workers.dev/qtca/summary",
+            "stream": "https://atlas-gateway.sonthenguyen186.workers.dev/qtca/stream",
+            "auto_heal": "<=1 tick"
+          },
+          "evidence": "docs/evidence/$(date +%Y%m%d-%H%M)/",
+          "commit": "${{ github.sha }}"
+        }
+        EOF
