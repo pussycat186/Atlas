@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Badge } from '@atlas/design-system';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
 import { Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
 export default function SystemStatusPage() {

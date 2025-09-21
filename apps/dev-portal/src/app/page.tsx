@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button } from '@atlas/design-system';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 // import { CommandPalette, type Command } from '@atlas/design-system';
 import { 
   Code, 

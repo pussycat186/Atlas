@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Button } from '@atlas/design-system';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui/Button';
 import { BookOpen, Download, Code, ExternalLink } from 'lucide-react';
 
 export default function SDKDocsPage() {

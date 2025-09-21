@@ -1,7 +1,7 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { Button } from '@atlas/design-system';
+import { Button } from './ui/Button';
 import { Moon, Sun } from 'lucide-react';
 
 export function ThemeToggle() {

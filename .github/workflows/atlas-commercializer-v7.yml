@@ -94,9 +94,6 @@ jobs:
     - name: Install dependencies
       run: pnpm install --no-frozen-lockfile
       
-    - name: Build design system
-      run: pnpm -r --filter="@atlas/design-system" build
-      
     - name: Build app
       working-directory: apps/${{ matrix.app }}
       run: pnpm build
