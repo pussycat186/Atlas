@@ -41,7 +41,8 @@ jobs:
       run: |
         TIMESTAMP=$(date +%Y%m%d-%H%M)
         mkdir -p docs/evidence/$TIMESTAMP/playwright/basic
-        npx playwright test tests/basic.spec.ts --config=playwright.config.ts --reporter=html --output-dir=docs/evidence/$TIMESTAMP/playwright/basic
+        npx playwright test tests/basic.spec.ts --config=playwright.config.ts --reporter=html
+        cp -r playwright-report/* docs/evidence/$TIMESTAMP/playwright/basic/ || true
         
     - name: Run k6 Basic
       run: |
@@ -80,7 +81,8 @@ jobs:
       run: |
         TIMESTAMP=$(date +%Y%m%d-%H%M)
         mkdir -p docs/evidence/$TIMESTAMP/playwright/pro
-        npx playwright test tests/pro.spec.ts --config=playwright.config.ts --reporter=html --output-dir=docs/evidence/$TIMESTAMP/playwright/pro
+        npx playwright test tests/pro.spec.ts --config=playwright.config.ts --reporter=html
+        cp -r playwright-report/* docs/evidence/$TIMESTAMP/playwright/pro/ || true
         
     - name: Run k6 Pro
       run: |
