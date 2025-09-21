@@ -126,12 +126,17 @@ jobs:
           "projectId": "${{ steps.project-id.outputs.project_id }}"
         }
         EOF
+        echo "Created .vercel/project.json:"
+        cat .vercel/project.json
         
     - name: Deploy to Vercel
       id: deploy
       working-directory: apps/${{ matrix.app }}
       run: |
         echo "Deploying ${{ matrix.app }}..."
+        echo "Current directory: $(pwd)"
+        echo "Contents: $(ls -la)"
+        echo "Package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
         vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
         vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
