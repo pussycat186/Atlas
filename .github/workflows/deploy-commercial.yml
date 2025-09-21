@@ -1,0 +1,153 @@
+name: Deploy Commercial
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+  NPM_CONFIG_FROZEN_LOCKFILE: false
+  NPM_CONFIG_SHAMEFULLY_HOIST: true
+
+jobs:
+  deploy-frontends:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [proof-messenger, admin-insights, dev-portal]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Configure pnpm
+      run: pnpm config set shamefully-hoist true
+        
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+        
+    - name: Build apps
+      run: pnpm -r --filter "./apps/*" build
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+        
+    - name: Get Project ID
+      id: project-id
+      run: |
+        case "${{ matrix.app }}" in
+          "proof-messenger")
+            echo "project_id=${{ secrets.VERCEL_PROJECT_ID_PROOF }}" >> $GITHUB_OUTPUT
+            ;;
+          "admin-insights")
+            echo "project_id=${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}" >> $GITHUB_OUTPUT
+            ;;
+          "dev-portal")
+            echo "project_id=${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}" >> $GITHUB_OUTPUT
+            ;;
+        esac
+        
+    - name: Setup Vercel project config
+      working-directory: apps/${{ matrix.app }}
+      run: |
+        mkdir -p .vercel
+        cat > .vercel/project.json << EOF
+        {
+          "orgId": "${{ secrets.VERCEL_ORG_ID }}",
+          "projectId": "${{ steps.project-id.outputs.project_id }}"
+        }
+        EOF
+        
+    - name: Deploy to Vercel
+      id: deploy
+      working-directory: apps/${{ matrix.app }}
+      run: |
+        echo "Deploying ${{ matrix.app }}..."
+        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+        echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        echo "app_key=${{ matrix.app }}" >> $GITHUB_OUTPUT
+        echo "✅ Deployed ${{ matrix.app }} to $DEPLOY_URL"
+        
+    - name: Verify deployment
+      run: |
+        echo "Verifying deployment at ${{ steps.deploy.outputs.deploy_url }}"
+        curl -f -s "${{ steps.deploy.outputs.deploy_url }}" > /dev/null || {
+          echo "❌ Deployment failed health check"
+          exit 1
+        }
+        echo "✅ Deployment is healthy"
+        
+  deploy-workers:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install Wrangler
+      run: npm install -g wrangler
+        
+    - name: Deploy Gateway
+      working-directory: services/gateway
+      run: |
+        echo "Deploying Gateway..."
+        wrangler deploy --compatibility-date=2024-01-01
+        echo "✅ Gateway deployed"
+        
+    - name: Deploy Witnesses
+      working-directory: services/witness
+      run: |
+        echo "Deploying Witnesses..."
+        wrangler deploy --compatibility-date=2024-01-01
+        echo "✅ Witnesses deployed"
+        
+  update-urls:
+    needs: [deploy-frontends, deploy-workers]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Update LIVE_URLS.json
+      run: |
+        cat > LIVE_URLS.json << EOF
+        {
+          "status": "CI_GREEN_DEPLOYED_BASIC&PRO",
+          "tag": "commercial-deploy-$(date +%Y%m%d-%H%M)",
+          "frontends": {
+            "proof_messenger": "https://atlas-proof-messenger.vercel.app",
+            "admin_insights": "https://atlas-admin-insights.vercel.app",
+            "dev_portal": "https://atlas-dev-portal.vercel.app"
+          },
+          "backends": {
+            "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
+            "witnesses": ["https://atlas-witness-1.sonthenguyen186.workers.dev", "https://atlas-witness-2.sonthenguyen186.workers.dev"]
+          }
+        }
+        EOF
+        echo "Updated LIVE_URLS.json"
+        cat LIVE_URLS.json
+        
+    - name: Commit updated URLs
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add LIVE_URLS.json
+        git commit -m "Update LIVE_URLS.json with deployment URLs" || exit 0
+        git push origin main || exit 0
