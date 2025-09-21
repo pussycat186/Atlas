@@ -18,7 +18,7 @@ test.describe('ATLAS Basic SKU Tests', () => {
     
     // Verify message verification functionality exists
     await expect(page.locator('[data-testid="recent-messages-card"]')).toBeVisible();
-    await expect(page.locator('text=verified')).toBeVisible();
+    await expect(page.locator('[data-testid="message-status-msg_001"]')).toBeVisible();
     
     console.log('✓ Sign→Verify workflow (Message verification) - PASS');
   });
