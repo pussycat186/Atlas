@@ -1,0 +1,20 @@
+Running axe-core 4.10.3 in chrome-headless
+
+Testing https://atlas-proof-messenger.vercel.app ... please wait, this may take a minute.
+
+  Violation of "landmark-one-main" with 1 occurrences!
+    Ensure the document has a main landmark. Correct invalid elements at:
+     - html
+    For details, see: https://dequeuniversity.com/rules/axe/4.10/landmark-one-main
+
+  Violation of "region" with 4 occurrences!
+    Ensure all page content is contained by landmarks. Correct invalid elements at:
+     - .mb-8
+     - div[data-testid="send-message-card"] > .mb-4
+     - textarea
+     - div[data-testid="recent-messages-card"]
+    For details, see: https://dequeuniversity.com/rules/axe/4.10/region
+
+5 Accessibility issues detected.
+Testing complete of 1 pages
+

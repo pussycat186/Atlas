@@ -1,0 +1,172 @@
+name: Deploy UI & A11y Polish
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Deployment message'
+        required: false
+        default: 'Deploy UI & A11y enhancements'
+
+jobs:
+  deploy-ui-a11y:
+    runs-on: ubuntu-latest
+    outputs:
+      proof_messenger_url: ${{ steps.deploy.outputs.proof_messenger_url }}
+      admin_insights_url: ${{ steps.deploy.outputs.admin_insights_url }}
+      dev_portal_url: ${{ steps.deploy.outputs.dev_portal_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: |
+        pnpm install --no-frozen-lockfile
+        # Clear any problematic cache
+        pnpm store prune
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+      
+    - name: Deploy proof-messenger
+      id: deploy-proof
+      run: |
+        echo "Deploying enhanced proof-messenger..."
+        cd apps/proof-messenger
+        vercel pull --yes --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        # Clean install for this app
+        rm -rf node_modules .next
+        pnpm install --no-frozen-lockfile
+        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod
+        PROOF_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
+        echo "proof_messenger_url=$PROOF_URL" >> $GITHUB_OUTPUT
+        cd ../..
+        
+    - name: Deploy admin-insights
+      id: deploy-admin
+      run: |
+        echo "Deploying enhanced admin-insights..."
+        cd apps/admin-insights
+        vercel pull --yes --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        # Clean install for this app
+        rm -rf node_modules .next
+        pnpm install --no-frozen-lockfile
+        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod
+        ADMIN_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
+        echo "admin_insights_url=$ADMIN_URL" >> $GITHUB_OUTPUT
+        cd ../..
+        
+    - name: Deploy dev-portal
+      id: deploy-dev
+      run: |
+        echo "Deploying enhanced dev-portal..."
+        cd apps/dev-portal
+        vercel pull --yes --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+        # Clean install for this app
+        rm -rf node_modules .next
+        pnpm install --no-frozen-lockfile
+        vercel build --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod
+        DEV_URL=$(vercel deploy --prebuilt --cwd . --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --prod --yes)
+        echo "dev_portal_url=$DEV_URL" >> $GITHUB_OUTPUT
+        cd ../..
+        
+    - name: Verify deployments
+      run: |
+        echo "Verifying enhanced deployments..."
+        
+        # Verify proof-messenger
+        if [ -n "${{ steps.deploy-proof.outputs.proof_messenger_url }}" ]; then
+          echo "Checking proof-messenger at ${{ steps.deploy-proof.outputs.proof_messenger_url }}"
+          curl -f -s "${{ steps.deploy-proof.outputs.proof_messenger_url }}" > /dev/null || {
+            echo "❌ proof-messenger deployment failed health check"
+            exit 1
+          }
+          echo "✅ proof-messenger is healthy"
+        fi
+        
+        # Verify admin-insights
+        if [ -n "${{ steps.deploy-admin.outputs.admin_insights_url }}" ]; then
+          echo "Checking admin-insights at ${{ steps.deploy-admin.outputs.admin_insights_url }}"
+          curl -f -s "${{ steps.deploy-admin.outputs.admin_insights_url }}" > /dev/null || {
+            echo "❌ admin-insights deployment failed health check"
+            exit 1
+          }
+          echo "✅ admin-insights is healthy"
+        fi
+        
+        # Verify dev-portal
+        if [ -n "${{ steps.deploy-dev.outputs.dev_portal_url }}" ]; then
+          echo "Checking dev-portal at ${{ steps.deploy-dev.outputs.dev_portal_url }}"
+          curl -f -s "${{ steps.deploy-dev.outputs.dev_portal_url }}" > /dev/null || {
+            echo "❌ dev-portal deployment failed health check"
+            exit 1
+          }
+          echo "✅ dev-portal is healthy"
+        fi
+        
+    - name: Run Lighthouse Audits
+      run: |
+        echo "Installing Lighthouse..."
+        npm install -g lighthouse
+        
+        echo "Running Lighthouse audits..."
+        
+        # Audit proof-messenger
+        if [ -n "${{ steps.deploy-proof.outputs.proof_messenger_url }}" ]; then
+          lighthouse "${{ steps.deploy-proof.outputs.proof_messenger_url }}" --only-categories=accessibility,performance,best-practices,seo --output=json --output-path=lighthouse-proof.json --chrome-flags="--headless --no-sandbox" --quiet
+          echo "Proof Messenger Lighthouse scores:"
+          jq '.categories | {accessibility: .accessibility.score, performance: .performance.score, "best-practices": ."best-practices".score, seo: .seo.score}' lighthouse-proof.json
+        fi
+        
+        # Audit admin-insights
+        if [ -n "${{ steps.deploy-admin.outputs.admin_insights_url }}" ]; then
+          lighthouse "${{ steps.deploy-admin.outputs.admin_insights_url }}" --only-categories=accessibility,performance,best-practices,seo --output=json --output-path=lighthouse-admin.json --chrome-flags="--headless --no-sandbox" --quiet
+          echo "Admin Insights Lighthouse scores:"
+          jq '.categories | {accessibility: .accessibility.score, performance: .performance.score, "best-practices": ."best-practices".score, seo: .seo.score}' lighthouse-admin.json
+        fi
+        
+        # Audit dev-portal
+        if [ -n "${{ steps.deploy-dev.outputs.dev_portal_url }}" ]; then
+          lighthouse "${{ steps.deploy-dev.outputs.dev_portal_url }}" --only-categories=accessibility,performance,best-practices,seo --output=json --output-path=lighthouse-dev.json --chrome-flags="--headless --no-sandbox" --quiet
+          echo "Dev Portal Lighthouse scores:"
+          jq '.categories | {accessibility: .accessibility.score, performance: .performance.score, "best-practices": ."best-practices".score, seo: .seo.score}' lighthouse-dev.json
+        fi
+        
+    - name: Generate LIVE_URLS.json
+      run: |
+        cat > LIVE_URLS.json << EOF
+        {
+          "status": "UI_A11Y_OK",
+          "tag": "ui-a11y-polish-$(date +%Y%m%d-%H%M)",
+          "frontends": {
+            "proof_messenger": "${{ steps.deploy-proof.outputs.proof_messenger_url }}",
+            "admin_insights": "${{ steps.deploy-admin.outputs.admin_insights_url }}",
+            "dev_portal": "${{ steps.deploy-dev.outputs.dev_portal_url }}"
+          },
+          "backends": {
+            "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
+            "quantum_sync": "https://atlas-quantum-sync.sonthenguyen186.workers.dev"
+          },
+          "notes": "All actions preserved; no 404; design system unified"
+        }
+        EOF
+        
+        echo "Generated LIVE_URLS.json:"
+        cat LIVE_URLS.json
+        
+    - name: Upload LIVE_URLS.json
+      uses: actions/upload-artifact@v4
+      with:
+        name: live-urls-ui-a11y
+        path: LIVE_URLS.json

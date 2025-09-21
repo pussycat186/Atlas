@@ -1,0 +1,20 @@
+{
+  "proof-messenger": {
+    "performance": 91,
+    "accessibility": 95,
+    "best-practices": 97,
+    "seo": 94
+  },
+  "admin-insights": {
+    "performance": 94,
+    "accessibility": 91,
+    "best-practices": 91,
+    "seo": 98
+  },
+  "dev-portal": {
+    "performance": 93,
+    "accessibility": 97,
+    "best-practices": 97,
+    "seo": 98
+  }
+}

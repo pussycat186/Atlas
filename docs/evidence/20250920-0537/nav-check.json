@@ -1,0 +1,89 @@
+{
+  "timestamp": "2025-09-20T05:37:29.998Z",
+  "status": "PASS",
+  "results": [
+    {
+      "url": "https://atlas-proof-messenger.vercel.app/",
+      "status": 200,
+      "finalUrl": "https://atlas-proof-messenger.vercel.app/",
+      "success": true
+    },
+    {
+      "url": "https://atlas-proof-messenger.vercel.app/messages",
+      "status": 308,
+      "finalUrl": "/messages/",
+      "success": true
+    },
+    {
+      "url": "https://atlas-proof-messenger.vercel.app/receipts",
+      "status": 308,
+      "finalUrl": "/receipts/",
+      "success": true
+    },
+    {
+      "url": "https://atlas-proof-messenger.vercel.app/evidence",
+      "status": 308,
+      "finalUrl": "/evidence/",
+      "success": true
+    },
+    {
+      "url": "https://atlas-proof-messenger.vercel.app/settings",
+      "status": 308,
+      "finalUrl": "/settings/",
+      "success": true
+    },
+    {
+      "url": "https://atlas-admin-insights.vercel.app/",
+      "status": 200,
+      "finalUrl": "https://atlas-admin-insights.vercel.app/",
+      "success": true
+    },
+    {
+      "url": "https://atlas-admin-insights.vercel.app/metrics",
+      "status": 200,
+      "finalUrl": "https://atlas-admin-insights.vercel.app/metrics",
+      "success": true
+    },
+    {
+      "url": "https://atlas-admin-insights.vercel.app/traces",
+      "status": 200,
+      "finalUrl": "https://atlas-admin-insights.vercel.app/traces",
+      "success": true
+    },
+    {
+      "url": "https://atlas-admin-insights.vercel.app/witnesses",
+      "status": 200,
+      "finalUrl": "https://atlas-admin-insights.vercel.app/witnesses",
+      "success": true
+    },
+    {
+      "url": "https://atlas-dev-portal.vercel.app/",
+      "status": 200,
+      "finalUrl": "https://atlas-dev-portal.vercel.app/",
+      "success": true
+    },
+    {
+      "url": "https://atlas-dev-portal.vercel.app/docs",
+      "status": 200,
+      "finalUrl": "https://atlas-dev-portal.vercel.app/docs",
+      "success": true
+    },
+    {
+      "url": "https://atlas-dev-portal.vercel.app/sdk",
+      "status": 200,
+      "finalUrl": "https://atlas-dev-portal.vercel.app/sdk",
+      "success": true
+    },
+    {
+      "url": "https://atlas-dev-portal.vercel.app/examples",
+      "status": 200,
+      "finalUrl": "https://atlas-dev-portal.vercel.app/examples",
+      "success": true
+    }
+  ],
+  "summary": {
+    "total": 13,
+    "passed": 13,
+    "failed": 0
+  }
+}

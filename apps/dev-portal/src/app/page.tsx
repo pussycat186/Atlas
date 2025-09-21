@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge } from '@atlas/design-system';
+import { CommandPalette, type Command } from '@atlas/design-system';
 import { 
   Code, 
   Download, 
@@ -137,6 +136,65 @@ const sdkDownloads = [
 export default function DeveloperPortal() {
   const [selectedLanguage, setSelectedLanguage] = useState<'javascript' | 'python' | 'curl'>('javascript');
   const [copiedCode, setCopiedCode] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  // Command palette commands
+  const commands: Command[] = [
+    {
+      id: 'docs',
+      title: 'View Documentation',
+      description: 'Open the complete API documentation',
+      icon: <Book className="h-4 w-4" />,
+      action: () => window.location.href = '/docs',
+      category: 'Navigation'
+    },
+    {
+      id: 'sdk',
+      title: 'SDK Reference',
+      description: 'Browse SDK documentation and examples',
+      icon: <Code className="h-4 w-4" />,
+      action: () => window.location.href = '/sdk',
+      category: 'Navigation'
+    },
+    {
+      id: 'examples',
+      title: 'Code Examples',
+      description: 'View practical implementation examples',
+      icon: <Play className="h-4 w-4" />,
+      action: () => window.location.href = '/examples',
+      category: 'Navigation'
+    },
+    {
+      id: 'copy-js',
+      title: 'Copy JavaScript Example',
+      description: 'Copy the JavaScript/TypeScript code example',
+      icon: <Copy className="h-4 w-4" />,
+      action: () => {
+        copyToClipboard(codeExamples.javascript);
+      },
+      category: 'Actions'
+    },
+    {
+      id: 'copy-python',
+      title: 'Copy Python Example',
+      description: 'Copy the Python code example',
+      icon: <Copy className="h-4 w-4" />,
+      action: () => {
+        copyToClipboard(codeExamples.python);
+      },
+      category: 'Actions'
+    },
+    {
+      id: 'copy-curl',
+      title: 'Copy cURL Example',
+      description: 'Copy the cURL command example',
+      icon: <Copy className="h-4 w-4" />,
+      action: () => {
+        copyToClipboard(codeExamples.curl);
+      },
+      category: 'Actions'
+    }
+  ];
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -149,62 +207,83 @@ export default function DeveloperPortal() {
   };
 
   return (
-    <div className="space-y-12">
+    <div className="min-h-screen bg-bg text-fg">
+      <header className="border-b border-border bg-surface">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-h1 font-bold">Atlas Developer Portal</h1>
+          <div className="flex items-center space-x-4">
+            <Button variant="outline" size="sm" onClick={() => setCommandPaletteOpen(true)} aria-label="Open command palette">
+              <span className="sr-only">Command</span>⌘K
+            </Button>
+          </div>
+        </div>
+      </header>
+      
+      <main className="container mx-auto px-4 py-8 space-y-12" data-testid="dev-portal">
       {/* Hero Section */}
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Atlas Developer Portal
-        </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Build verifiable applications with zero cryptographic knowledge. 
-          Atlas provides multi-witness quorum verification and integrity guarantees.
+      <section className="text-center" data-testid="hero-section">
+        <h2 className="text-h1 font-bold mb-4" data-testid="portal-title">
+          Build Verifiable Applications
+        </h2>
+        <p className="text-lg mb-8 max-w-3xl mx-auto text-muted" data-testid="portal-description">
+          Zero cryptographic knowledge required. Atlas provides multi-witness quorum verification and integrity guarantees.
         </p>
-        <div className="flex justify-center space-x-4">
-          <Button size="lg" className="bg-atlas-600 hover:bg-atlas-700">
-            <Play className="h-5 w-5 mr-2" />
+        <div className="flex justify-center space-x-4" data-testid="hero-buttons">
+          <Button size="lg" data-testid="quick-start-button">
+            <Play className="h-5 w-5 mr-2" aria-hidden="true" />
             Quick Start
           </Button>
-          <Button size="lg" variant="outline">
-            <Book className="h-5 w-5 mr-2" />
+          <Button size="lg" variant="outline" data-testid="view-docs-button">
+            <Book className="h-5 w-5 mr-2" aria-hidden="true" />
             View Docs
           </Button>
+          <Button size="lg" variant="outline" onClick={() => setCommandPaletteOpen(true)} data-testid="command-palette-button">
+            <span className="mr-2">⌘K</span>
+            Search
+          </Button>
         </div>
-      </div>
+      </header>
 
+      <main>
       {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="features-grid">
         {features.map((feature) => (
-          <Card key={feature.title} className="text-center">
+          <Card key={feature.title} className="text-center" data-testid={`feature-card-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}>
             <CardContent className="pt-6">
-              <feature.icon className={`h-12 w-12 mx-auto mb-4 ${feature.color}`} />
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-sm text-gray-600">{feature.description}</p>
+              <feature.icon className={`h-12 w-12 mx-auto mb-4 text-[var(--primary)]`} />
+              <h2 className="text-lg font-semibold mb-2" data-testid="feature-title">{feature.title}</h2>
+              <p className="text-sm text-muted" data-testid="feature-description">{feature.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Code Examples */}
-      <Card>
+      <Card data-testid="code-examples-card">
         <CardHeader>
-          <CardTitle>Quick Start Examples</CardTitle>
-          <CardDescription>
+          <CardTitle data-testid="code-examples-title">Quick Start Examples</CardTitle>
+          <CardDescription data-testid="code-examples-description">
             Get started with Atlas in your preferred language
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
             {/* Language Tabs */}
-            <div className="flex space-x-2 border-b">
+            <div className="flex space-x-2 border-b" data-testid="language-tabs" role="tablist" aria-label="Code example language selection">
               {Object.keys(codeExamples).map((lang) => (
                 <button
                   key={lang}
                   onClick={() => setSelectedLanguage(lang as keyof typeof codeExamples)}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                     selectedLanguage === lang
-                      ? 'border-atlas-600 text-atlas-600'
+                      ? 'border-blue-600 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
+                  data-testid={`language-tab-${lang}`}
+                  aria-label={`Switch to ${lang === 'javascript' ? 'JavaScript/TypeScript' : lang === 'python' ? 'Python' : 'cURL'} code example`}
+                  aria-selected={selectedLanguage === lang}
+                  role="tab"
+                  tabIndex={selectedLanguage === lang ? 0 : -1}
                 >
                   {lang === 'javascript' ? 'JavaScript/TypeScript' : 
                    lang === 'python' ? 'Python' : 'cURL'}
@@ -213,7 +292,7 @@ export default function DeveloperPortal() {
             </div>
 
             {/* Code Block */}
-            <div className="relative">
+            <div className="relative" role="tabpanel" aria-label={`${selectedLanguage === 'javascript' ? 'JavaScript/TypeScript' : selectedLanguage === 'python' ? 'Python' : 'cURL'} code example`}>
               <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                 <pre className="text-sm text-gray-100">
                   <code>{codeExamples[selectedLanguage]}</code>
@@ -222,8 +301,9 @@ export default function DeveloperPortal() {
               <Button
                 size="sm"
                 variant="outline"
-                className="absolute top-2 right-2 bg-gray-800 text-white hover:bg-gray-700"
+                className="absolute top-2 right-2 bg-gray-800 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 onClick={() => copyToClipboard(codeExamples[selectedLanguage])}
+                aria-label="Copy code to clipboard"
               >
                 <Copy className="h-4 w-4 mr-2" />
                 {copiedCode ? 'Copied!' : 'Copy'}
@@ -248,7 +328,7 @@ export default function DeveloperPortal() {
                       <CardDescription>v{sdk.version} • {sdk.size}</CardDescription>
                     </div>
                   </div>
-                  <Badge variant="outline">Latest</Badge>
+                  <Badge variant="secondary" role="status" aria-label="Latest version">Latest</Badge>
                 </div>
               </CardHeader>
               <CardContent>
@@ -257,12 +337,13 @@ export default function DeveloperPortal() {
                     {sdk.downloads}
                   </div>
                   <div className="flex space-x-2">
-                    <Button size="sm" className="flex-1">
-                      <Download className="h-4 w-4 mr-2" />
+                    <Button size="sm" className="flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label={`Download ${sdk.name} SDK`}>
+                      <Download className="h-4 w-4 mr-2" aria-hidden="true" />
                       Download
                     </Button>
-                    <Button size="sm" variant="outline">
-                      <ExternalLink className="h-4 w-4" />
+                    <Button size="sm" variant="outline" className="tap-24 focus-outline" aria-label={`View ${sdk.name} documentation`}>
+                      <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                      <span className="sr-only">View documentation</span>
                     </Button>
                   </div>
                 </div>
@@ -283,41 +364,41 @@ export default function DeveloperPortal() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Core Endpoints</h3>
+              <h2 className="text-lg font-semibold">Core Endpoints</h2>
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <code className="text-sm font-mono">POST /record</code>
                     <p className="text-xs text-gray-500">Submit a new record</p>
                   </div>
-                  <Badge variant="outline">POST</Badge>
+                  <Badge variant="outline" role="status" aria-label="HTTP POST method">POST</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <code className="text-sm font-mono">GET /record/:id</code>
                     <p className="text-xs text-gray-500">Retrieve a record</p>
                   </div>
-                  <Badge variant="outline">GET</Badge>
+                  <Badge variant="outline" role="status" aria-label="HTTP GET method">GET</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <code className="text-sm font-mono">GET /health</code>
                     <p className="text-xs text-gray-500">Service health check</p>
                   </div>
-                  <Badge variant="outline">GET</Badge>
+                  <Badge variant="outline" role="status" aria-label="HTTP GET method">GET</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <code className="text-sm font-mono">GET /metrics</code>
                     <p className="text-xs text-gray-500">Prometheus metrics</p>
                   </div>
-                  <Badge variant="outline">GET</Badge>
+                  <Badge variant="outline" role="status" aria-label="HTTP GET method">GET</Badge>
                 </div>
               </div>
             </div>
             
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Evidence Format</h3>
+              <h2 className="text-lg font-semibold">Evidence Format</h2>
               <div className="bg-gray-50 rounded-lg p-4">
                 <pre className="text-xs text-gray-700 overflow-x-auto">
 {`{
@@ -399,28 +480,37 @@ export default function DeveloperPortal() {
       </div>
 
       {/* CTA Section */}
-      <Card className="bg-atlas-50 border-atlas-200">
+      <Card className="bg-blue-50 border-blue-200">
         <CardContent className="text-center py-12">
-          <h2 className="text-2xl font-bold text-atlas-900 mb-4">
+          <h2 className="text-2xl font-bold text-blue-900 mb-4">
             Ready to build with Atlas?
           </h2>
-          <p className="text-atlas-700 mb-6 max-w-2xl mx-auto">
+          <p className="text-blue-700 mb-6 max-w-2xl mx-auto">
             Join developers building verifiable applications with zero cryptographic complexity. 
             Get started in minutes with our comprehensive SDKs and documentation.
           </p>
           <div className="flex justify-center space-x-4">
-            <Button size="lg" className="bg-atlas-600 hover:bg-atlas-700">
-              <Code className="h-5 w-5 mr-2" />
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              <Code className="h-5 w-5 mr-2" aria-hidden="true" />
               Start Building
-              <ArrowRight className="h-5 w-5 ml-2" />
+              <ArrowRight className="h-5 w-5 ml-2" aria-hidden="true" />
             </Button>
-            <Button size="lg" variant="outline">
-              <Book className="h-5 w-5 mr-2" />
+            <Button size="lg" variant="outline" className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              <Book className="h-5 w-5 mr-2" aria-hidden="true" />
               Read Documentation
             </Button>
           </div>
         </CardContent>
       </Card>
+      </main>
+
+      {/* Command Palette */}
+      <CommandPalette
+        commands={commands}
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        placeholder="Search documentation, examples, or run commands..."
+      />
     </div>
   );
 }

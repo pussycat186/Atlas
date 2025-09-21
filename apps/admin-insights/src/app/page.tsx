@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge } from '@atlas/design-system';
 import { 
   Activity, 
   Server, 
@@ -132,10 +131,10 @@ export default function AdminDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy': return 'bg-green-100 text-green-800';
-      case 'degraded': return 'bg-yellow-100 text-yellow-800';
-      case 'critical': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'healthy': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'degraded': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'critical': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
   };
 
@@ -149,15 +148,19 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Atlas Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-          Real-time cluster health monitoring and witness quorum status
-        </p>
-      </div>
+    <div className="min-h-screen bg-bg text-fg">
+      <header className="border-b border-border bg-surface">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-h1 font-bold">Atlas Admin Dashboard</h1>
+          <p className="mt-2 text-muted">
+            Real-time cluster health monitoring and witness quorum status
+          </p>
+        </div>
+      </header>
+      
+      <main className="container mx-auto px-4 py-8 space-y-8">
 
-      {/* Cluster Health Overview */}
+      {/* KPI Row with Trending */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -169,11 +172,11 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="flex items-center">
               {getStatusIcon(clusterHealth.status)}
-              <span className="ml-2 text-sm font-medium capitalize">{clusterHealth.status}</span>
+              <Text size="sm" weight="medium" className="ml-2 capitalize">{clusterHealth.status}</Text>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <Text size="xs" color="tertiary" className="mt-1">
               Uptime: {clusterHealth.uptime}%
-            </p>
+            </Text>
           </CardContent>
         </Card>
 
@@ -185,12 +188,12 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <Text size="2xl" weight="bold">
               {witnessQuorum.active}/{witnessQuorum.total}
-            </div>
-            <p className="text-xs text-muted-foreground">
+            </Text>
+            <Text size="xs" color="tertiary">
               Required: {witnessQuorum.required}
-            </p>
+            </Text>
           </CardContent>
         </Card>
 
@@ -202,10 +205,10 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.requestsPerSecond}</div>
-            <p className="text-xs text-muted-foreground">
+            <Text size="2xl" weight="bold">{metrics.requestsPerSecond}</Text>
+            <Text size="xs" color="tertiary">
               Avg Latency: {metrics.averageLatency}ms
-            </p>
+            </Text>
           </CardContent>
         </Card>
 
@@ -217,10 +220,10 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.errorRate}%</div>
-            <p className="text-xs text-muted-foreground">
+            <Text size="2xl" weight="bold">{metrics.errorRate}%</Text>
+            <Text size="xs" color="tertiary">
               Active: {metrics.activeConnections}
-            </p>
+            </Text>
           </CardContent>
         </Card>
       </div>
@@ -228,7 +231,7 @@ export default function AdminDashboard() {
       {/* Services Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Service Health</CardTitle>
+          <CardTitle as="h2">Service Health</CardTitle>
           <CardDescription>
             Real-time status of all Atlas services
           </CardDescription>
@@ -249,7 +252,7 @@ export default function AdminDashboard() {
                     <p className="text-sm font-medium">{service.uptime}% uptime</p>
                     <p className="text-xs text-gray-500">{service.responseTime}ms response</p>
                   </div>
-                  <Badge className={getStatusColor(service.status)}>
+                  <Badge variant={service.status === 'healthy' ? 'success' : service.status === 'degraded' ? 'warning' : 'destructive'} role="status" aria-label={`Service status: ${service.status}`}>
                     {service.status}
                   </Badge>
                 </div>
@@ -262,7 +265,7 @@ export default function AdminDashboard() {
       {/* Witness Quorum Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Witness Quorum Status</CardTitle>
+          <CardTitle as="h2">Witness Quorum Status</CardTitle>
           <CardDescription>
             N={witnessQuorum.total}, q={witnessQuorum.required}, Δ≤2000ms
           </CardDescription>
@@ -303,7 +306,7 @@ export default function AdminDashboard() {
                         {format(witness.lastSeen, 'HH:mm:ss')}
                       </p>
                     </div>
-                    <Badge className={getStatusColor(witness.status)}>
+                    <Badge variant={witness.status === 'active' ? 'success' : witness.status === 'lagging' ? 'warning' : 'destructive'} role="status" aria-label={`Witness status: ${witness.status}`}>
                       {witness.status}
                     </Badge>
                   </div>
@@ -331,7 +334,7 @@ export default function AdminDashboard() {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Rate Limited</span>
-                <span className="font-medium text-yellow-600">{rateLimitStats.rateLimited.toLocaleString()}</span>
+                <span className="font-medium text-[var(--warn)]">{rateLimitStats.rateLimited.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Rate Limit %</span>
@@ -354,7 +357,7 @@ export default function AdminDashboard() {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Cache Hit Rate</span>
-                <span className="font-medium text-green-600">{rateLimitStats.cacheHitRate}%</span>
+                <span className="font-medium text-[var(--success)]">{rateLimitStats.cacheHitRate}%</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Idempotent Hits</span>
@@ -374,7 +377,7 @@ export default function AdminDashboard() {
       {/* System Resources */}
       <Card>
         <CardHeader>
-          <CardTitle>System Resources</CardTitle>
+          <CardTitle as="h2">System Resources</CardTitle>
           <CardDescription>
             Current resource utilization across the cluster
           </CardDescription>
@@ -415,6 +418,8 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+        </main>
+      </div>
     </div>
   );
 }
