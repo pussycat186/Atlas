@@ -1,0 +1,58 @@
+name: Deploy Minimal v4
+
+on:
+  workflow_dispatch:
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+  NPM_CONFIG_FROZEN_LOCKFILE: false
+  NPM_CONFIG_SHAMEFULLY_HOIST: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Configure pnpm
+      run: pnpm config set shamefully-hoist true
+        
+    - name: Install dependencies
+      run: pnpm install --no-frozen-lockfile
+        
+    - name: Build apps
+      run: pnpm -r --filter "./apps/*" build
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+        
+    - name: Deploy Admin Insights
+      working-directory: apps/admin-insights
+      run: |
+        echo "Deploying Admin Insights..."
+        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+        echo "ADMIN_URL=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        echo "✅ Deployed Admin Insights to $DEPLOY_URL"
+        
+    - name: Deploy Dev Portal
+      working-directory: apps/dev-portal
+      run: |
+        echo "Deploying Dev Portal..."
+        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+        echo "DEV_URL=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        echo "✅ Deployed Dev Portal to $DEPLOY_URL"
