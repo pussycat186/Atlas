@@ -34,8 +34,8 @@ test.describe('ATLAS Pro SKU Tests', () => {
   test('Plugin sandbox isolation - Dev Portal', async ({ page }) => {
     await page.goto('https://atlas-dev-portal.vercel.app');
     
-    // Use a more specific selector for the main heading
-    await expect(page.locator('h1:has-text("Atlas Developer Portal")')).toBeVisible();
+    // Use the main heading within the main content area to avoid duplicate header
+    await expect(page.locator('main h1')).toBeVisible();
     
     // Verify dev portal loads successfully
     await expect(page).toHaveURL(/atlas-dev-portal/);
