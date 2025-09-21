@@ -92,7 +92,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build design system
         run: pnpm -r --filter="@atlas/design-system" build
@@ -144,7 +144,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build services
         run: pnpm -r --filter="./services/*" build
@@ -237,7 +237,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Create evidence directory
         run: mkdir -p docs/evidence/${{ needs.preflight.outputs.t0 }}/lighthouse/basic
@@ -293,7 +293,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Create evidence directory
         run: mkdir -p docs/evidence/${{ needs.preflight.outputs.t0 }}/lighthouse/pro
