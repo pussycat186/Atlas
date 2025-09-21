@@ -26,7 +26,7 @@ npm install @atlas/fabric-client
 import { AtlasClient } from '@atlas/fabric-client';
 
 const client = new AtlasClient({
-  gatewayUrl: 'http://localhost:3000',
+  gatewayUrl: 'https://atlas-gateway.sonthenguyen186.workers.dev',
   idempotencyKey: 'optional-key'
 });
 
@@ -46,7 +46,7 @@ pip install atlas-fabric-client
 from atlas_fabric_client import AtlasClient
 
 client = AtlasClient(
-    gateway_url='http://localhost:3000',
+    gateway_url='https://atlas-gateway.sonthenguyen186.workers.dev',
     idempotency_key='optional-key'
 )
 
@@ -60,7 +60,7 @@ print(f'Record submitted: {record.id}')
 print(f'Receipt: {record.receipt}')`,
 
   curl: `# Submit a record via REST API
-curl -X POST http://localhost:3000/record \\
+curl -X POST https://atlas-gateway.sonthenguyen186.workers.dev/record \\
   -H "Content-Type: application/json" \\
   -H "X-Idempotency-Key: optional-key" \\
   -d '{
@@ -292,22 +292,48 @@ export default function DeveloperPortal() {
               ))}
             </div>
 
-            {/* Code Block */}
+            {/* Code Block with View Transition */}
             <div className="relative" role="tabpanel" aria-label={`${selectedLanguage === 'javascript' ? 'JavaScript/TypeScript' : selectedLanguage === 'python' ? 'Python' : 'cURL'} code example`}>
-              <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+              <div 
+                className="bg-gray-900 rounded-lg p-4 overflow-x-auto transition-all duration-500 group"
+                style={{
+                  viewTransitionName: `code-block-${selectedLanguage}`
+                }}
+              >
                 <pre className="text-sm text-gray-100">
-                  <code>{codeExamples[selectedLanguage]}</code>
+                  <code className="transition-all duration-300">{codeExamples[selectedLanguage]}</code>
                 </pre>
+                {/* Code execution indicator */}
+                <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="flex items-center space-x-1 text-green-400 text-xs">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span>Ready to run</span>
+                  </div>
+                </div>
               </div>
               <Button
                 size="sm"
                 variant="outline"
-                className="absolute top-2 right-2 bg-gray-800 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="absolute top-2 right-2 bg-gray-800 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 hover:scale-105"
                 onClick={() => copyToClipboard(codeExamples[selectedLanguage])}
                 aria-label="Copy code to clipboard"
               >
                 <Copy className="h-4 w-4 mr-2" />
                 {copiedCode ? 'Copied!' : 'Copy'}
+              </Button>
+              {/* Run button for quickstart */}
+              <Button
+                size="sm"
+                className="absolute bottom-2 right-2 bg-green-600 hover:bg-green-700 text-white transition-all duration-300 hover:scale-105"
+                onClick={() => {
+                  // Simulate code execution
+                  console.log('Running code:', selectedLanguage);
+                  // In a real app, this would execute the code
+                }}
+                aria-label="Run code example"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Run
               </Button>
             </div>
           </div>

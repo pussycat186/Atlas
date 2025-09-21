@@ -69,7 +69,7 @@ export default function AdminDashboard() {
         uptime: 99.9,
         responseTime: 45,
         lastCheck: new Date(),
-        endpoint: 'http://localhost:3000'
+        endpoint: 'https://atlas-gateway.sonthenguyen186.workers.dev'
       },
       {
         name: 'Witness Node 1',
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
         uptime: 99.8,
         responseTime: 32,
         lastCheck: new Date(),
-        endpoint: 'http://localhost:3001'
+        endpoint: 'https://atlas-witness-1.sonthenguyen186.workers.dev'
       },
       {
         name: 'Witness Node 2',
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
         uptime: 99.7,
         responseTime: 38,
         lastCheck: new Date(),
-        endpoint: 'http://localhost:3002'
+        endpoint: 'https://atlas-witness-2.sonthenguyen186.workers.dev'
       },
       {
         name: 'Witness Node 3',
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
         uptime: 95.2,
         responseTime: 120,
         lastCheck: new Date(),
-        endpoint: 'http://localhost:3003'
+        endpoint: 'https://atlas-witness-3.sonthenguyen186.workers.dev'
       }
     ],
     lastUpdate: new Date()
@@ -229,20 +229,49 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Services Status */}
+      {/* Services Status - Status Constellations */}
       <Card>
         <CardHeader>
-          <CardTitle as="h3">Service Health</CardTitle>
+          <CardTitle as="h3">Service Health Constellations</CardTitle>
           <CardDescription>
-            Real-time status of all Atlas services
+            Real-time status of all Atlas services with latency visualization
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {clusterHealth.services.map((service) => (
-              <div key={service.name} className="flex items-center justify-between p-4 border rounded-lg">
+            {clusterHealth.services.map((service, index) => (
+              <div 
+                key={service.name} 
+                className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all duration-300 group"
+                style={{
+                  viewTransitionName: `service-${service.name}`,
+                  animationDelay: `${index * 100}ms`
+                }}
+              >
                 <div className="flex items-center space-x-4">
-                  <Server className="h-5 w-5 text-gray-400" />
+                  <div className="relative">
+                    <Server className="h-5 w-5 text-gray-400" />
+                    {/* Status constellation pulse */}
+                    <div 
+                      className={`absolute -inset-2 rounded-full ${
+                        service.status === 'healthy' ? 'bg-green-200 dark:bg-green-800' :
+                        service.status === 'degraded' ? 'bg-yellow-200 dark:bg-yellow-800' :
+                        'bg-red-200 dark:bg-red-800'
+                      } animate-pulse opacity-30`}
+                    ></div>
+                    {/* Latency ripple effect */}
+                    <div 
+                      className={`absolute -inset-1 rounded-full border-2 ${
+                        service.status === 'healthy' ? 'border-green-400' :
+                        service.status === 'degraded' ? 'border-yellow-400' :
+                        'border-red-400'
+                      } opacity-60`}
+                      style={{
+                        animation: `ripple 2s infinite`,
+                        animationDelay: `${index * 0.3}s`
+                      }}
+                    ></div>
+                  </div>
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-gray-100">{service.name}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{service.endpoint}</p>
@@ -252,8 +281,24 @@ export default function AdminDashboard() {
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{service.uptime}% uptime</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">{service.responseTime}ms response</p>
+                    {/* Latency visualization bar */}
+                    <div className="w-16 h-1 bg-gray-200 rounded-full mt-1">
+                      <div 
+                        className={`h-1 rounded-full transition-all duration-500 ${
+                          service.responseTime < 50 ? 'bg-green-500' :
+                          service.responseTime < 100 ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${Math.min(100, (service.responseTime / 200) * 100)}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <Badge variant={service.status === 'healthy' ? 'success' : service.status === 'degraded' ? 'warning' : 'destructive'} role="status" aria-label={`Service status: ${service.status}`}>
+                  <Badge 
+                    variant={service.status === 'healthy' ? 'success' : service.status === 'degraded' ? 'warning' : 'destructive'} 
+                    role="status" 
+                    aria-label={`Service status: ${service.status}`}
+                    className="transition-all duration-300 group-hover:scale-105"
+                  >
                     {service.status}
                   </Badge>
                 </div>
