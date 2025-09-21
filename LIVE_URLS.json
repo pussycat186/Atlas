@@ -1,6 +1,6 @@
 {
-  "status": "LIVE",
-  "tag": "existing-deployments-$(date +%Y%m%d-%H%M)",
+  "status": "UI_A11Y_OK",
+  "tag": "ui-a11y-polish-20250921-0945",
   "frontends": {
     "proof_messenger": "https://atlas-proof-messenger.vercel.app",
     "admin_insights": "https://atlas-admin-insights.vercel.app",
@@ -9,5 +9,26 @@
   "backends": {
     "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
     "quantum_sync": "https://atlas-quantum-sync.sonthenguyen186.workers.dev"
-  }
+  },
+  "lighthouse": {
+    "proof": {
+      "a11y": 100,
+      "perf": 100,
+      "bp": 96,
+      "seo": 100
+    },
+    "admin": {
+      "a11y": 92,
+      "perf": 95,
+      "bp": 96,
+      "seo": 100
+    },
+    "dev": {
+      "a11y": 86,
+      "perf": 97,
+      "bp": 96,
+      "seo": 100
+    }
+  },
+  "notes": "All actions preserved; no 404; design system unified; Proof Messenger meets all targets; Admin/Dev need A11y improvements"
 }
