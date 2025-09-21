@@ -1,0 +1,80 @@
+{
+  "timestamp": "20250921-1708",
+  "apps": {
+    "proof_messenger": {
+      "base_url": "https://atlas-proof-messenger.vercel.app",
+      "pages": [
+        {
+          "name": "Home",
+          "url": "https://atlas-proof-messenger.vercel.app",
+          "description": "Main messenger interface with composer and recent messages"
+        },
+        {
+          "name": "Wallet",
+          "url": "https://atlas-proof-messenger.vercel.app/wallet",
+          "description": "Wallet management and balance information"
+        },
+        {
+          "name": "Workflows",
+          "url": "https://atlas-proof-messenger.vercel.app/workflows",
+          "description": "Workflow management and automation"
+        },
+        {
+          "name": "Receipt Detail",
+          "url": "https://atlas-proof-messenger.vercel.app/receipts/msg_001",
+          "description": "Detailed receipt view with verification status"
+        }
+      ]
+    },
+    "admin_insights": {
+      "base_url": "https://atlas-admin-insights.vercel.app",
+      "pages": [
+        {
+          "name": "Dashboard",
+          "url": "https://atlas-admin-insights.vercel.app",
+          "description": "Main admin dashboard with KPI overview"
+        },
+        {
+          "name": "System Status",
+          "url": "https://atlas-admin-insights.vercel.app/system-status",
+          "description": "System health monitoring and component status"
+        },
+        {
+          "name": "Analytics",
+          "url": "https://atlas-admin-insights.vercel.app/analytics",
+          "description": "Performance metrics and usage analytics"
+        },
+        {
+          "name": "Settings",
+          "url": "https://atlas-admin-insights.vercel.app/settings",
+          "description": "Admin configuration and preferences"
+        }
+      ]
+    },
+    "dev_portal": {
+      "base_url": "https://atlas-dev-portal.vercel.app",
+      "pages": [
+        {
+          "name": "Home",
+          "url": "https://atlas-dev-portal.vercel.app",
+          "description": "Developer portal homepage with features and SDKs"
+        },
+        {
+          "name": "SDK Documentation",
+          "url": "https://atlas-dev-portal.vercel.app/docs/sdk",
+          "description": "Complete SDK integration guide and API reference"
+        },
+        {
+          "name": "Plugins",
+          "url": "https://atlas-dev-portal.vercel.app/plugins",
+          "description": "Plugin registry with community extensions"
+        },
+        {
+          "name": "API Reference",
+          "url": "https://atlas-dev-portal.vercel.app/api",
+          "description": "REST API documentation and examples"
+        }
+      ]
+    }
+  }
+}
