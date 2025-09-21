@@ -1,6 +1,6 @@
 {
-  "status": "CI_GREEN_CREATIVE_UI_DEPLOYED",
-  "tag": "creative-ui-v8-",
+  "status": "CI_GREEN_DEPLOYED_BASIC&PRO",
+  "tag": "quality-gates-20250921-1728",
   "frontends": {
     "proof_messenger": "https://atlas-proof-messenger.vercel.app",
     "admin_insights": "https://atlas-admin-insights.vercel.app",
@@ -8,22 +8,6 @@
   },
   "backends": {
     "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
-    "witnesses": [
-      "https://atlas-witness-1.sonthenguyen186.workers.dev",
-      "https://atlas-witness-2.sonthenguyen186.workers.dev"
-    ]
-  },
-  "ui_signatures": {
-    "messenger": "Quantum Threads + ViewTransition",
-    "admin": "Status Constellations + ScrollDriven",
-    "dev_portal": "Runway Quickstart + ViewTransition"
-  },
-  "creative_features": {
-    "quantum_threads": "Real-time message verification with quantum wave animations",
-    "status_constellations": "Service health visualization with latency ripples",
-    "runway_quickstart": "Interactive code examples with View Transitions API",
-    "accessibility": "WCAG 2.2 compliant with prefers-reduced-motion support"
-  },
-  "evidence": "docs/evidence//",
-  "commit": "6f143c56cb04d5b6b632501b21f8fd482244ad45"
+    "witnesses": ["https://atlas-witness-1.sonthenguyen186.workers.dev", "https://atlas-witness-2.sonthenguyen186.workers.dev"]
+  }
 }
