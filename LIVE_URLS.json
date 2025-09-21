@@ -1,0 +1,13 @@
+{
+  "status": "LIVE",
+  "tag": "existing-deployments-$(date +%Y%m%d-%H%M)",
+  "frontends": {
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app",
+    "admin_insights": "https://atlas-admin-insights.vercel.app",
+    "dev_portal": "https://atlas-dev-portal.vercel.app"
+  },
+  "backends": {
+    "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
+    "quantum_sync": "https://atlas-quantum-sync.sonthenguyen186.workers.dev"
+  }
+}
