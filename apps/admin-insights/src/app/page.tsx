@@ -151,8 +151,8 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-h1 font-bold">Atlas Admin Dashboard</h1>
-          <p className="mt-2 text-muted">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Atlas Admin Dashboard</h1>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">
             Real-time cluster health monitoring and witness quorum status
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle as="h2" className="text-sm font-medium flex items-center">
+            <CardTitle as="h3" className="text-sm font-medium flex items-center">
               <Activity className="h-4 w-4 mr-2" aria-hidden="true" />
               Cluster Status
             </CardTitle>
@@ -182,7 +182,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle as="h2" className="text-sm font-medium flex items-center">
+            <CardTitle as="h3" className="text-sm font-medium flex items-center">
               <Users className="h-4 w-4 mr-2" aria-hidden="true" />
               Witness Quorum
             </CardTitle>
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle as="h2" className="text-sm font-medium flex items-center">
+            <CardTitle as="h3" className="text-sm font-medium flex items-center">
               <TrendingUp className="h-4 w-4 mr-2" aria-hidden="true" />
               RPS
             </CardTitle>
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle as="h2" className="text-sm font-medium flex items-center">
+            <CardTitle as="h3" className="text-sm font-medium flex items-center">
               <Zap className="h-4 w-4 mr-2" aria-hidden="true" />
               Error Rate
             </CardTitle>
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
       {/* Services Status */}
       <Card>
         <CardHeader>
-          <CardTitle as="h2">Service Health</CardTitle>
+          <CardTitle as="h3">Service Health</CardTitle>
           <CardDescription>
             Real-time status of all Atlas services
           </CardDescription>
@@ -243,14 +243,14 @@ export default function AdminDashboard() {
                 <div className="flex items-center space-x-4">
                   <Server className="h-5 w-5 text-gray-400" />
                   <div>
-                    <h3 className="font-medium">{service.name}</h3>
-                    <p className="text-sm text-gray-500">{service.endpoint}</p>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{service.name}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{service.endpoint}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
-                    <p className="text-sm font-medium">{service.uptime}% uptime</p>
-                    <p className="text-xs text-gray-500">{service.responseTime}ms response</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{service.uptime}% uptime</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{service.responseTime}ms response</p>
                   </div>
                   <Badge variant={service.status === 'healthy' ? 'success' : service.status === 'degraded' ? 'warning' : 'destructive'} role="status" aria-label={`Service status: ${service.status}`}>
                     {service.status}
@@ -265,7 +265,7 @@ export default function AdminDashboard() {
       {/* Witness Quorum Status */}
       <Card>
         <CardHeader>
-          <CardTitle as="h2">Witness Quorum Status</CardTitle>
+          <CardTitle as="h3">Witness Quorum Status</CardTitle>
           <CardDescription>
             N={witnessQuorum.total}, q={witnessQuorum.required}, Δ≤2000ms
           </CardDescription>
@@ -274,18 +274,18 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-atlas-600">{witnessQuorum.active}</div>
-                <p className="text-sm text-gray-500">Active Witnesses</p>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{witnessQuorum.active}</div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active Witnesses</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-atlas-600">{witnessQuorum.skew}ms</div>
-                <p className="text-sm text-gray-500">Max Skew</p>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{witnessQuorum.skew}ms</div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Max Skew</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-atlas-600">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {format(witnessQuorum.lastConsensus, 'HH:mm:ss')}
                 </div>
-                <p className="text-sm text-gray-500">Last Consensus</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Last Consensus</p>
               </div>
             </div>
             
@@ -295,14 +295,14 @@ export default function AdminDashboard() {
                   <div className="flex items-center space-x-3">
                     <Shield className="h-4 w-4 text-gray-400" />
                     <div>
-                      <p className="font-medium">{witness.id}</p>
-                      <p className="text-sm text-gray-500">v{witness.version}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{witness.id}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">v{witness.version}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
-                      <p className="text-sm">{witness.responseTime}ms</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{witness.responseTime}ms</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         {format(witness.lastSeen, 'HH:mm:ss')}
                       </p>
                     </div>
@@ -329,16 +329,16 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Total Requests</span>
-                <span className="font-medium">{rateLimitStats.totalRequests.toLocaleString()}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Total Requests</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{rateLimitStats.totalRequests.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Rate Limited</span>
-                <span className="font-medium text-[var(--warn)]">{rateLimitStats.rateLimited.toLocaleString()}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Rate Limited</span>
+                <span className="font-medium text-yellow-600 dark:text-yellow-400">{rateLimitStats.rateLimited.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Rate Limit %</span>
-                <span className="font-medium">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Rate Limit %</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
                   {((rateLimitStats.rateLimited / rateLimitStats.totalRequests) * 100).toFixed(2)}%
                 </span>
               </div>
@@ -356,16 +356,16 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Cache Hit Rate</span>
-                <span className="font-medium text-[var(--success)]">{rateLimitStats.cacheHitRate}%</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Cache Hit Rate</span>
+                <span className="font-medium text-green-600 dark:text-green-400">{rateLimitStats.cacheHitRate}%</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Idempotent Hits</span>
-                <span className="font-medium">{rateLimitStats.idempotentHits.toLocaleString()}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Idempotent Hits</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{rateLimitStats.idempotentHits.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Deduplication %</span>
-                <span className="font-medium">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Deduplication %</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
                   {((rateLimitStats.idempotentHits / rateLimitStats.totalRequests) * 100).toFixed(2)}%
                 </span>
               </div>
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
       {/* System Resources */}
       <Card>
         <CardHeader>
-          <CardTitle as="h2">System Resources</CardTitle>
+          <CardTitle as="h3">System Resources</CardTitle>
           <CardDescription>
             Current resource utilization across the cluster
           </CardDescription>
@@ -386,34 +386,34 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium">CPU Usage</span>
-                <span className="text-sm text-gray-500">{metrics.cpuUsage}%</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">CPU Usage</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{metrics.cpuUsage}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-atlas-600 h-2 rounded-full" 
+                  className="bg-blue-600 h-2 rounded-full" 
                   style={{ width: `${metrics.cpuUsage}%` }}
                 ></div>
               </div>
             </div>
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium">Memory Usage</span>
-                <span className="text-sm text-gray-500">{metrics.memoryUsage}%</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Memory Usage</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{metrics.memoryUsage}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-atlas-600 h-2 rounded-full" 
+                  className="bg-blue-600 h-2 rounded-full" 
                   style={{ width: `${metrics.memoryUsage}%` }}
                 ></div>
               </div>
             </div>
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium">Active Connections</span>
-                <span className="text-sm text-gray-500">{metrics.activeConnections}</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Active Connections</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{metrics.activeConnections}</span>
               </div>
-              <div className="text-2xl font-bold text-atlas-600">{metrics.activeConnections}</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{metrics.activeConnections}</div>
             </div>
           </div>
         </CardContent>

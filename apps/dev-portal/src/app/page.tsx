@@ -210,7 +210,7 @@ export default function DeveloperPortal() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Atlas Developer Portal</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Atlas Developer Portal</h1>
           <div className="flex items-center space-x-4">
             <Button variant="outline" size="sm" onClick={() => setCommandPaletteOpen(true)} aria-label="Open command palette" className="tap-24 focus-outline">
               <span className="sr-only">Open command palette</span>⌘K
@@ -222,14 +222,14 @@ export default function DeveloperPortal() {
       <main className="container mx-auto px-4 py-8 space-y-12" data-testid="dev-portal" role="main" aria-label="Developer portal content">
       {/* Hero Section */}
       <section className="text-center" data-testid="hero-section">
-        <h2 className="text-3xl font-bold mb-4" data-testid="portal-title">
+        <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100" data-testid="portal-title">
           Build Verifiable Applications
         </h2>
-        <p className="text-lg mb-8 max-w-3xl mx-auto text-muted-foreground" data-testid="portal-description">
+        <p className="text-lg mb-8 max-w-3xl mx-auto text-gray-700 dark:text-gray-300" data-testid="portal-description">
           Zero cryptographic knowledge required. Atlas provides multi-witness quorum verification and integrity guarantees.
         </p>
         <div className="flex justify-center space-x-4" data-testid="hero-buttons">
-          <Button size="lg" data-testid="quick-start-button">
+          <Button size="lg" data-testid="quick-start-button" aria-label="Start building with Atlas quickly">
             <Play className="h-5 w-5 mr-2" aria-hidden="true" />
             Quick Start
           </Button>
@@ -250,8 +250,8 @@ export default function DeveloperPortal() {
           <Card key={feature.title} className="text-center" data-testid={`feature-card-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}>
             <CardContent className="pt-6">
               <feature.icon className={`h-12 w-12 mx-auto mb-4 text-[var(--primary)]`} />
-              <h2 className="text-lg font-semibold mb-2" data-testid="feature-title">{feature.title}</h2>
-              <p className="text-sm text-muted-foreground" data-testid="feature-description">{feature.description}</p>
+              <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100" data-testid="feature-title">{feature.title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400" data-testid="feature-description">{feature.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -314,7 +314,7 @@ export default function DeveloperPortal() {
 
       {/* SDK Downloads */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">SDK Downloads</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">SDK Downloads</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {sdkDownloads.map((sdk) => (
             <Card key={sdk.name} className="hover:shadow-md transition-shadow">
@@ -323,8 +323,8 @@ export default function DeveloperPortal() {
                   <div className="flex items-center space-x-3">
                     <span className="text-2xl">{sdk.icon}</span>
                     <div>
-                      <CardTitle className="text-lg">{sdk.name}</CardTitle>
-                      <CardDescription>v{sdk.version} • {sdk.size}</CardDescription>
+                      <CardTitle className="text-lg text-gray-900 dark:text-gray-100">{sdk.name}</CardTitle>
+                      <CardDescription className="text-gray-600 dark:text-gray-400">v{sdk.version} • {sdk.size}</CardDescription>
                     </div>
                   </div>
                   <Badge variant="secondary" role="status" aria-label="Latest version">Latest</Badge>
@@ -363,33 +363,33 @@ export default function DeveloperPortal() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Core Endpoints</h2>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Core Endpoints</h3>
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <code className="text-sm font-mono">POST /record</code>
-                    <p className="text-xs text-gray-500">Submit a new record</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Submit a new record</p>
                   </div>
                   <Badge variant="outline" role="status" aria-label="HTTP POST method">POST</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <code className="text-sm font-mono">GET /record/:id</code>
-                    <p className="text-xs text-gray-500">Retrieve a record</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Retrieve a record</p>
                   </div>
                   <Badge variant="outline" role="status" aria-label="HTTP GET method">GET</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <code className="text-sm font-mono">GET /health</code>
-                    <p className="text-xs text-gray-500">Service health check</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Service health check</p>
                   </div>
                   <Badge variant="outline" role="status" aria-label="HTTP GET method">GET</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <code className="text-sm font-mono">GET /metrics</code>
-                    <p className="text-xs text-gray-500">Prometheus metrics</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Prometheus metrics</p>
                   </div>
                   <Badge variant="outline" role="status" aria-label="HTTP GET method">GET</Badge>
                 </div>
@@ -397,7 +397,7 @@ export default function DeveloperPortal() {
             </div>
             
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Evidence Format</h2>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Evidence Format</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <pre className="text-xs text-gray-700 overflow-x-auto">
 {`{
@@ -434,7 +434,7 @@ export default function DeveloperPortal() {
             <CardTitle className="text-lg">What</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               Atlas provides verifiable message integrity through multi-witness quorum consensus 
               without requiring cryptographic knowledge from developers.
             </p>
@@ -446,7 +446,7 @@ export default function DeveloperPortal() {
             <CardTitle className="text-lg">Why</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               Traditional messaging lacks verifiable integrity guarantees. Atlas ensures 
               message authenticity and prevents tampering through distributed witness verification.
             </p>
@@ -458,7 +458,7 @@ export default function DeveloperPortal() {
             <CardTitle className="text-lg">Verify</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               Every message includes a receipt with witness signatures, timestamps, and 
               integrity proofs that can be independently verified by any party.
             </p>
@@ -470,7 +470,7 @@ export default function DeveloperPortal() {
             <CardTitle className="text-lg">Rollback</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               In case of issues, Atlas provides complete audit trails and evidence packages 
               for forensic analysis and potential rollback procedures.
             </p>
@@ -481,15 +481,15 @@ export default function DeveloperPortal() {
       {/* CTA Section */}
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="text-center py-12">
-          <h2 className="text-2xl font-bold text-blue-900 mb-4">
+          <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-4">
             Ready to build with Atlas?
           </h2>
-          <p className="text-blue-700 mb-6 max-w-2xl mx-auto">
+          <p className="text-blue-700 dark:text-blue-300 mb-6 max-w-2xl mx-auto">
             Join developers building verifiable applications with zero cryptographic complexity. 
             Get started in minutes with our comprehensive SDKs and documentation.
           </p>
           <div className="flex justify-center space-x-4">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Start building verifiable applications with Atlas">
               <Code className="h-5 w-5 mr-2" aria-hidden="true" />
               Start Building
               <ArrowRight className="h-5 w-5 ml-2" aria-hidden="true" />
