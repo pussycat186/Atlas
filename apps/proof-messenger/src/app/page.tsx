@@ -14,7 +14,7 @@ import {
   Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Button, Card, CardContent, CardHeader, Badge, Text } from '@atlas/design-system';
+import { Button, Card, CardContent, CardHeader, Badge, Text, Heading } from '@atlas/design-system';
 
 interface Message {
   id: string;
