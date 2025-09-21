@@ -38,13 +38,13 @@
   /* Color Roles - Light Theme (WCAG AA compliant) */
   --bg: #ffffff;
   --surface: #f9fafb;
-  --fg: #0F172A; /* Improved neutral base */
-  --muted: #1f2937; /* Increased contrast from #374151 */
-  --primary: #2563EB; /* Consistent primary blue */
-  --success: #10B981; /* Improved success color */
-  --warn: #F59E0B; /* Improved warning color */
-  --danger: #EF4444; /* Improved danger color */
-  --focus: #2563EB;
+  --fg: #000000; /* Maximum contrast for WCAG AAA */
+  --muted: #000000; /* Maximum contrast for WCAG AAA */
+  --primary: #1d4ed8; /* Enhanced contrast blue */
+  --success: #047857; /* Enhanced contrast green */
+  --warn: #b45309; /* Enhanced contrast yellow */
+  --danger: #dc2626; /* Enhanced contrast red */
+  --focus: #1d4ed8;
   
   /* Semantic color variations - Enhanced contrast for WCAG AA */
   --bg-secondary: #f3f4f6;

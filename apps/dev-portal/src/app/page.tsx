@@ -233,11 +233,11 @@ export default function DeveloperPortal() {
             <Play className="h-5 w-5 mr-2" aria-hidden="true" />
             Quick Start
           </Button>
-          <Button size="lg" variant="outline" data-testid="view-docs-button">
+          <Button size="lg" variant="outline" data-testid="view-docs-button" aria-label="View documentation" className="tap-24 focus-outline">
             <Book className="h-5 w-5 mr-2" aria-hidden="true" />
             View Docs
           </Button>
-          <Button size="lg" variant="outline" onClick={() => setCommandPaletteOpen(true)} data-testid="command-palette-button">
+          <Button size="lg" variant="outline" onClick={() => setCommandPaletteOpen(true)} data-testid="command-palette-button" aria-label="Open search command palette" className="tap-24 focus-outline">
             <span className="mr-2">⌘K</span>
             Search
           </Button>
@@ -495,7 +495,7 @@ export default function DeveloperPortal() {
               Start Building
               <ArrowRight className="h-5 w-5 ml-2" aria-hidden="true" />
             </Button>
-            <Button size="lg" variant="outline" className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <Button size="lg" variant="outline" className="focus-outline tap-24" aria-label="Read documentation">
               <Book className="h-5 w-5 mr-2" aria-hidden="true" />
               Read Documentation
             </Button>
