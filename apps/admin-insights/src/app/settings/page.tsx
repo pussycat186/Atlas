@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Button, Heading, Text } from '@atlas/design-system';
+import { Card, CardContent, CardHeader, CardTitle, Button } from '@atlas/design-system';
 import { Settings, Save, RefreshCw } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -25,13 +27,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border bg-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-input bg-card">
         <div className="container mx-auto px-4 py-4">
-          <Heading level={1} className="text-h1 font-bold">Admin Settings</Heading>
-          <Text className="mt-2 text-muted">
+          <h1 className="text-3xl font-bold">Admin Settings</h1>
+          <span className="mt-2 text-muted-foreground">
             Configure system preferences and monitoring settings
-          </Text>
+          </span>
         </div>
       </header>
       
@@ -47,8 +49,8 @@ export default function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <Text className="font-medium">Notifications</Text>
-                <Text className="text-sm text-muted">Receive alerts for system events</Text>
+                <span className="font-medium">Notifications</span>
+                <span className="text-sm text-muted-foreground">Receive alerts for system events</span>
               </div>
               <input
                 type="checkbox"
@@ -61,8 +63,8 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Text className="font-medium">Auto Refresh</Text>
-                <Text className="text-sm text-muted">Automatically refresh dashboard data</Text>
+                <span className="font-medium">Auto Refresh</span>
+                <span className="text-sm text-muted-foreground">Automatically refresh dashboard data</span>
               </div>
               <input
                 type="checkbox"
@@ -75,8 +77,8 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Text className="font-medium">Theme</Text>
-                <Text className="text-sm text-muted">Choose your preferred theme</Text>
+                <span className="font-medium">Theme</span>
+                <span className="text-sm text-muted-foreground">Choose your preferred theme</span>
               </div>
               <select
                 value={settings.theme}
@@ -92,8 +94,8 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Text className="font-medium">Timezone</Text>
-                <Text className="text-sm text-muted">Display times in this timezone</Text>
+                <span className="font-medium">Timezone</span>
+                <span className="text-sm text-muted-foreground">Display times in this timezone</span>
               </div>
               <select
                 value={settings.timezone}
@@ -118,7 +120,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Text className="font-medium">Health Check Interval</Text>
+                <span className="font-medium">Health Check Interval</span>
                 <select className="w-full px-3 py-2 border rounded" aria-label="Select health check interval">
                   <option value="30">30 seconds</option>
                   <option value="60">1 minute</option>
@@ -128,7 +130,7 @@ export default function SettingsPage() {
               </div>
               
               <div className="space-y-2">
-                <Text className="font-medium">Alert Threshold</Text>
+                <span className="font-medium">Alert Threshold</span>
                 <select className="w-full px-3 py-2 border rounded" aria-label="Select alert threshold">
                   <option value="95">95% uptime</option>
                   <option value="99">99% uptime</option>

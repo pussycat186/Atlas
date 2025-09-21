@@ -1,16 +1,12 @@
-@import '@atlas/design-system/src/tokens/tokens.css';
-@import '@atlas/design-system/src/styles/globals.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* App-specific styles */
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
-    @apply bg-bg text-fg;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 

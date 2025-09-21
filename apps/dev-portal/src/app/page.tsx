@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge } from '@atlas/design-system';
-import { CommandPalette, type Command } from '@atlas/design-system';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button } from '@atlas/design-system';
+// import { CommandPalette, type Command } from '@atlas/design-system';
 import { 
   Code, 
   Download, 
@@ -138,63 +138,63 @@ export default function DeveloperPortal() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
-  // Command palette commands
-  const commands: Command[] = [
-    {
-      id: 'docs',
-      title: 'View Documentation',
-      description: 'Open the complete API documentation',
-      icon: <Book className="h-4 w-4" />,
-      action: () => window.location.href = '/docs',
-      category: 'Navigation'
-    },
-    {
-      id: 'sdk',
-      title: 'SDK Reference',
-      description: 'Browse SDK documentation and examples',
-      icon: <Code className="h-4 w-4" />,
-      action: () => window.location.href = '/sdk',
-      category: 'Navigation'
-    },
-    {
-      id: 'examples',
-      title: 'Code Examples',
-      description: 'View practical implementation examples',
-      icon: <Play className="h-4 w-4" />,
-      action: () => window.location.href = '/examples',
-      category: 'Navigation'
-    },
-    {
-      id: 'copy-js',
-      title: 'Copy JavaScript Example',
-      description: 'Copy the JavaScript/TypeScript code example',
-      icon: <Copy className="h-4 w-4" />,
-      action: () => {
-        copyToClipboard(codeExamples.javascript);
-      },
-      category: 'Actions'
-    },
-    {
-      id: 'copy-python',
-      title: 'Copy Python Example',
-      description: 'Copy the Python code example',
-      icon: <Copy className="h-4 w-4" />,
-      action: () => {
-        copyToClipboard(codeExamples.python);
-      },
-      category: 'Actions'
-    },
-    {
-      id: 'copy-curl',
-      title: 'Copy cURL Example',
-      description: 'Copy the cURL command example',
-      icon: <Copy className="h-4 w-4" />,
-      action: () => {
-        copyToClipboard(codeExamples.curl);
-      },
-      category: 'Actions'
-    }
-  ];
+  // Command palette commands - temporarily disabled
+  // const commands: Command[] = [
+  //   {
+  //     id: 'docs',
+  //     title: 'View Documentation',
+  //     description: 'Open the complete API documentation',
+  //     icon: <Book className="h-4 w-4" />,
+  //     action: () => window.location.href = '/docs',
+  //     category: 'Navigation'
+  //   },
+  //   {
+  //     id: 'sdk',
+  //     title: 'SDK Reference',
+  //     description: 'Browse SDK documentation and examples',
+  //     icon: <Code className="h-4 w-4" />,
+  //     action: () => window.location.href = '/sdk',
+  //     category: 'Navigation'
+  //   },
+  //   {
+  //     id: 'examples',
+  //     title: 'Code Examples',
+  //     description: 'View practical implementation examples',
+  //     icon: <Play className="h-4 w-4" />,
+  //     action: () => window.location.href = '/examples',
+  //     category: 'Navigation'
+  //   },
+  //   {
+  //     id: 'copy-js',
+  //     title: 'Copy JavaScript Example',
+  //     description: 'Copy the JavaScript/TypeScript code example',
+  //     icon: <Copy className="h-4 w-4" />,
+  //     action: () => {
+  //       copyToClipboard(codeExamples.javascript);
+  //     },
+  //     category: 'Actions'
+  //   },
+  //   {
+  //     id: 'copy-python',
+  //     title: 'Copy Python Example',
+  //     description: 'Copy the Python code example',
+  //     icon: <Copy className="h-4 w-4" />,
+  //     action: () => {
+  //       copyToClipboard(codeExamples.python);
+  //     },
+  //     category: 'Actions'
+  //   },
+  //   {
+  //     id: 'copy-curl',
+  //     title: 'Copy cURL Example',
+  //     description: 'Copy the cURL command example',
+  //     icon: <Copy className="h-4 w-4" />,
+  //     action: () => {
+  //       copyToClipboard(codeExamples.curl);
+  //     },
+  //     category: 'Actions'
+  //   }
+  // ];
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -207,10 +207,10 @@ export default function DeveloperPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border bg-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-h1 font-bold">Atlas Developer Portal</h1>
+          <h1 className="text-3xl font-bold">Atlas Developer Portal</h1>
           <div className="flex items-center space-x-4">
             <Button variant="outline" size="sm" onClick={() => setCommandPaletteOpen(true)} aria-label="Open command palette" className="tap-24 focus-outline">
               <span className="sr-only">Open command palette</span>⌘K
@@ -222,10 +222,10 @@ export default function DeveloperPortal() {
       <main className="container mx-auto px-4 py-8 space-y-12" data-testid="dev-portal" role="main" aria-label="Developer portal content">
       {/* Hero Section */}
       <section className="text-center" data-testid="hero-section">
-        <h2 className="text-h1 font-bold mb-4" data-testid="portal-title">
+        <h2 className="text-3xl font-bold mb-4" data-testid="portal-title">
           Build Verifiable Applications
         </h2>
-        <p className="text-lg mb-8 max-w-3xl mx-auto text-muted" data-testid="portal-description">
+        <p className="text-lg mb-8 max-w-3xl mx-auto text-muted-foreground" data-testid="portal-description">
           Zero cryptographic knowledge required. Atlas provides multi-witness quorum verification and integrity guarantees.
         </p>
         <div className="flex justify-center space-x-4" data-testid="hero-buttons">
@@ -242,9 +242,8 @@ export default function DeveloperPortal() {
             Search
           </Button>
         </div>
-      </header>
+      </section>
 
-      <main>
       {/* Features Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="features-grid">
         {features.map((feature) => (
@@ -252,7 +251,7 @@ export default function DeveloperPortal() {
             <CardContent className="pt-6">
               <feature.icon className={`h-12 w-12 mx-auto mb-4 text-[var(--primary)]`} />
               <h2 className="text-lg font-semibold mb-2" data-testid="feature-title">{feature.title}</h2>
-              <p className="text-sm text-muted" data-testid="feature-description">{feature.description}</p>
+              <p className="text-sm text-muted-foreground" data-testid="feature-description">{feature.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -504,13 +503,13 @@ export default function DeveloperPortal() {
       </Card>
       </main>
 
-      {/* Command Palette */}
-      <CommandPalette
+      {/* Command Palette - temporarily disabled */}
+      {/* <CommandPalette
         commands={commands}
         open={commandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}
         placeholder="Search documentation, examples, or run commands..."
-      />
+      /> */}
     </div>
   );
 }

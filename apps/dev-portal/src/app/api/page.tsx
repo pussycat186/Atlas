@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Heading, Text } from '@atlas/design-system';
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from '@atlas/design-system';
 import { Code, ExternalLink, Copy, Play } from 'lucide-react';
 
 export default function APIPage() {
@@ -70,13 +72,13 @@ export default function APIPage() {
 }`;
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border bg-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-input bg-card">
         <div className="container mx-auto px-4 py-4">
-          <Heading level={1} className="text-h1 font-bold">API Reference</Heading>
-          <Text className="mt-2 text-muted">
+          <h1 className="text-3xl font-bold">API Reference</h1>
+          <span className="mt-2 text-muted-foreground">
             Complete REST API documentation for Atlas platform
-          </Text>
+          </span>
         </div>
       </header>
       
@@ -88,7 +90,7 @@ export default function APIPage() {
           </CardHeader>
           <CardContent>
             <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-              <Text className="font-mono">https://api.atlas.com</Text>
+              <span className="font-mono">https://api.atlas.com</span>
             </div>
           </CardContent>
         </Card>
@@ -99,11 +101,11 @@ export default function APIPage() {
             <CardTitle>Authentication</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Text>
+            <span>
               Most API endpoints require authentication using your API key. Include it in the Authorization header:
-            </Text>
+            </span>
             <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-              <Text className="font-mono text-sm">Authorization: Bearer YOUR_API_KEY</Text>
+              <span className="font-mono text-sm">Authorization: Bearer YOUR_API_KEY</span>
             </div>
             <Button variant="outline" size="sm" className="flex items-center">
               <ExternalLink className="h-4 w-4 mr-2" />
@@ -124,13 +126,13 @@ export default function APIPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-3">
                       {getMethodBadge(endpoint.method)}
-                      <Text className="font-mono font-semibold">{endpoint.path}</Text>
+                      <span className="font-mono font-semibold">{endpoint.path}</span>
                     </div>
                     {endpoint.auth && (
                       <Badge variant="warning">Auth Required</Badge>
                     )}
                   </div>
-                  <Text className="text-muted">{endpoint.description}</Text>
+                  <span className="text-muted-foreground">{endpoint.description}</span>
                 </div>
               ))}
             </div>
@@ -143,7 +145,7 @@ export default function APIPage() {
             <CardTitle>Example Request</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Text>Send a verifiable message:</Text>
+            <span>Send a verifiable message:</span>
             <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto">
               <pre className="text-sm font-mono whitespace-pre-wrap">{exampleRequest}</pre>
             </div>
@@ -166,7 +168,7 @@ export default function APIPage() {
             <CardTitle>Example Response</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Text>Successful message creation response:</Text>
+            <span>Successful message creation response:</span>
             <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto">
               <pre className="text-sm font-mono whitespace-pre-wrap">{exampleResponse}</pre>
             </div>
@@ -189,9 +191,9 @@ export default function APIPage() {
             <CardTitle>Interactive Testing</CardTitle>
           </CardHeader>
           <CardContent>
-            <Text className="mb-4">
+            <span className="mb-4">
               Test API endpoints directly in your browser with our interactive documentation.
-            </Text>
+            </span>
             <div className="flex space-x-4">
               <Button className="flex items-center">
                 <Play className="h-4 w-4 mr-2" />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Badge, Heading, Text } from '@atlas/design-system';
+import { Card, CardContent, CardHeader, CardTitle, Badge } from '@atlas/design-system';
 import { Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
 export default function SystemStatusPage() {
@@ -34,13 +34,13 @@ export default function SystemStatusPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border bg-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-input bg-card">
         <div className="container mx-auto px-4 py-4">
-          <Heading level={1} className="text-h1 font-bold">System Status</Heading>
-          <Text className="mt-2 text-muted">
+          <h1 className="text-3xl font-bold">System Status</h1>
+          <span className="mt-2 text-muted-foreground">
             Real-time monitoring of Atlas infrastructure components
-          </Text>
+          </span>
         </div>
       </header>
       
@@ -58,8 +58,8 @@ export default function SystemStatusPage() {
               <div className="flex items-center space-x-4">
                 {getStatusIcon(systemStatus.status)}
                 <div>
-                  <Text className="text-lg font-semibold capitalize">{systemStatus.status}</Text>
-                  <Text className="text-sm text-muted">Uptime: {systemStatus.uptime}</Text>
+                  <span className="text-lg font-semibold capitalize">{systemStatus.status}</span>
+                  <span className="text-sm text-muted-foreground">Uptime: {systemStatus.uptime}</span>
                 </div>
               </div>
               {getStatusBadge(systemStatus.status)}
@@ -79,7 +79,7 @@ export default function SystemStatusPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <Text className="text-sm text-muted">Latency: {component.latency}</Text>
+                  <span className="text-sm text-muted-foreground">Latency: {component.latency}</span>
                   {getStatusBadge(component.status)}
                 </div>
               </CardContent>
@@ -90,9 +90,9 @@ export default function SystemStatusPage() {
         {/* Last Update */}
         <Card>
           <CardContent className="pt-6">
-            <Text className="text-sm text-muted">
+            <span className="text-sm text-muted-foreground">
               Last updated: {new Date(systemStatus.lastUpdate).toLocaleString()}
-            </Text>
+            </span>
           </CardContent>
         </Card>
       </main>

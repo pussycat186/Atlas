@@ -148,8 +148,8 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border bg-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
           <h1 className="text-h1 font-bold">Atlas Admin Dashboard</h1>
           <p className="mt-2 text-muted">
@@ -172,11 +172,11 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="flex items-center">
               {getStatusIcon(clusterHealth.status)}
-              <Text size="sm" weight="medium" className="ml-2 capitalize">{clusterHealth.status}</Text>
+              <span className="text-sm font-medium ml-2 capitalize">{clusterHealth.status}</span>
             </div>
-            <Text size="xs" color="tertiary" className="mt-1">
+            <span className="text-xs text-muted-foreground mt-1">
               Uptime: {clusterHealth.uptime}%
-            </Text>
+            </span>
           </CardContent>
         </Card>
 
@@ -188,12 +188,12 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Text size="2xl" weight="bold">
+            <span className="text-2xl font-bold">
               {witnessQuorum.active}/{witnessQuorum.total}
-            </Text>
-            <Text size="xs" color="tertiary">
+            </span>
+            <span className="text-xs text-muted-foreground">
               Required: {witnessQuorum.required}
-            </Text>
+            </span>
           </CardContent>
         </Card>
 
@@ -205,10 +205,10 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Text size="2xl" weight="bold">{metrics.requestsPerSecond}</Text>
-            <Text size="xs" color="tertiary">
+            <span className="text-2xl font-bold">{metrics.requestsPerSecond}</span>
+            <span className="text-xs text-muted-foreground">
               Avg Latency: {metrics.averageLatency}ms
-            </Text>
+            </span>
           </CardContent>
         </Card>
 
@@ -220,10 +220,10 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Text size="2xl" weight="bold">{metrics.errorRate}%</Text>
-            <Text size="xs" color="tertiary">
+            <span className="text-2xl font-bold">{metrics.errorRate}%</span>
+            <span className="text-xs text-muted-foreground">
               Active: {metrics.activeConnections}
-            </Text>
+            </span>
           </CardContent>
         </Card>
       </div>
@@ -419,7 +419,6 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
         </main>
-      </div>
     </div>
   );
 }

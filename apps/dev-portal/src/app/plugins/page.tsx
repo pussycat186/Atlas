@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Heading, Text } from '@atlas/design-system';
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from '@atlas/design-system';
 import { Puzzle, Download, ExternalLink, Star } from 'lucide-react';
 
 export default function PluginsPage() {
@@ -52,13 +52,13 @@ export default function PluginsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border bg-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-input bg-card">
         <div className="container mx-auto px-4 py-4">
-          <Heading level={1} className="text-h1 font-bold">Plugin Registry</Heading>
-          <Text className="mt-2 text-muted">
+          <h1 className="text-3xl font-bold">Plugin Registry</h1>
+          <span className="mt-2 text-muted-foreground">
             Extend Atlas functionality with community-built plugins
-          </Text>
+          </span>
         </div>
       </header>
       
@@ -77,7 +77,7 @@ export default function PluginsPage() {
                 <Card key={plugin.id} className="border-l-4 border-primary">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center text-h3">
+                      <CardTitle className="flex items-center text-xl font-semibold">
                         <Puzzle className="h-4 w-4 mr-2" />
                         {plugin.name}
                       </CardTitle>
@@ -85,9 +85,9 @@ export default function PluginsPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Text className="mb-4">{plugin.description}</Text>
+                    <span className="mb-4">{plugin.description}</span>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 text-sm text-muted">
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <span>{plugin.downloads} downloads</span>
                         <span className="flex items-center">
                           <Star className="h-3 w-3 mr-1" />
@@ -119,15 +119,15 @@ export default function PluginsPage() {
                     <div className="flex items-center space-x-3">
                       <Puzzle className="h-5 w-5 text-primary" />
                       <div>
-                        <Heading level={3} className="text-h3">{plugin.name}</Heading>
-                        <Text className="text-sm text-muted">{plugin.description}</Text>
+                        <h3 className="text-xl font-semibold">{plugin.name}</h3>
+                        <span className="text-sm text-muted-foreground">{plugin.description}</span>
                         <div className="flex items-center space-x-4 mt-1">
                           <Badge variant="outline">{plugin.category}</Badge>
-                          <Text className="text-xs text-muted">{plugin.downloads} downloads</Text>
-                          <Text className="text-xs text-muted flex items-center">
+                          <span className="text-xs text-muted-foreground">{plugin.downloads} downloads</span>
+                          <span className="text-xs text-muted-foreground flex items-center">
                             <Star className="h-3 w-3 mr-1" />
                             {plugin.rating}
-                          </Text>
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -150,9 +150,9 @@ export default function PluginsPage() {
             <CardTitle>Submit Your Plugin</CardTitle>
           </CardHeader>
           <CardContent>
-            <Text className="mb-4">
+            <span className="mb-4">
               Have you built a useful Atlas plugin? Share it with the community!
-            </Text>
+            </span>
             <div className="flex space-x-4">
               <Button className="flex items-center">
                 <ExternalLink className="h-4 w-4 mr-2" />

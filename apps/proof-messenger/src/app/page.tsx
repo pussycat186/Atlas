@@ -14,7 +14,7 @@ import {
   Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Button, Card, CardContent, CardHeader, Badge, Text, Heading } from '@atlas/design-system';
+import { Button, Card, CardContent, CardHeader, Badge } from '@atlas/design-system';
 
 interface Message {
   id: string;
@@ -122,8 +122,8 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border bg-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-h1 font-bold">Atlas Messenger</h1>
           <div className="flex items-center space-x-4">
@@ -152,10 +152,10 @@ export default function HomePage() {
               connectionStatus === 'connected' ? 'bg-green-500' : 
               connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
             }`} data-testid="connection-indicator"></div>
-            <Text size="sm" color="secondary" data-testid="connection-status">
+            <span className="text-sm text-muted-foreground" data-testid="connection-status">
               {connectionStatus === 'connected' ? 'Connected to Atlas Network' :
                connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
-            </Text>
+            </span>
           </div>
           <Button
             variant="ghost"
@@ -173,12 +173,12 @@ export default function HomePage() {
         {/* Send Message Card */}
         <Card data-testid="send-message-card">
           <CardHeader>
-            <Heading level={3} data-testid="send-message-title">
+            <h3 className="text-lg font-semibold" data-testid="send-message-title">
               Send Message
-            </Heading>
-            <Text data-testid="send-message-description">
+            </h3>
+            <p className="text-sm text-muted-foreground" data-testid="send-message-description">
               Send a verifiable message with integrity timeline
-            </Text>
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -193,7 +193,7 @@ export default function HomePage() {
                 placeholder="Enter your message here..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full min-h-[100px] p-3 border border-border-primary bg-bg-primary text-fg-primary rounded-md focus:ring-2 focus:ring-border-focus focus:border-transparent"
+                className="w-full min-h-[100px] p-3 border border-input bg-background text-foreground rounded-md focus:ring-2 focus:ring-ring focus:border-transparent"
                 data-testid="message-input"
                 disabled={isSending}
                 aria-label="Message input"
@@ -226,9 +226,9 @@ export default function HomePage() {
                     📎
                   </Button>
                 </div>
-                <Text size="xs" className="text-muted">
+                <span className="text-xs text-muted-foreground">
                   {message.length}/280
-                </Text>
+                </span>
               </div>
             </div>
           </CardContent>
@@ -237,33 +237,33 @@ export default function HomePage() {
         {/* Recent Messages Card */}
         <Card data-testid="recent-messages-card">
           <CardHeader>
-            <Heading level={3} data-testid="recent-messages-title">
+            <h3 className="text-lg font-semibold" data-testid="recent-messages-title">
               Recent Messages
-            </Heading>
-            <Text data-testid="recent-messages-description">
+            </h3>
+            <p className="text-sm text-muted-foreground" data-testid="recent-messages-description">
               View your message history and verification status
-            </Text>
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-3" data-testid="message-list">
             {messages.map((msg) => (
-              <div key={msg.id} className="flex items-center justify-between p-3 border border-border-primary rounded-lg hover:bg-bg-secondary" data-testid={`message-item-${msg.id}`}>
+              <div key={msg.id} className="flex items-center justify-between p-3 border border-input rounded-lg hover:bg-muted" data-testid={`message-item-${msg.id}`}>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
                     {getStatusIcon(msg.status)}
-                    <Text weight="medium" color="primary" data-testid="message-content">
+                    <span className="font-medium text-foreground" data-testid="message-content">
                       {msg.content}
-                    </Text>
+                    </span>
                   </div>
-                  <Text size="sm" color="tertiary" data-testid="message-timestamp">
+                  <span className="text-sm text-muted-foreground" data-testid="message-timestamp">
                     {format(msg.timestamp, 'MMM d, HH:mm')}
-                  </Text>
+                  </span>
                   {msg.receipt && (
                     <div className="mt-2 flex items-center space-x-2">
                       <Shield className="h-3 w-3 text-green-600" />
-                      <Text size="xs" color="tertiary" data-testid="witness-count">
+                      <span className="text-xs text-muted-foreground" data-testid="witness-count">
                         {msg.receipt.witnesses.length} witnesses
-                      </Text>
+                      </span>
                     </div>
                   )}
                 </div>
@@ -300,8 +300,8 @@ export default function HomePage() {
             <div className="flex items-center space-x-2">
               <Activity className="h-5 w-5 text-blue-600" />
               <div>
-                <Text size="sm" color="secondary" data-testid="total-messages-label">Total Messages</Text>
-                <Text size="2xl" weight="bold" data-testid="total-messages-value">{messages.length}</Text>
+                <span className="text-sm text-muted-foreground" data-testid="total-messages-label">Total Messages</span>
+                <span className="text-2xl font-bold" data-testid="total-messages-value">{messages.length}</span>
               </div>
             </div>
           </CardContent>
@@ -311,10 +311,10 @@ export default function HomePage() {
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
-                <Text size="sm" color="secondary" data-testid="verified-messages-label">Verified</Text>
-                <Text size="2xl" weight="bold" data-testid="verified-messages-value">
+                <span className="text-sm text-muted-foreground" data-testid="verified-messages-label">Verified</span>
+                <span className="text-2xl font-bold" data-testid="verified-messages-value">
                   {messages.filter(m => m.status === 'verified').length}
-                </Text>
+                </span>
               </div>
             </div>
           </CardContent>
@@ -324,10 +324,10 @@ export default function HomePage() {
             <div className="flex items-center space-x-2">
               <Clock className="h-5 w-5 text-yellow-600" />
               <div>
-                <Text size="sm" color="secondary" data-testid="pending-messages-label">Pending</Text>
-                <Text size="2xl" weight="bold" data-testid="pending-messages-value">
+                <span className="text-sm text-muted-foreground" data-testid="pending-messages-label">Pending</span>
+                <span className="text-2xl font-bold" data-testid="pending-messages-value">
                   {messages.filter(m => m.status === 'pending').length}
-                </Text>
+                </span>
               </div>
             </div>
           </CardContent>
@@ -337,8 +337,8 @@ export default function HomePage() {
             <div className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-purple-600" />
               <div>
-                <Text size="sm" color="secondary" data-testid="uptime-label">Uptime</Text>
-                <Text size="2xl" weight="bold" data-testid="uptime-value">99.9%</Text>
+                <span className="text-sm text-muted-foreground" data-testid="uptime-label">Uptime</span>
+                <span className="text-2xl font-bold" data-testid="uptime-value">99.9%</span>
               </div>
             </div>
           </CardContent>
@@ -351,33 +351,33 @@ export default function HomePage() {
           <CardHeader>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></div>
-              <Heading level={4} className="text-purple-900 dark:text-purple-100">Quantum Time Crystal Architecture</Heading>
+              <h4 className="text-lg font-semibold text-purple-900 dark:text-purple-100">Quantum Time Crystal Architecture</h4>
             </div>
           </CardHeader>
           <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Text size="sm" className="text-purple-700 dark:text-purple-300">Quantum Phase</Text>
-              <Text size="xl" weight="bold" className="text-purple-900 dark:text-purple-100" data-testid="quantum-phase">
+              <span className="text-sm text-purple-700 dark:text-purple-300">Quantum Phase</span>
+              <span className="text-xl font-bold text-purple-900 dark:text-purple-100" data-testid="quantum-phase">
                 {quantumState ? (quantumState.phase / Math.PI).toFixed(2) + 'π' : 'N/A'}
-              </Text>
+              </span>
             </div>
             <div>
-              <Text size="sm" className="text-purple-700 dark:text-purple-300">Time Crystals</Text>
-              <Text size="xl" weight="bold" className="text-purple-900 dark:text-purple-100" data-testid="quantum-crystals">
+              <span className="text-sm text-purple-700 dark:text-purple-300">Time Crystals</span>
+              <span className="text-xl font-bold text-purple-900 dark:text-purple-100" data-testid="quantum-crystals">
                 {timeCrystals.length}
-              </Text>
+              </span>
             </div>
             <div>
-              <Text size="sm" className="text-purple-700 dark:text-purple-300">Entangled Channels</Text>
-              <Text size="xl" weight="bold" className="text-purple-900 dark:text-purple-100" data-testid="quantum-channels">
+              <span className="text-sm text-purple-700 dark:text-purple-300">Entangled Channels</span>
+              <span className="text-xl font-bold text-purple-900 dark:text-purple-100" data-testid="quantum-channels">
                 {entangledChannels.length}
-              </Text>
+              </span>
             </div>
           </div>
           {quantumMetrics && (
             <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
-              <Text size="sm" className="text-purple-700 dark:text-purple-300">System Health</Text>
+              <span className="text-sm text-purple-700 dark:text-purple-300">System Health</span>
               <div className="flex items-center space-x-2 mt-1">
                 <div className="flex-1 bg-purple-200 dark:bg-purple-800 rounded-full h-2">
                   <div 
@@ -385,16 +385,16 @@ export default function HomePage() {
                     style={{ width: `${quantumMetrics.healthScore}%` }}
                   ></div>
                 </div>
-                <Text size="sm" weight="medium" className="text-purple-900 dark:text-purple-100" data-testid="quantum-health">
+                <span className="text-sm font-medium text-purple-900 dark:text-purple-100" data-testid="quantum-health">
                   {quantumMetrics.healthScore}%
-                </Text>
+                </span>
               </div>
             </div>
           )}
           </CardContent>
         </Card>
       )}
-      </div>
+      </main>
     </div>
   );
 }

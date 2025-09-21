@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Badge, Heading, Text } from '@atlas/design-system';
+import { Card, CardContent, CardHeader, CardTitle, Badge } from '@atlas/design-system';
 import { TrendingUp, Users, MessageSquare, Clock } from 'lucide-react';
 
 export default function AnalyticsPage() {
@@ -28,13 +28,13 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-border bg-surface">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-input bg-card">
         <div className="container mx-auto px-4 py-4">
-          <Heading level={1} className="text-h1 font-bold">Analytics Dashboard</Heading>
-          <Text className="mt-2 text-muted">
+          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+          <span className="mt-2 text-muted-foreground">
             Performance metrics and usage analytics for Atlas platform
-          </Text>
+          </span>
         </div>
       </header>
       
@@ -49,8 +49,8 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Text className="text-2xl font-bold">{analytics.totalMessages.toLocaleString()}</Text>
-              <Text className="text-xs text-muted">All time</Text>
+              <span className="text-2xl font-bold">{analytics.totalMessages.toLocaleString()}</span>
+              <span className="text-xs text-muted-foreground">All time</span>
             </CardContent>
           </Card>
 
@@ -62,8 +62,8 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Text className="text-2xl font-bold">{analytics.activeUsers}</Text>
-              <Text className="text-xs text-muted">Last 30 days</Text>
+              <span className="text-2xl font-bold">{analytics.activeUsers}</span>
+              <span className="text-xs text-muted-foreground">Last 30 days</span>
             </CardContent>
           </Card>
 
@@ -75,8 +75,8 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Text className="text-2xl font-bold">{analytics.avgResponseTime}</Text>
-              <Text className="text-xs text-muted">Last 24 hours</Text>
+              <span className="text-2xl font-bold">{analytics.avgResponseTime}</span>
+              <span className="text-xs text-muted-foreground">Last 24 hours</span>
             </CardContent>
           </Card>
 
@@ -88,8 +88,8 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Text className="text-2xl font-bold">{analytics.successRate}</Text>
-              <Text className="text-xs text-muted">Last 7 days</Text>
+              <span className="text-2xl font-bold">{analytics.successRate}</span>
+              <span className="text-xs text-muted-foreground">Last 7 days</span>
             </CardContent>
           </Card>
         </div>
@@ -103,11 +103,11 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {analytics.trends.map((trend) => (
                 <div key={trend.metric} className="flex items-center justify-between p-3 border rounded-lg">
-                  <Text className="font-medium">{trend.metric}</Text>
+                  <span className="font-medium">{trend.metric}</span>
                   <div className="flex items-center space-x-2">
-                    <Text className={`text-sm font-semibold ${getTrendColor(trend.trend, trend.metric)}`}>
+                    <span className={`text-sm font-semibold ${getTrendColor(trend.trend, trend.metric)}`}>
                       {getTrendIcon(trend.trend)} {trend.value}
-                    </Text>
+                    </span>
                   </div>
                 </div>
               ))}
@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-              <Text className="text-muted">Chart visualization would be rendered here</Text>
+              <span className="text-muted-foreground">Chart visualization would be rendered here</span>
             </div>
           </CardContent>
         </Card>
