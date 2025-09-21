@@ -4,8 +4,6 @@ on: [workflow_dispatch, pull_request]
 jobs:
   test-basic:
     runs-on: ubuntu-latest
-    env:
-      BASE_URL: https://atlas-proof-messenger.vercel.app
     steps:
       - uses: actions/checkout@v4
 
@@ -27,14 +25,14 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Install axe-playwright
-        run: npm install @axe-core/playwright
+        run: pnpm add -D @axe-core/playwright
 
       - name: Run Playwright tests
         run: |
-          pnpm exec playwright test tests/specs/messenger.behavior.spec.ts --config=tests/playwright.config.ts
-          pnpm exec playwright test tests/specs/admin.metrics.spec.ts --config=tests/playwright.config.ts
-          pnpm exec playwright test tests/specs/devportal.quickstart.spec.ts --config=tests/playwright.config.ts
-          pnpm exec playwright test tests/specs/a11y.spec.ts --config=tests/playwright.config.ts
+          BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/messenger.behavior.spec.ts --config=tests/playwright.config.ts
+          BASE_URL=https://atlas-admin-insights.vercel.app pnpm exec playwright test tests/specs/admin.metrics.spec.ts --config=tests/playwright.config.ts
+          BASE_URL=https://atlas-dev-portal.vercel.app pnpm exec playwright test tests/specs/devportal.quickstart.spec.ts --config=tests/playwright.config.ts
+          BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/a11y.spec.ts --config=tests/playwright.config.ts
 
       - name: Run Lighthouse Basic
         uses: treosh/lighthouse-ci-action@v12
@@ -49,8 +47,6 @@ jobs:
 
   test-pro:
     runs-on: ubuntu-latest
-    env:
-      BASE_URL: https://atlas-proof-messenger.vercel.app
     steps:
       - uses: actions/checkout@v4
 
@@ -72,14 +68,14 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Install axe-playwright
-        run: npm install @axe-core/playwright
+        run: pnpm add -D @axe-core/playwright
 
       - name: Run Playwright tests
         run: |
-          pnpm exec playwright test tests/specs/messenger.behavior.spec.ts --config=tests/playwright.config.ts
-          pnpm exec playwright test tests/specs/admin.metrics.spec.ts --config=tests/playwright.config.ts
-          pnpm exec playwright test tests/specs/devportal.quickstart.spec.ts --config=tests/playwright.config.ts
-          pnpm exec playwright test tests/specs/a11y.spec.ts --config=tests/playwright.config.ts
+          BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/messenger.behavior.spec.ts --config=tests/playwright.config.ts
+          BASE_URL=https://atlas-admin-insights.vercel.app pnpm exec playwright test tests/specs/admin.metrics.spec.ts --config=tests/playwright.config.ts
+          BASE_URL=https://atlas-dev-portal.vercel.app pnpm exec playwright test tests/specs/devportal.quickstart.spec.ts --config=tests/playwright.config.ts
+          BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/a11y.spec.ts --config=tests/playwright.config.ts
 
       - name: Run Lighthouse Pro
         uses: treosh/lighthouse-ci-action@v12
