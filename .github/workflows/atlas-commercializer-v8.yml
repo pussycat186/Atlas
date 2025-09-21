@@ -99,6 +99,9 @@ jobs:
 
       - name: Deploy ${{ matrix.app }}
         working-directory: apps/${{ matrix.app }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         run: |
           echo "Deploying ${{ matrix.app }}..."
           
@@ -117,9 +120,9 @@ jobs:
           esac
           
           # Deploy with Vercel CLI
-          npx vercel pull --yes --environment=production
-          npx vercel build --prod
-          npx vercel deploy --prebuilt --prod
+          npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          npx vercel build --prod --token=$VERCEL_TOKEN
+          npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
           
           echo "✅ ${{ matrix.app }} deployed successfully"
 
@@ -145,6 +148,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Build fabric-protocol
+        run: pnpm -r --filter="@atlas/fabric-protocol" build
 
       - name: Build services
         run: pnpm -r --filter="./services/*" build
