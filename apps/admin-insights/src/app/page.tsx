@@ -158,14 +158,14 @@ export default function AdminDashboard() {
         </div>
       </header>
       
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main className="container mx-auto px-4 py-8 space-y-8" role="main" aria-label="Admin dashboard content">
 
       {/* KPI Row with Trending */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Activity className="h-4 w-4 mr-2" />
+            <CardTitle as="h2" className="text-sm font-medium flex items-center">
+              <Activity className="h-4 w-4 mr-2" aria-hidden="true" />
               Cluster Status
             </CardTitle>
           </CardHeader>
@@ -182,8 +182,8 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Users className="h-4 w-4 mr-2" />
+            <CardTitle as="h2" className="text-sm font-medium flex items-center">
+              <Users className="h-4 w-4 mr-2" aria-hidden="true" />
               Witness Quorum
             </CardTitle>
           </CardHeader>
@@ -199,8 +199,8 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <TrendingUp className="h-4 w-4 mr-2" />
+            <CardTitle as="h2" className="text-sm font-medium flex items-center">
+              <TrendingUp className="h-4 w-4 mr-2" aria-hidden="true" />
               RPS
             </CardTitle>
           </CardHeader>
@@ -214,8 +214,8 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Zap className="h-4 w-4 mr-2" />
+            <CardTitle as="h2" className="text-sm font-medium flex items-center">
+              <Zap className="h-4 w-4 mr-2" aria-hidden="true" />
               Error Rate
             </CardTitle>
           </CardHeader>

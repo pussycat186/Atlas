@@ -212,14 +212,14 @@ export default function DeveloperPortal() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-h1 font-bold">Atlas Developer Portal</h1>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" onClick={() => setCommandPaletteOpen(true)} aria-label="Open command palette">
-              <span className="sr-only">Command</span>⌘K
+            <Button variant="outline" size="sm" onClick={() => setCommandPaletteOpen(true)} aria-label="Open command palette" className="tap-24 focus-outline">
+              <span className="sr-only">Open command palette</span>⌘K
             </Button>
           </div>
         </div>
       </header>
       
-      <main className="container mx-auto px-4 py-8 space-y-12" data-testid="dev-portal">
+      <main className="container mx-auto px-4 py-8 space-y-12" data-testid="dev-portal" role="main" aria-label="Developer portal content">
       {/* Hero Section */}
       <section className="text-center" data-testid="hero-section">
         <h2 className="text-h1 font-bold mb-4" data-testid="portal-title">

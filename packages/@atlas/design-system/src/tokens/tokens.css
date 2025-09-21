@@ -46,10 +46,10 @@
   --danger: #EF4444; /* Improved danger color */
   --focus: #2563EB;
   
-  /* Semantic color variations */
+  /* Semantic color variations - Enhanced contrast for WCAG AA */
   --bg-secondary: #f3f4f6;
-  --fg-secondary: #374151; /* Increased contrast from #6b7280 */
-  --fg-tertiary: #6b7280; /* Increased contrast from #9ca3af */
+  --fg-secondary: #1f2937; /* Increased contrast for better readability */
+  --fg-tertiary: #374151; /* Increased contrast from #6b7280 */
   --border: #d1d5db;
   --border-focus: #2563eb;
   
