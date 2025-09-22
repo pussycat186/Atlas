@@ -37,6 +37,9 @@ jobs:
       - name: Install axe-playwright
         run: pnpm add -D @axe-core/playwright -w
 
+      - name: Install lighthouse-ci
+        run: pnpm add -D @lhci/cli -w
+
       - name: Run Playwright tests - ${{ matrix.app }}
         run: |
           case "${{ matrix.app }}" in
@@ -110,6 +113,9 @@ jobs:
 
       - name: Install axe-playwright
         run: pnpm add -D @axe-core/playwright -w
+
+      - name: Install lighthouse-ci
+        run: pnpm add -D @lhci/cli -w
 
       - name: Run Playwright tests - ${{ matrix.app }}
         run: |
