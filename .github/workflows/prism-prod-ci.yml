@@ -35,7 +35,7 @@ jobs:
 
       # Deploy Proof Messenger
       - name: Deploy Proof Messenger
-        if: ${{ vars.VERCEL_ORG_ID != '' && secrets.VERCEL_TOKEN != '' }}
+        if: vars.VERCEL_ORG_ID != '' && secrets.VERCEL_TOKEN != ''
         working-directory: apps/proof-messenger
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -48,7 +48,7 @@ jobs:
 
       # Deploy Admin Insights
       - name: Deploy Admin Insights
-        if: ${{ vars.VERCEL_ORG_ID != '' && secrets.VERCEL_TOKEN != '' }}
+        if: vars.VERCEL_ORG_ID != '' && secrets.VERCEL_TOKEN != ''
         working-directory: apps/admin-insights
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -61,7 +61,7 @@ jobs:
 
       # Deploy Dev Portal
       - name: Deploy Dev Portal
-        if: ${{ vars.VERCEL_ORG_ID != '' && secrets.VERCEL_TOKEN != '' }}
+        if: vars.VERCEL_ORG_ID != '' && secrets.VERCEL_TOKEN != ''
         working-directory: apps/dev-portal
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -74,7 +74,7 @@ jobs:
 
       # Deploy Gateway
       - name: Deploy Gateway
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        if: secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != ''
         working-directory: services/gateway
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
