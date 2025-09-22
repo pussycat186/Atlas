@@ -23,6 +23,7 @@
     "@radix-ui/react-toast": "^1.1.5",
     "autoprefixer": "^10.4.16",
     "date-fns": "^2.30.0",
+    "framer-motion": "^12.23.18",
     "lucide-react": "^0.294.0",
     "next": "^14.0.4",
     "next-themes": "^0.2.1",
