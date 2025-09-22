@@ -1,0 +1,108 @@
+name: ATLAS UI Hard Reset v14.2 - Prism UX
+
+on:
+  push:
+    branches: [feat/ui-reset-v14]
+  pull_request:
+    branches: [feat/ui-reset-v14]
+  workflow_dispatch:
+
+jobs:
+  test-ui:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [proof-messenger, admin-insights, dev-portal]
+        sku: [basic, pro]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Playwright
+        run: pnpm exec playwright install --with-deps
+
+      - name: Install axe-playwright
+        run: pnpm add -D @axe-core/playwright -w
+
+      - name: Install lighthouse-ci
+        run: pnpm add -D @lhci/cli -w
+
+      - name: Run Playwright tests - ${{ matrix.app }} (${{ matrix.sku }})
+        run: |
+          case "${{ matrix.app }}" in
+            "proof-messenger")
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/ui-smoke.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/ui-theme.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/ui-messenger.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/ui-minimap.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/ui-a11y.spec.ts --config=tests/playwright.config.ts
+              ;;
+            "admin-insights")
+              BASE_URL=https://atlas-admin-insights.vercel.app pnpm exec playwright test tests/specs/ui-smoke.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-admin-insights.vercel.app pnpm exec playwright test tests/specs/ui-theme.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-admin-insights.vercel.app pnpm exec playwright test tests/specs/ui-a11y.spec.ts --config=tests/playwright.config.ts
+              ;;
+            "dev-portal")
+              BASE_URL=https://atlas-dev-portal.vercel.app pnpm exec playwright test tests/specs/ui-smoke.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-dev-portal.vercel.app pnpm exec playwright test tests/specs/ui-theme.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-dev-portal.vercel.app pnpm exec playwright test tests/specs/ui-a11y.spec.ts --config=tests/playwright.config.ts
+              ;;
+          esac
+
+      - name: Run Lighthouse - ${{ matrix.app }} (${{ matrix.sku }})
+        run: |
+          case "${{ matrix.sku }}" in
+            "basic")
+              pnpm exec lhci autorun --config=tests/lhci.json --collect.url=https://atlas-${{ matrix.app }}.vercel.app
+              ;;
+            "pro")
+              pnpm exec lhci autorun --config=tests/lhci-pro.json --collect.url=https://atlas-${{ matrix.app }}.vercel.app
+              ;;
+          esac
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.app }}-${{ matrix.sku }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Lighthouse Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report-${{ matrix.app }}-${{ matrix.sku }}
+          path: .lighthouseci/
+          retention-days: 30
+
+  success-check:
+    runs-on: ubuntu-latest
+    needs: [test-ui]
+    if: always()
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ needs.test-ui.result }}" == "success" ]]; then
+            echo "✅ All tests passed!"
+            echo '{"status":"UI_RESET_LIVE_CI_GREEN","apps":{"proof_messenger":"https://atlas-proof-messenger.vercel.app","admin_insights":"https://atlas-admin-insights.vercel.app","dev_portal":"https://atlas-dev-portal.vercel.app"},"tests":{"playwright":"PASS","axe":"PASS","lighthouse":{"basic":"PASS","pro":"PASS"}},"evidence":"docs/evidence/$(date +%Y%m%d-%H%M)/","commit":"${{ github.sha }}"}' > success.json
+            cat success.json
+          else
+            echo "❌ Some tests failed"
+            echo "BLOCKER_PLAYWRIGHT:Tests failed"
+            exit 1
+          fi

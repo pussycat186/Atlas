@@ -110,3 +110,4 @@ console.log('   2. Configure GitHub secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL
 console.log('   3. Run: pnpm install to ensure all dependencies are installed');
 console.log('   4. Test locally: pnpm exec playwright test --config=tests/playwright.config.ts');
 console.log('   5. Create a pull request to trigger CI gates');
+

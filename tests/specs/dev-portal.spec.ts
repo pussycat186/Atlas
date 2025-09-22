@@ -16,3 +16,4 @@ test('Dev portal quickstart copy functionality', async ({ page }) => {
   expect(clipboardText).toContain('https://');
   expect(clipboardText).toContain('/record');
 });
+

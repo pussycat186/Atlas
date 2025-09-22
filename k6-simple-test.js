@@ -10,6 +10,7 @@ export let options = {
   thresholds: {
     http_req_duration: ['p(95)<200'],
     'http_req_failed{endpoint:implemented}': ['rate<0.01'], // Only check implemented endpoints
+    'http_req_duration{endpoint:implemented}': ['p(95)<200'], // p95 < 200ms for implemented endpoints
   },
 };
 
