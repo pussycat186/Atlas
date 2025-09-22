@@ -12,9 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+        with:
+          version: 9
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
+        with:
+          node-version: '20'
+          cache: 'pnpm'
       - name: Install deps (no lockfile strictness)
         run: pnpm install --no-frozen-lockfile
       - name: Install Playwright browsers
@@ -62,9 +65,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+        with:
+          version: 9
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
+        with:
+          node-version: '20'
+          cache: 'pnpm'
       - run: pnpm install --no-frozen-lockfile
       - run: npx playwright install --with-deps
       - name: Export LIVE URLs → env
