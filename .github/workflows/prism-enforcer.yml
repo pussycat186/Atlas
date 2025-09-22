@@ -89,7 +89,7 @@ jobs:
           BASE_ADMIN: ${{ env.ADMIN_INSIGHTS }}
           BASE_DEV: ${{ env.DEV_PORTAL }}
         run: npx playwright test --project=pro --reporter=line
-      - name: Lighthouse (Pro thresholds: Perf≥95 A11y≥95 BP=100 SEO=100)
+      - name: Lighthouse (Pro thresholds)
         run: |
           pnpm dlx @lhci/cli autorun --upload.target=filesystem --assert.preset=perf \
             --collect.url="${{ env.PROOF_MESSENGER }}" \
