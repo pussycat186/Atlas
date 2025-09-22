@@ -24,3 +24,4 @@ test('Admin metrics page loads and shows data', async ({ page }) => {
   const localhostRequests = requests.filter(url => url.includes('localhost'));
   expect(localhostRequests).toHaveLength(0);
 });
+

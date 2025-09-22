@@ -8,3 +8,4 @@ test('Send → Receipt → Verified', async ({ page }) => {
   await page.getByTestId('verify-btn').click();
   await expect(page.getByTestId('receipt')).toContainText(/verified/i, { timeout: 8000 });
 });
+

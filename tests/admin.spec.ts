@@ -80,3 +80,4 @@ test.describe('Atlas Admin Insights', () => {
     expect(localhostRequests).toHaveLength(0);
   });
 });
+

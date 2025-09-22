@@ -68,3 +68,4 @@ test.describe('Atlas Proof Messenger', () => {
     await expect(page.getByTestId('quantum-channels')).toBeVisible();
   });
 });
+
