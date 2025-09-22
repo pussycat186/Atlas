@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe('ATLAS Pro SKU Tests', () => {
   test('Pro SKU features - Advanced messenger with minimap', async ({ page }) => {
-    await page.goto('https://atlas-proof-messenger.vercel.app');
+    const baseUrl = process.env.BASE_PROOF || 'https://atlas-proof-messenger.vercel.app';
+    await page.goto(baseUrl);
     
     // Wait for page to load - check for either Prism UI or legacy UI
     const hasPrismUI = await page.locator('text=ATLAS • Prism UI').isVisible().catch(() => false);
@@ -33,7 +34,8 @@ test.describe('ATLAS Pro SKU Tests', () => {
   });
 
   test('Pro Admin - Constellation view and advanced metrics', async ({ page }) => {
-    await page.goto('https://atlas-admin-insights.vercel.app');
+    const baseUrl = process.env.BASE_ADMIN || 'https://atlas-admin-insights.vercel.app';
+    await page.goto(baseUrl);
     
     // Wait for page to load - check for either Prism UI or legacy UI
     await page.waitForLoadState('networkidle');
@@ -61,7 +63,8 @@ test.describe('ATLAS Pro SKU Tests', () => {
   });
 
   test('Pro Dev Portal - Marketplace and advanced endpoints', async ({ page }) => {
-    await page.goto('https://atlas-dev-portal.vercel.app');
+    const baseUrl = process.env.BASE_DEV || 'https://atlas-dev-portal.vercel.app';
+    await page.goto(baseUrl);
     
     // Wait for page to load - check for either Prism UI or legacy UI
     await page.waitForLoadState('networkidle');
@@ -100,8 +103,8 @@ test.describe('ATLAS Pro SKU Tests', () => {
     
     for (const endpoint of endpoints) {
       const response = await page.request.get(endpoint);
-      // Accept both 200 (implemented) and 404 (not implemented) as valid responses
-      expect([200, 404]).toContain(response.status());
+    // Accept both 200 (implemented) and 404 (not implemented) as valid responses
+    expect([200, 404]).toContain(response.status());
     }
     
     console.log('✓ QTCA endpoints - PASS');

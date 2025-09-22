@@ -8,14 +8,23 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: process.env.BASE_URL || 'https://atlas-proof-messenger.vercel.app',
     trace: 'on-first-retry',
   },
 
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'basic',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.BASE_PROOF || 'https://atlas-proof-messenger.vercel.app',
+      },
+    },
+    {
+      name: 'pro',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.BASE_PROOF || 'https://atlas-proof-messenger.vercel.app',
+      },
     },
   ],
 });

@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe('ATLAS Basic SKU Tests', () => {
   test('Messenger functionality - Send and verify messages', async ({ page }) => {
-    await page.goto('https://atlas-proof-messenger.vercel.app');
+    const baseUrl = process.env.BASE_PROOF || 'https://atlas-proof-messenger.vercel.app';
+    await page.goto(baseUrl);
     
     // Wait for page to load - check for either Prism UI or legacy UI
     const hasPrismUI = await page.locator('text=ATLAS • Prism UI').isVisible().catch(() => false);
@@ -19,7 +20,7 @@ test.describe('ATLAS Basic SKU Tests', () => {
       await expect(page.locator('[data-testid="receipt"]')).toBeVisible();
     } else if (hasLegacyUI) {
       // Legacy UI tests (fallback)
-      await expect(page.locator('[data-testid="message-input"]')).toBeVisible();
+    await expect(page.locator('[data-testid="message-input"]')).toBeVisible();
       await page.fill('[data-testid="message-input"]', 'Test message from Playwright');
       await page.click('[data-testid="send-message-button"]');
       await expect(page.locator('text=Test message from Playwright')).toBeVisible();
@@ -31,7 +32,8 @@ test.describe('ATLAS Basic SKU Tests', () => {
   });
 
   test('Admin dashboard - Basic metrics display', async ({ page }) => {
-    await page.goto('https://atlas-admin-insights.vercel.app');
+    const baseUrl = process.env.BASE_ADMIN || 'https://atlas-admin-insights.vercel.app';
+    await page.goto(baseUrl);
     
     // Wait for page to load - check for either Prism UI or legacy UI
     const hasPrismUI = await page.locator('text=ATLAS • Prism UI').isVisible().catch(() => false);
@@ -59,7 +61,8 @@ test.describe('ATLAS Basic SKU Tests', () => {
   });
 
   test('Dev Portal - Basic functionality', async ({ page }) => {
-    await page.goto('https://atlas-dev-portal.vercel.app');
+    const baseUrl = process.env.BASE_DEV || 'https://atlas-dev-portal.vercel.app';
+    await page.goto(baseUrl);
     
     // Wait for page to load - check for either Prism UI or legacy UI
     await page.waitForLoadState('networkidle');

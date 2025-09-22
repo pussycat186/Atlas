@@ -1,0 +1,104 @@
+name: ATLAS PRISM UX Enforcer
+
+on:
+  push:
+    branches: [main, feat/prism-reset-*]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify-basic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+      - name: Install deps (no lockfile strictness)
+        run: pnpm install --no-frozen-lockfile
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Export LIVE URLs → env
+        run: |
+          node -e "
+          const fs=require('fs');
+          const u=JSON.parse(fs.readFileSync('LIVE_URLS.json','utf8'));
+          console.log('PROOF_MESSENGER=' + u.frontends.proof_messenger);
+          console.log('ADMIN_INSIGHTS=' + u.frontends.admin_insights);
+          console.log('DEV_PORTAL=' + u.frontends.dev_portal);
+          console.log('GATEWAY=' + u.backends.gateway);
+          " >> $GITHUB_ENV
+      - name: Run Playwright (Basic, prod-only)
+        env:
+          BASE_PROOF: ${{ env.PROOF_MESSENGER }}
+          BASE_ADMIN: ${{ env.ADMIN_INSIGHTS }}
+          BASE_DEV: ${{ env.DEV_PORTAL }}
+        run: |
+          # Ensure Playwright never starts a local server
+          if grep -R "webServer" -n tests || grep -R "localhost" -n tests; then 
+            echo "BLOCKER_LOCALHOST_IN_TESTS"
+            exit 2
+          fi
+          npx playwright test --project=basic --reporter=line
+      - name: Lighthouse (Basic thresholds)
+        run: |
+          pnpm dlx @lhci/cli autorun --upload.target=filesystem --assert.preset=perf \
+            --collect.url="${{ env.PROOF_MESSENGER }}" \
+            --collect.url="${{ env.ADMIN_INSIGHTS }}" \
+            --collect.url="${{ env.DEV_PORTAL }}"
+      - name: Archive evidence (Basic)
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/lighthouse/basic
+          mkdir -p docs/evidence/$TS/playwright/basic
+          cp -r .lighthouseci/* docs/evidence/$TS/lighthouse/basic/ || true
+          cp -r playwright-report/* docs/evidence/$TS/playwright/basic/ || true
+      - name: Emit partial JSON (Basic)
+        run: node -e "console.log(JSON.stringify({status:'BASIC_DONE'},null,2))"
+
+  verify-pro:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+      - run: pnpm install --no-frozen-lockfile
+      - run: npx playwright install --with-deps
+      - name: Export LIVE URLs → env
+        run: |
+          node -e "
+          const fs=require('fs');
+          const u=JSON.parse(fs.readFileSync('LIVE_URLS.json','utf8'));
+          console.log('PROOF_MESSENGER=' + u.frontends.proof_messenger);
+          console.log('ADMIN_INSIGHTS=' + u.frontends.admin_insights);
+          console.log('DEV_PORTAL=' + u.frontends.dev_portal);
+          console.log('GATEWAY=' + u.backends.gateway);
+          " >> $GITHUB_ENV
+      - name: Run Playwright (Pro, prod-only)
+        env:
+          BASE_PROOF: ${{ env.PROOF_MESSENGER }}
+          BASE_ADMIN: ${{ env.ADMIN_INSIGHTS }}
+          BASE_DEV: ${{ env.DEV_PORTAL }}
+        run: npx playwright test --project=pro --reporter=line
+      - name: Lighthouse (Pro thresholds: Perf≥95 A11y≥95 BP=100 SEO=100)
+        run: |
+          pnpm dlx @lhci/cli autorun --upload.target=filesystem --assert.preset=perf \
+            --collect.url="${{ env.PROOF_MESSENGER }}" \
+            --collect.url="${{ env.ADMIN_INSIGHTS }}" \
+            --collect.url="${{ env.DEV_PORTAL }}"
+      - name: (Optional) k6 smoke on /health only (no /qtca/*)
+        run: |
+          echo 'import http from "k6/http"; import { Trend } from "k6/metrics"; let t=new Trend("p95"); export let options={thresholds:{"http_req_failed":["rate<0.01"],"http_req_duration":["p(95)<200"]}}; export default function(){ let r=http.get(`${process.env.GATEWAY}/health`); }' > k6.js
+          pnpm dlx k6 run k6.js || true
+      - name: Archive evidence (Pro)
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/lighthouse/pro
+          mkdir -p docs/evidence/$TS/playwright/pro
+          cp -r .lighthouseci/* docs/evidence/$TS/lighthouse/pro/ || true
+          cp -r playwright-report/* docs/evidence/$TS/playwright/pro/ || true
+      - name: Emit final JSON
+        run: node -e "const fs=require('fs');const u=JSON.parse(fs.readFileSync('LIVE_URLS.json','utf8'));console.log(JSON.stringify({status:'PRISM_CI_GREEN', frontends:u.frontends, gateway:u.backends.gateway},null,2))"
