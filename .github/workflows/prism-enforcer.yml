@@ -19,7 +19,9 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
       - name: Install deps (no lockfile strictness)
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm add -D dotenv
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
       - name: Export LIVE URLs → env
@@ -71,7 +73,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-      - run: pnpm install --no-frozen-lockfile
+      - run: |
+          pnpm install --no-frozen-lockfile
+          pnpm add -D dotenv
       - run: npx playwright install --with-deps
       - name: Export LIVE URLs → env
         run: |
