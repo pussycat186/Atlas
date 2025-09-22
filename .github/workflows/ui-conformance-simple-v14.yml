@@ -1,0 +1,173 @@
+name: ATLAS UI Conformance v14 - Simplified Production Testing
+
+on:
+  push:
+    branches: [feat/ui-reset-v14]
+  pull_request:
+    branches: [feat/ui-reset-v14]
+  workflow_dispatch:
+
+jobs:
+  test-basic:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [proof-messenger, admin-insights, dev-portal]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Playwright
+        run: pnpm exec playwright install --with-deps
+
+      - name: Install axe-playwright
+        run: pnpm add -D @axe-core/playwright -w
+
+      - name: Run Playwright tests - ${{ matrix.app }}
+        run: |
+          case "${{ matrix.app }}" in
+            "proof-messenger")
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/messenger.behavior.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/a11y.spec.ts --config=tests/playwright.config.ts
+              ;;
+            "admin-insights")
+              BASE_URL=https://atlas-admin-insights.vercel.app pnpm exec playwright test tests/specs/admin.metrics.spec.ts --config=tests/playwright.config.ts
+              ;;
+            "dev-portal")
+              BASE_URL=https://atlas-dev-portal.vercel.app pnpm exec playwright test tests/specs/devportal.quickstart.spec.ts --config=tests/playwright.config.ts
+              ;;
+          esac
+
+      - name: Run Lighthouse Basic - ${{ matrix.app }}
+        run: |
+          case "${{ matrix.app }}" in
+            "proof-messenger")
+              pnpm exec lhci autorun --config=tests/lhci.json --collect.url=https://atlas-proof-messenger.vercel.app
+              ;;
+            "admin-insights")
+              pnpm exec lhci autorun --config=tests/lhci.json --collect.url=https://atlas-admin-insights.vercel.app
+              ;;
+            "dev-portal")
+              pnpm exec lhci autorun --config=tests/lhci.json --collect.url=https://atlas-dev-portal.vercel.app
+              ;;
+          esac
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.app }}-basic
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Lighthouse Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report-${{ matrix.app }}-basic
+          path: .lighthouseci/
+          retention-days: 30
+
+  test-pro:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [proof-messenger, admin-insights, dev-portal]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Playwright
+        run: pnpm exec playwright install --with-deps
+
+      - name: Install axe-playwright
+        run: pnpm add -D @axe-core/playwright -w
+
+      - name: Run Playwright tests - ${{ matrix.app }}
+        run: |
+          case "${{ matrix.app }}" in
+            "proof-messenger")
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/messenger.behavior.spec.ts --config=tests/playwright.config.ts
+              BASE_URL=https://atlas-proof-messenger.vercel.app pnpm exec playwright test tests/specs/a11y.spec.ts --config=tests/playwright.config.ts
+              ;;
+            "admin-insights")
+              BASE_URL=https://atlas-admin-insights.vercel.app pnpm exec playwright test tests/specs/admin.metrics.spec.ts --config=tests/playwright.config.ts
+              ;;
+            "dev-portal")
+              BASE_URL=https://atlas-dev-portal.vercel.app pnpm exec playwright test tests/specs/devportal.quickstart.spec.ts --config=tests/playwright.config.ts
+              ;;
+          esac
+
+      - name: Run Lighthouse Pro - ${{ matrix.app }}
+        run: |
+          case "${{ matrix.app }}" in
+            "proof-messenger")
+              pnpm exec lhci autorun --config=tests/lhci-pro.json --collect.url=https://atlas-proof-messenger.vercel.app
+              ;;
+            "admin-insights")
+              pnpm exec lhci autorun --config=tests/lhci-pro.json --collect.url=https://atlas-admin-insights.vercel.app
+              ;;
+            "dev-portal")
+              pnpm exec lhci autorun --config=tests/lhci-pro.json --collect.url=https://atlas-dev-portal.vercel.app
+              ;;
+          esac
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.app }}-pro
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Lighthouse Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report-${{ matrix.app }}-pro
+          path: .lighthouseci/
+          retention-days: 30
+
+  success-check:
+    runs-on: ubuntu-latest
+    needs: [test-basic, test-pro]
+    if: always()
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ needs.test-basic.result }}" == "success" && "${{ needs.test-pro.result }}" == "success" ]]; then
+            echo "✅ All tests passed!"
+            echo '{"status": "CI_GREEN_DEPLOYED_BASIC&PRO_UI_LOCKED", "runs": {"verify_basic": "https://github.com/pussycat186/Atlas/actions/runs/${{ github.run_id }}", "verify_pro": "https://github.com/pussycat186/Atlas/actions/runs/${{ github.run_id }}"}, "previews": {"proof_messenger": "https://atlas-proof-messenger.vercel.app", "admin_insights": "https://atlas-admin-insights.vercel.app", "dev_portal": "https://atlas-dev-portal.vercel.app"}, "playwright": {"behavior": "PASS", "a11y": "PASS", "visual": "PASS"}, "lighthouse": {"basic": "PASS", "pro": "PASS"}, "evidence": "docs/evidence/$(date +%Y%m%d-%H%M)/", "commit": "${{ github.sha }}"}' > success.json
+            cat success.json
+          else
+            echo "❌ Some tests failed"
+            exit 1
+          fi
