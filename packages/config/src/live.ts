@@ -1,25 +1,19 @@
-import { readFileSync } from 'fs';
-import path from 'path';
+import LIVE from '../../../LIVE_URLS.json';
 
-export type LiveUrls = {
-  proof: string;
-  admin: string;
-  dev: string;
-  gateway: string;
-};
+export const PROOF_FRONTEND = LIVE?.proof ?? undefined;
+export const ADMIN_FRONTEND = LIVE?.admin ?? undefined;
+export const DEV_FRONTEND = LIVE?.dev ?? undefined;
 
-const LIVE_URLS_PATH = path.resolve(process.cwd(), 'LIVE_URLS.json');
-const LIVE_URLS: LiveUrls = JSON.parse(readFileSync(LIVE_URLS_PATH, 'utf-8'));
-
-export const PROOF_FRONTEND = LIVE_URLS.proof;
-export const ADMIN_FRONTEND = LIVE_URLS.admin;
-export const DEV_FRONTEND = LIVE_URLS.dev;
+export const LIVE_URLS = Object.freeze({
+  proof: PROOF_FRONTEND,
+  admin: ADMIN_FRONTEND,
+  dev: DEV_FRONTEND,
+  gateway: LIVE?.gateway ?? undefined,
+});
 
 export function getGatewayUrl(): string {
-  if (!LIVE_URLS.gateway) {
-    throw new Error("BLOCKER_NO_LIVE_URLS: gateway");
+  if (typeof LIVE?.gateway === 'string' && LIVE.gateway.length > 0) {
+    return LIVE.gateway;
   }
-  return LIVE_URLS.gateway;
+  throw new Error('BLOCKER_NO_LIVE_URLS');
 }
-
-export default LIVE_URLS;

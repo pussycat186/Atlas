@@ -1,3 +1,25 @@
+:root {
+  --bg: #f7f7fb;
+  --surface: #ffffffcc;
+  --border: #e5e7eb;
+  --text: #111827;
+}
+
+.light {
+  --bg: #f7f7fb;
+  --surface: #ffffffcc;
+  --border: #e5e7eb;
+  --text: #111827;
+}
+
+.dark {
+  --bg: #000000;
+  --surface: #111827cc;
+  --border: #374151;
+  --text: #f3f4f6;
+  /* neon-on-ink styles */
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
