@@ -309,7 +309,7 @@ export default function HomePage() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="w-full min-h-[100px] p-3 border border-input bg-background text-foreground rounded-md focus:ring-2 focus:ring-ring focus:border-transparent"
-                data-testid="composer-input"
+                data-testid="message-input"
                 disabled={isSending}
                 aria-label="Message input"
               />
@@ -320,7 +320,7 @@ export default function HomePage() {
                     onClick={handleSendMessage}
                     disabled={!message.trim() || isSending || !gatewayReachable}
                     loading={isSending}
-                    data-testid="send-btn"
+                    data-testid="send-message-button"
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Send Message
@@ -414,7 +414,7 @@ export default function HomePage() {
                     <div className="mt-2 flex items-center space-x-2" data-testid="receipt">
                       <Shield className="h-3 w-3 text-green-600 animate-pulse" />
                       <span className="text-xs text-muted-foreground">
-                        {msg.receipt.status} - {msg.receipt.id}
+                        Receipt ID: {msg.receipt.id} - {msg.receipt.status}
                       </span>
                     </div>
                   )}
@@ -431,12 +431,12 @@ export default function HomePage() {
                       {msg.status}
                     </Badge>
                   </span>
-                  {msg.status === 'sent' && (
+                  {(msg.status === 'sent' || msg.status === 'pending') && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleVerifyMessage(msg.id)}
-                      data-testid="verify-btn"
+                      data-testid="verify-button"
                       aria-label="Verify message"
                       className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                     >
