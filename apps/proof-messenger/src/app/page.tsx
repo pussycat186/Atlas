@@ -100,7 +100,7 @@ export default function HomePage() {
           'Idempotency-Key': newMessage.id
         },
         body: JSON.stringify({
-          message: message
+          message
         })
       });
 
@@ -185,7 +185,7 @@ export default function HomePage() {
                 status: 'verified' as const,
                 receipt: {
                   ...msg.receipt,
-                  status: status
+                  status
                 }
               }
             : msg
@@ -528,7 +528,7 @@ export default function HomePage() {
             <div>
               <span className="text-sm text-purple-700 dark:text-purple-300">Quantum Phase</span>
               <span className="text-xl font-bold text-purple-900 dark:text-purple-100" data-testid="quantum-phase">
-                {quantumState ? (quantumState.phase / Math.PI).toFixed(2) + 'π' : 'N/A'}
+                {quantumState ? `${(quantumState.phase / Math.PI).toFixed(2)  }π` : 'N/A'}
               </span>
             </div>
             <div>

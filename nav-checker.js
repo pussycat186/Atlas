@@ -99,7 +99,7 @@ async function runNavCheck() {
   // Save results
   const fs = require('fs');
   const path = require('path');
-  const outputPath = path.join('docs', 'evidence', new Date().toISOString().slice(0,16).replace(/[-:]/g, '').slice(0,8) + '-' + new Date().toISOString().slice(11,16).replace(/:/g, ''), 'nav-check.json');
+  const outputPath = path.join('docs', 'evidence', `${new Date().toISOString().slice(0,16).replace(/[-:]/g, '').slice(0,8)  }-${  new Date().toISOString().slice(11,16).replace(/:/g, '')}`, 'nav-check.json');
   
   // Ensure directory exists
   const dir = path.dirname(outputPath);

@@ -51,7 +51,7 @@ async function runLighthouse() {
   }
 
   // Save results
-  const timestamp = new Date().toISOString().slice(0,16).replace(/[-:]/g, '').slice(0,8) + '-' + new Date().toISOString().slice(11,16).replace(/:/g, '');
+  const timestamp = `${new Date().toISOString().slice(0,16).replace(/[-:]/g, '').slice(0,8)  }-${  new Date().toISOString().slice(11,16).replace(/:/g, '')}`;
   const outputPath = path.join('docs', 'evidence', timestamp, 'lighthouse-results.json');
   
   const dir = path.dirname(outputPath);
