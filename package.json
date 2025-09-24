@@ -30,7 +30,9 @@
     "docker:dev": "docker-compose -f infra/docker/compose.dev.yml up -d",
     "docker:ci": "docker-compose -f infra/docker/compose.ci.yml up -d",
     "k8s:deploy": "helm upgrade --install atlas ./infra/k8s/atlas",
-    "k8s:delete": "helm uninstall atlas"
+    "k8s:delete": "helm uninstall atlas",
+    "ci:ensure-live": "node -e \"const u=require('./LIVE_URLS.json');if(!u.proof||!u.admin||!u.dev||!u.gateway){console.log('BLOCKER_NO_LIVE_URLS');process.exit(1)}\"",
+    "ci:print-success": "node ./scripts/print-success.cjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
@@ -47,7 +49,9 @@
     "rimraf": "^5.0.0",
     "ts-jest": "^29.1.1",
     "ts-prune": "^0.10.3",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "lighthouse": "^11.0.0",
+    "@lhci/cli": "^0.13.0"
   },
   "engines": {
     "node": ">=20.0.0",
