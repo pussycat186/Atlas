@@ -6,7 +6,7 @@ const BASE = process.env.BASE_URL!; // set by CI to the Vercel Preview URL
 
 test.describe('Accessibility Tests', () => {
   test('A11y (axe) has no critical issues - Messenger', async ({ page }) => {
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -16,7 +16,7 @@ test.describe('Accessibility Tests', () => {
   });
 
   test('A11y (axe) has no critical issues - Admin', async ({ page }) => {
-    await page.goto(BASE + '/metrics');
+    await page.goto(`${BASE}/metrics`);
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -26,7 +26,7 @@ test.describe('Accessibility Tests', () => {
   });
 
   test('A11y (axe) has no critical issues - Dev Portal', async ({ page }) => {
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -36,7 +36,7 @@ test.describe('Accessibility Tests', () => {
   });
 
   test('Keyboard navigation works - Messenger', async ({ page }) => {
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
     
     // Test tab navigation
     await page.keyboard.press('Tab');
@@ -49,7 +49,7 @@ test.describe('Accessibility Tests', () => {
   });
 
   test('ARIA labels are present', async ({ page }) => {
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
     
     // Check for ARIA labels on interactive elements
     const buttons = page.locator('button[aria-label]');
@@ -60,7 +60,7 @@ test.describe('Accessibility Tests', () => {
   });
 
   test('Color contrast meets WCAG standards', async ({ page }) => {
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
     
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(['color-contrast'])
@@ -70,7 +70,7 @@ test.describe('Accessibility Tests', () => {
   });
 
   test('Focus management works correctly', async ({ page }) => {
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
     
     // Test that focus is managed properly
     const messageInput = page.getByRole('textbox', { name: /message/i });
