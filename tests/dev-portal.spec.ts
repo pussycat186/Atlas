@@ -5,7 +5,7 @@ const BASE = process.env.BASE_URL!; // set by CI to the Vercel Preview URL
 
 test.describe('Atlas Dev Portal', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
   });
 
   test('Portal loads and displays content', async ({ page }) => {
@@ -110,7 +110,7 @@ test.describe('Atlas Dev Portal', () => {
       requests.push(request.url());
     });
     
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
     await page.waitForLoadState('networkidle');
     
     // Check no localhost requests

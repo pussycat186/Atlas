@@ -13,7 +13,7 @@ import {
   Shield,
   Activity
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -25,9 +25,11 @@ interface Message {
   status: 'pending' | 'verified' | 'failed';
   timestamp: Date;
   receipt?: {
-    hash: string;
-    witnesses: string[];
-    verifyResult: boolean;
+    id?: string;
+    hash?: string;
+    witnesses?: string[];
+    verifyResult?: boolean;
+    status?: string;
   };
 }
 
@@ -106,16 +108,15 @@ export default function HomePage() {
         const data = await response.json();
         const recordId = data.id || data.receiptId || newMessage.id;
         
-        // Update message status to sent
+        // Update message status to pending (sent successfully)
         setMessages(prev => prev.map(msg => 
           msg.id === newMessage.id 
             ? { 
                 ...msg, 
                 id: recordId,
-                status: 'sent' as const,
+                status: 'pending' as const,
                 receipt: {
                   id: recordId,
-                  ts: new Date(),
                   status: 'sent'
                 }
               }
@@ -231,7 +232,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-h1 font-bold">Atlas Messenger</h1>
+          <h1 className="text-h1 font-bold" data-testid="pm-header-title">Atlas Proof Messenger</h1>
           <div className="flex items-center space-x-4">
             <Button variant="outline" size="sm" aria-label="Search messages">
               <span className="sr-only">Search</span>
@@ -309,7 +310,7 @@ export default function HomePage() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="w-full min-h-[100px] p-3 border border-input bg-background text-foreground rounded-md focus:ring-2 focus:ring-ring focus:border-transparent"
-                data-testid="composer-input"
+                data-testid="message-input"
                 disabled={isSending}
                 aria-label="Message input"
               />
@@ -319,8 +320,7 @@ export default function HomePage() {
                   <Button 
                     onClick={handleSendMessage}
                     disabled={!message.trim() || isSending || !gatewayReachable}
-                    loading={isSending}
-                    data-testid="send-btn"
+                    data-testid="send-message-button"
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Send Message
@@ -386,7 +386,7 @@ export default function HomePage() {
               <div 
                 key={msg.id} 
                 className="flex items-center justify-between p-3 border border-input rounded-lg hover:bg-muted transition-all duration-300 group"
-                data-testid={`message-item-${msg.id}`}
+                data-testid={`message-item-${msg.status}`}
                 style={{
                   viewTransitionName: `message-${msg.id}`,
                   animationDelay: `${index * 50}ms`
@@ -408,7 +408,7 @@ export default function HomePage() {
                     )}
                   </div>
                   <span className="text-sm text-muted-foreground" data-testid="message-timestamp">
-                    {format(msg.timestamp, 'MMM d, HH:mm')}
+                    {formatDistanceToNow(msg.timestamp)} ago
                   </span>
                   {msg.receipt && (
                     <div className="mt-2 flex items-center space-x-2" data-testid="receipt">
@@ -422,16 +422,16 @@ export default function HomePage() {
                 <div className="flex items-center space-x-2">
                   <span 
                     className="px-2 py-1 text-xs rounded-full flex items-center space-x-1"
-                    data-testid={`message-status-${msg.id}`}
+                    data-testid={`message-status-${msg.status}`}
                   >
                     <Badge 
-                      variant={msg.status === 'verified' ? 'success' : msg.status === 'pending' ? 'warning' : 'destructive'}
+                      variant={msg.status === 'verified' ? 'default' : msg.status === 'pending' ? 'secondary' : 'destructive'}
                       className="transition-all duration-300"
                     >
                       {msg.status}
                     </Badge>
                   </span>
-                  {msg.status === 'sent' && (
+                  {msg.status === 'pending' && (
                     <Button
                       variant="outline"
                       size="sm"

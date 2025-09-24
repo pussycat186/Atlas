@@ -5,7 +5,7 @@ const BASE = process.env.BASE_URL!; // set by CI to the Vercel Preview URL
 
 test.describe('Atlas Proof Messenger', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE + '/');
+    await page.goto(`${BASE}/`);
   });
 
   test('Send → Receipt → Verified', async ({ page }) => {
