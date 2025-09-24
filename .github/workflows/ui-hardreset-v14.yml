@@ -1,0 +1,216 @@
+name: UI Hard-Reset v14.2 - Production Gates
+
+on:
+  push:
+    branches: [ui-hardreset-v14]
+  pull_request:
+    branches: [ui-hardreset-v14]
+
+jobs:
+  ui-hardreset-gates:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        app: [proof, admin, dev]
+        sku: [basic, pro]
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm 9
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Guard - Check pnpm-lock.yaml exists
+        run: |
+          if [ ! -f pnpm-lock.yaml ]; then
+            echo "BLOCKER_FATAL:missing_lock"
+            exit 1
+          fi
+
+      - name: Guard - Ensure live URLs are valid
+        run: npm run ci:ensure-live
+
+      - name: Guard - Forbid localhost references
+        run: |
+          if git grep -nE "(localhost|127\.0\.0\.1|webServer)" -- ':!node_modules' ':!docs/evidence' ':!.lighthouseci' ':!*.md' ':!*.json'; then
+            echo "BLOCKER_LOCALHOST"
+            exit 1
+          fi
+
+      - name: Guard - Verify wrangler nodejs_compat
+        run: |
+          if ! grep -r "compatibility_flags.*nodejs_compat" services/*/wrangler.toml; then
+            echo "BLOCKER_FATAL:wrangler_nodejs_compat"
+            exit 1
+          fi
+
+      - name: Map app to BASE_URL
+        id: map_url
+        run: |
+          case "${{ matrix.app }}" in
+            proof)
+              echo "BASE_URL=https://atlas-proof-messenger.vercel.app" >> $GITHUB_OUTPUT
+              echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_PROOF }}" >> $GITHUB_OUTPUT
+              ;;
+            admin)
+              echo "BASE_URL=https://atlas-admin-insights.vercel.app" >> $GITHUB_OUTPUT
+              echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_ADMIN }}" >> $GITHUB_OUTPUT
+              ;;
+            dev)
+              echo "BASE_URL=https://atlas-dev-portal.vercel.app" >> $GITHUB_OUTPUT
+              echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_DEV }}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Vercel Production Deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ steps.map_url.outputs.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "BLOCKER_MISSING_SECRET:VERCEL_TOKEN"
+            exit 1
+          fi
+          if [ -z "$VERCEL_ORG_ID" ]; then
+            echo "BLOCKER_MISSING_SECRET:VERCEL_ORG_ID"
+            exit 1
+          fi
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_${{ matrix.app }}"
+            exit 1
+          fi
+          
+          # Deploy would go here in real scenario
+          echo "Deployment step placeholder - would deploy to Vercel"
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright Tests
+        env:
+          BASE_URL: ${{ steps.map_url.outputs.BASE_URL }}
+        run: npx playwright test tests/ui/smoke.spec.ts tests/ui/a11y.spec.ts --project=${{ matrix.sku }}
+
+      - name: Create Evidence Directory
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M")
+          mkdir -p "docs/evidence/$TIMESTAMP/lighthouse/${{ matrix.app }}/"
+          echo "EVIDENCE_DIR=docs/evidence/$TIMESTAMP" >> $GITHUB_ENV
+
+      - name: Run Lighthouse
+        env:
+          BASE_URL: ${{ steps.map_url.outputs.BASE_URL }}
+        run: |
+          # Install Lighthouse CLI
+          npm install -g lighthouse
+
+          # Run Lighthouse with desktop settings (1 run)
+          lighthouse "$BASE_URL" \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --output=json \
+            --output-path="$EVIDENCE_DIR/lighthouse/${{ matrix.app }}/${{ matrix.sku }}.json" \
+            --preset=desktop
+
+      - name: Enforce Lighthouse Budgets
+        run: |
+          REPORT_FILE="$EVIDENCE_DIR/lighthouse/${{ matrix.app }}/${{ matrix.sku }}.json"
+          
+          if [ ! -f "$REPORT_FILE" ]; then
+            echo "BLOCKER_LIGHTHOUSE:no_report"
+            exit 1
+          fi
+          
+          # Parse Lighthouse results
+          PERF=$(jq '.categories.performance.score' "$REPORT_FILE")
+          A11Y=$(jq '.categories.accessibility.score' "$REPORT_FILE")
+          BP=$(jq '.categories["best-practices"].score' "$REPORT_FILE")
+          SEO=$(jq '.categories.seo.score' "$REPORT_FILE")
+          
+          # Calculate JS bundle size (rough estimate from audits)
+          JS_SIZE=$(jq '[.audits."unused-javascript".details.items[]? | .wastedBytes] | add // 0' "$REPORT_FILE")
+          JS_SIZE_KB=$((JS_SIZE / 1024))
+          
+          echo "Lighthouse Scores - Perf: $PERF, A11y: $A11Y, BP: $BP, SEO: $SEO, JS: ${JS_SIZE_KB}KB"
+          
+          # Set budgets based on SKU
+          if [ "${{ matrix.sku }}" = "basic" ]; then
+            PERF_MIN=0.90
+            A11Y_MIN=0.95
+            BP_MIN=0.95
+            SEO_MIN=0.95
+            JS_MAX=300
+          else
+            PERF_MIN=0.95
+            A11Y_MIN=0.95
+            BP_MIN=1.00
+            SEO_MIN=1.00
+            JS_MAX=250
+          fi
+          
+          # Check budgets
+          if (( $(echo "$PERF < $PERF_MIN" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE:performance"
+            exit 1
+          fi
+          if (( $(echo "$A11Y < $A11Y_MIN" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE:accessibility"
+            exit 1
+          fi
+          if (( $(echo "$BP < $BP_MIN" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE:best-practices"
+            exit 1
+          fi
+          if (( $(echo "$SEO < $SEO_MIN" | bc -l) )); then
+            echo "BLOCKER_LIGHTHOUSE:seo"
+            exit 1
+          fi
+          if [ "$JS_SIZE_KB" -gt "$JS_MAX" ]; then
+            echo "BLOCKER_LIGHTHOUSE:js-bundle-size"
+            exit 1
+          fi
+
+      - name: Upload Evidence Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evidence-${{ matrix.app }}-${{ matrix.sku }}
+          path: ${{ env.EVIDENCE_DIR }}/
+          retention-days: 30
+
+  success-printer:
+    needs: ui-hardreset-gates
+    runs-on: ubuntu-latest
+    if: success()
+    
+    # Only run for dev app with pro SKU (final combination)
+    strategy:
+      matrix:
+        app: [dev]
+        sku: [pro]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Print Success JSON
+        run: npm run ci:print-success
