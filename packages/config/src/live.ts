@@ -1,7 +1,7 @@
 import LIVE from '../../../LIVE_URLS.json';
 
 export const PROOF_FRONTEND = LIVE?.proof ?? undefined;
-export const ADMIN_FRONTEND = LIVE?.admin ?? undefined;
+export const ADMIN_FRONTEND = LIVE?.admin ?? undefined; 
 export const DEV_FRONTEND = LIVE?.dev ?? undefined;
 
 export const LIVE_URLS = Object.freeze({
@@ -12,8 +12,8 @@ export const LIVE_URLS = Object.freeze({
 });
 
 export function getGatewayUrl(): string {
-  if (typeof LIVE?.gateway === 'string' && LIVE.gateway.length > 0) {
-    return LIVE.gateway;
+  if (!LIVE?.gateway || typeof LIVE.gateway !== 'string' || LIVE.gateway.length === 0) {
+    throw new Error('BLOCKER_NO_LIVE_URLS');
   }
-  throw new Error('BLOCKER_NO_LIVE_URLS');
+  return LIVE.gateway;
 }

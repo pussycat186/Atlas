@@ -1,31 +1,75 @@
+/* Atlas Prism UI Design Tokens */
 :root {
+  /* Light theme */
   --bg: #f7f7fb;
   --surface: #ffffffcc;
   --border: #e5e7eb;
   --text: #111827;
 }
 
-.light {
+[data-theme="light"] {
   --bg: #f7f7fb;
   --surface: #ffffffcc;
   --border: #e5e7eb;
   --text: #111827;
 }
 
-.dark {
-  --bg: #000000;
-  --surface: #111827cc;
+[data-theme="dark"] {
+  /* Dark theme - "neon-on-ink" */
+  --bg: #0a0a0a;
+  --surface: #1f2937cc;
   --border: #374151;
   --text: #f3f4f6;
-  /* neon-on-ink styles */
 }
 
-.light .neon {
-  --neon-color: #f3f4f6;
-  --neon-shadow: 0 0 10px #f3f4f6;
+/* Global Aurora Overlay for Dark Theme */
+.atlas-aurora-overlay::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, 
+    rgba(139, 69, 19, 0.1) 0%,
+    rgba(75, 0, 130, 0.1) 25%,
+    rgba(0, 100, 0, 0.1) 50%,
+    rgba(255, 20, 147, 0.1) 75%,
+    rgba(30, 144, 255, 0.1) 100%
+  );
+  animation: aurora-pulse 4s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
-.dark .neon {
-  --neon-color: #111827;
-  --neon-shadow: 0 0 10px #111827;
+@keyframes aurora-pulse {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+
+/* Apply theme colors to body */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Ensure single Aurora overlay globally */
+html[data-theme="dark"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, 
+    rgba(139, 69, 19, 0.05) 0%,
+    rgba(75, 0, 130, 0.05) 25%,
+    rgba(0, 100, 0, 0.05) 50%,
+    rgba(255, 20, 147, 0.05) 75%,
+    rgba(30, 144, 255, 0.05) 100%
+  );
+  animation: aurora-pulse 4s ease-in-out infinite alternate;
+  pointer-events: none;
 }

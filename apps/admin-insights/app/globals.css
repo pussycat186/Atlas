@@ -1,102 +1,79 @@
+/* Atlas Prism UI Design Tokens */
 :root {
+  /* Light theme */
   --bg: #f7f7fb;
   --surface: #ffffffcc;
   --border: #e5e7eb;
   --text: #111827;
 }
 
-.light {
+[data-theme="light"] {
   --bg: #f7f7fb;
   --surface: #ffffffcc;
   --border: #e5e7eb;
   --text: #111827;
 }
 
-.dark {
-  --bg: #000000;
-  --surface: #111827cc;
+[data-theme="dark"] {
+  /* Dark theme - "neon-on-ink" */
+  --bg: #0a0a0a;
+  --surface: #1f2937cc;
   --border: #374151;
   --text: #f3f4f6;
-  /* neon-on-ink styles */
 }
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@keyframes ripple {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
+/* Global Aurora Overlay for Dark Theme */
+.atlas-aurora-overlay::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, 
+    rgba(139, 69, 19, 0.1) 0%,
+    rgba(75, 0, 130, 0.1) 25%,
+    rgba(0, 100, 0, 0.1) 50%,
+    rgba(255, 20, 147, 0.1) 75%,
+    rgba(30, 144, 255, 0.1) 100%
+  );
+  animation: aurora-pulse 4s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
-@keyframes quantum-wave {
-  0%, 100% {
-    transform: translateX(0) scale(1);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translateX(10px) scale(1.1);
-    opacity: 1;
-  }
+@keyframes aurora-pulse {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.6; }
 }
 
-@keyframes status-pulse {
-  0%, 100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.8;
-  }
+/* Apply theme colors to body */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.ripple {
-  animation: ripple 2s infinite;
-}
-
-.quantum-wave {
-  animation: quantum-wave 1.5s infinite;
-}
-
-.status-pulse {
-  animation: status-pulse 2s infinite;
-}
-
-/* View Transitions API support */
-@supports (view-transition-name: none) {
-  .view-transition {
-    view-transition-name: var(--view-transition-name);
-  }
-}
-
-/* Accessibility: Respect prefers-reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-  .ripple,
-  .quantum-wave,
-  .status-pulse {
-    animation: none;
-  }
-  
-  .transition-all,
-  .transition-opacity,
-  .transition-transform {
-    transition: none;
-  }
-}
-
-/* Focus management for better accessibility */
-.focus-outline:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* Touch target size for mobile */
-.tap-24 {
-  min-height: 24px;
-  min-width: 24px;
+/* Ensure single Aurora overlay globally */
+html[data-theme="dark"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, 
+    rgba(139, 69, 19, 0.05) 0%,
+    rgba(75, 0, 130, 0.05) 25%,
+    rgba(0, 100, 0, 0.05) 50%,
+    rgba(255, 20, 147, 0.05) 75%,
+    rgba(30, 144, 255, 0.05) 100%
+  );
+  animation: aurora-pulse 4s ease-in-out infinite alternate;
+  pointer-events: none;
 }
