@@ -131,6 +131,28 @@ mirrors/
 # Test files
 test-results/
 coverage/
+playwright-report/
+playwright-results.*
+
+# Performance and lighthouse reports  
+k6-*.json
+k6-*.txt
+lighthouse-*.json
+lighthouserc*.json
+
+# Evidence and artifact files
+docs/evidence/
+*-artifacts*.json
+*-sbom*.json
+*-trivy.json
+cosign-*.txt
+slsa-provenance*.json
+verification-pack*.json
+evidence-pack*.zip
+*-manifest*.txt
+*-manifest*.csv
+observability-*.json
+observability-*.png
 
 # Local development
 .local/

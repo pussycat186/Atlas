@@ -1,3 +1,17 @@
+// Import LIVE_URLS.json at build time
+import LIVE from '../../../LIVE_URLS.json';
+
+export const PROOF_FRONTEND = LIVE.proof;
+export const ADMIN_FRONTEND = LIVE.admin;
+export const DEV_FRONTEND = LIVE.dev;
+
+export function getGatewayUrl(): string {
+  if (!LIVE.gateway) throw new Error('BLOCKER_NO_LIVE_URLS');
+  return LIVE.gateway;
+}
+
+export const LIVE_URLS = Object.freeze(LIVE);
+
 export type LiveUrls = {
   frontends?: { 
     proof?: string; 
@@ -17,19 +31,6 @@ export function readLiveUrls(): LiveUrls {
     frontends: (globalThis as any).__LIVE_URLS__?.frontends || {},
     witnesses: (globalThis as any).__LIVE_URLS__?.witnesses || [],
   };
-}
-
-export async function getGatewayUrl(): Promise<string> {
-  const env = process.env.NEXT_PUBLIC_GATEWAY_URL?.trim();
-  if (env) return env;
-  // @ts-ignore
-  const g = (globalThis as any).__LIVE_URLS__?.gateway;
-  if (g) return g;
-  const res = await fetch('/LIVE_URLS.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error('LIVE_URLS.json not found');
-  const j = await res.json();
-  if (!j?.gateway) throw new Error('LIVE_URLS.json missing gateway');
-  return j.gateway;
 }
 
 export function getFrontendUrl(app: 'proof' | 'admin' | 'dev'): string | undefined {
