@@ -1,0 +1,208 @@
+name: 'Atlas UI Hard-Reset v14.2 Gates'
+
+on:
+  push:
+    branches: [ui-hardreset-v14]
+  pull_request:
+    branches: [ui-hardreset-v14]
+
+jobs:
+  sanity-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check pnpm-lock.yaml exists
+        run: |
+          if [ ! -f "pnpm-lock.yaml" ]; then
+            echo "BLOCKER_FATAL:missing_lock"
+            exit 1
+          fi
+      
+      - name: Forbid localhost references
+        run: |
+          if grep -r "localhost\|127\.0\.0\.1\|webServer" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" --exclude-dir=node_modules --exclude-dir=.git .; then
+            echo "BLOCKER_LOCALHOST"
+            exit 1
+          fi
+      
+      - name: Check wrangler nodejs_compat
+        run: |
+          for file in $(find . -name "wrangler.toml"); do
+            if ! grep -q 'compatibility_flags.*nodejs_compat' "$file"; then
+              echo "BLOCKER_FATAL:wrangler_nodejs_compat"
+              exit 1
+            fi
+          done
+
+  ui-tests:
+    needs: sanity-checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [proof, admin, dev]
+        sku: [basic, pro]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '9'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        
+      - name: Map app to BASE_URL
+        id: map-url
+        run: |
+          case "${{ matrix.app }}" in
+            proof) echo "BASE_URL=https://atlas-proof-messenger.vercel.app" >> $GITHUB_OUTPUT ;;
+            admin) echo "BASE_URL=https://atlas-admin-insights.vercel.app" >> $GITHUB_OUTPUT ;;
+            dev) echo "BASE_URL=https://atlas-dev-portal.vercel.app" >> $GITHUB_OUTPUT ;;
+          esac
+        
+      - name: Verify Vercel deployment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID_PROOF: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
+          VERCEL_PROJECT_ID_ADMIN: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+          VERCEL_PROJECT_ID_DEV: ${{ secrets.VERCEL_PROJECT_ID_DEV }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ]; then
+            echo "BLOCKER_MISSING_SECRET:VERCEL"
+            exit 1
+          fi
+          
+          case "${{ matrix.app }}" in
+            proof) 
+              if [ -z "$VERCEL_PROJECT_ID_PROOF" ]; then
+                echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_PROOF"
+                exit 1
+              fi
+              ;;
+            admin)
+              if [ -z "$VERCEL_PROJECT_ID_ADMIN" ]; then
+                echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_ADMIN"
+                exit 1
+              fi
+              ;;
+            dev)
+              if [ -z "$VERCEL_PROJECT_ID_DEV" ]; then
+                echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_DEV"
+                exit 1
+              fi
+              ;;
+          esac
+          
+          # Check if URL is reachable
+          curl -f -s -o /dev/null "${{ steps.map-url.outputs.BASE_URL }}" || {
+            echo "BLOCKER_FATAL:app_not_reachable"
+            exit 1
+          }
+          
+      - name: Run Playwright tests
+        env:
+          BASE_URL: ${{ steps.map-url.outputs.BASE_URL }}
+        run: |
+          pnpm test:e2e --project=sku-${{ matrix.sku }}
+          
+      - name: Run axe accessibility tests
+        env:
+          BASE_URL: ${{ steps.map-url.outputs.BASE_URL }}
+        run: |
+          pnpm test:e2e tests/ui/a11y.spec.ts --project=sku-${{ matrix.sku }}
+          
+      - name: Run Lighthouse CI
+        env:
+          BASE_URL: ${{ steps.map-url.outputs.BASE_URL }}
+        run: |
+          # Create evidence directory
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M")
+          EVIDENCE_DIR="docs/evidence/$TIMESTAMP"
+          mkdir -p "$EVIDENCE_DIR"
+          
+          # Run Lighthouse with different thresholds per SKU
+          if [ "${{ matrix.sku }}" = "basic" ]; then
+            # Basic: Perf>=0.90, A11y>=0.95, BP>=0.95, SEO>=0.95, JS<=300KB
+            npx lighthouse "$BASE_URL" --output=json --output-path="$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" --only-categories=performance,accessibility,best-practices,seo --chrome-flags="--headless --no-sandbox"
+            
+            # Check budgets
+            PERF=$(cat "$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" | jq '.categories.performance.score')
+            A11Y=$(cat "$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" | jq '.categories.accessibility.score') 
+            BP=$(cat "$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" | jq '.categories["best-practices"].score')
+            SEO=$(cat "$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" | jq '.categories.seo.score')
+            
+            if (( $(echo "$PERF < 0.90" | bc -l) )); then
+              echo "BLOCKER_LIGHTHOUSE:performance"
+              exit 1
+            fi
+            if (( $(echo "$A11Y < 0.95" | bc -l) )); then
+              echo "BLOCKER_LIGHTHOUSE:accessibility"
+              exit 1
+            fi
+            if (( $(echo "$BP < 0.95" | bc -l) )); then
+              echo "BLOCKER_LIGHTHOUSE:best-practices"
+              exit 1
+            fi
+            if (( $(echo "$SEO < 0.95" | bc -l) )); then
+              echo "BLOCKER_LIGHTHOUSE:seo"
+              exit 1
+            fi
+          else
+            # Pro: Perf>=0.95, A11y>=0.95, BP=1, SEO=1, JS<=250KB
+            npx lighthouse "$BASE_URL" --output=json --output-path="$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" --only-categories=performance,accessibility,best-practices,seo --chrome-flags="--headless --no-sandbox"
+            
+            # Check budgets
+            PERF=$(cat "$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" | jq '.categories.performance.score')
+            A11Y=$(cat "$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" | jq '.categories.accessibility.score') 
+            BP=$(cat "$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" | jq '.categories["best-practices"].score')
+            SEO=$(cat "$EVIDENCE_DIR/lighthouse-${{ matrix.app }}-${{ matrix.sku }}.json" | jq '.categories.seo.score')
+            
+            if (( $(echo "$PERF < 0.95" | bc -l) )); then
+              echo "BLOCKER_LIGHTHOUSE:performance"
+              exit 1
+            fi
+            if (( $(echo "$A11Y < 0.95" | bc -l) )); then
+              echo "BLOCKER_LIGHTHOUSE:accessibility"  
+              exit 1
+            fi
+            if (( $(echo "$BP < 1.0" | bc -l) )); then
+              echo "BLOCKER_LIGHTHOUSE:best-practices"
+              exit 1
+            fi
+            if (( $(echo "$SEO < 1.0" | bc -l) )); then
+              echo "BLOCKER_LIGHTHOUSE:seo"
+              exit 1
+            fi
+          fi
+          
+      - name: Archive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ matrix.app }}-${{ matrix.sku }}
+          path: docs/evidence/
+          
+  success-printer:
+    needs: ui-tests
+    runs-on: ubuntu-latest
+    if: ${{ success() && matrix.app == 'dev' && matrix.sku == 'pro' }}
+    strategy:
+      matrix:
+        app: [dev]
+        sku: [pro]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print SUCCESS JSON
+        run: node ./scripts/print-success.cjs

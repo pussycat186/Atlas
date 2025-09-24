@@ -2,79 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes ripple {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
+:root {
+  /* Light theme tokens */
+  --bg-light: #f7f7fb;
+  --surface-light: #ffffffcc;
+  --border-light: #e5e7eb;
+  --text-light: #111827;
+  
+  /* Dark theme - neon-on-ink */
+  --bg-dark: #0a0a0f;
+  --surface-dark: #1a1a2ecc;
+  --border-dark: #3b3b5c;
+  --text-dark: #f0f0ff;
 }
 
-@keyframes quantum-wave {
-  0%, 100% {
-    transform: translateX(0) scale(1);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translateX(10px) scale(1.1);
-    opacity: 1;
-  }
+/* Aurora overlay for dark mode */
+.dark {
+  background: var(--bg-dark);
+  color: var(--text-dark);
 }
 
-@keyframes status-pulse {
+.dark::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1), rgba(139, 92, 246, 0.1));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.light {
+  background: var(--bg-light);
+  color: var(--text-light);
+}
+
+/* Single Aurora overlay */
+@keyframes aurora {
   0%, 100% {
     opacity: 0.3;
+    transform: rotate(0deg) scale(1);
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.6;
+    transform: rotate(180deg) scale(1.1);
   }
 }
 
-.ripple {
-  animation: ripple 2s infinite;
-}
-
-.quantum-wave {
-  animation: quantum-wave 1.5s infinite;
-}
-
-.status-pulse {
-  animation: status-pulse 2s infinite;
-}
-
-/* View Transitions API support */
-@supports (view-transition-name: none) {
-  .view-transition {
-    view-transition-name: var(--view-transition-name);
-  }
-}
-
-/* Accessibility: Respect prefers-reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-  .ripple,
-  .quantum-wave,
-  .status-pulse {
-    animation: none;
-  }
-  
-  .transition-all,
-  .transition-opacity,
-  .transition-transform {
-    transition: none;
-  }
-}
-
-/* Focus management for better accessibility */
-.focus-outline:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* Touch target size for mobile */
-.tap-24 {
-  min-height: 24px;
-  min-width: 24px;
+.aurora-overlay {
+  animation: aurora 20s infinite ease-in-out;
 }

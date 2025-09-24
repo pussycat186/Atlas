@@ -17,6 +17,7 @@
     "@atlas/design-system": "workspace:*",
     "@atlas/fabric-client": "workspace:*",
     "@atlas/fabric-protocol": "workspace:*",
+    "@atlas/prism-ui": "workspace:*",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.0.4",
