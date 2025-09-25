@@ -83,7 +83,11 @@ dist
 
 # Gatsby files
 .cache/
+# public assets
 public
+!public/manifest.json
+!public/icons/
+!public/icons/*.png
 
 # Storybook build outputs
 .out

@@ -1,4 +1,41 @@
-# Atlas v12 FutureTech Infrastructure
+# Atlas Ecosystem — Production-only
+
+This repository hosts the Atlas Ecosystem with Atlas Messenger as the flagship app. Two SKUs are supported:
+
+- Basic: fast, clean, reliable
+- Pro: advanced security, PQC readiness, QTCA full, multi-tenant, SSO
+
+## What is Atlas Ecosystem (Basic vs Pro outcomes)
+- Basic focuses on simple, reliable proof messaging UX with receipts and verification against the Gateway.
+- Pro enables enterprise controls: multi-tenant isolation, QTCA full hooks, and PQC readiness with Ed25519 fallback.
+
+## Production-only policy; LIVE_URLS.json + getGatewayUrl()
+- No localhost. All navigation and API calls must resolve against production URLs defined in `LIVE_URLS.json`.
+- Always resolve the Gateway endpoint via `packages/config/src/live.ts:getGatewayUrl()`; do not hardcode URLs.
+
+## Post-replan layout (matches BLUEPRINT)
+```
+apps/
+  proof-messenger/   # Next app/; Messenger UX
+  admin-insights/    # Status/metrics/QTCA dashboards
+  dev-portal/        # Plugins registry + SDK docs
+services/
+  gateway/           # Workers API; receipts/credits/QTCA
+  witness*/          # evidence/ledger
+packages/
+  config/            # LIVE_URLS + getGatewayUrl
+  design-system/     # tokens/components used
+docs/
+  evidence/<ts>/
+  REPLAN/*
+```
+
+## Running and deploying (high-level; no localhost)
+- Apps are deployed to Vercel; Workers are deployed to Cloudflare (with `compatibility_flags=["nodejs_compat"]`).
+- For local validation, use read-only audits and type-checks. Do not run dev servers in this repo per policy.
+
+## Evidence location
+- Evidence artifacts live under `docs/evidence/<ts>/` and are referenced by reports in `docs/REPLAN/`.
 
 [![CI Status](https://github.com/your-org/Atlas/workflows/Atlas%20v12%20Quality%20Gates/badge.svg)](https://github.com/your-org/Atlas/actions/workflows/atlas-v12-quality-gates.yml)
 [![Public Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://atlas-grafana-demo.loca.lt)

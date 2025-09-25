@@ -1,0 +1,2509 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2025-09-25T05:58:22.944Z",
+  "files": {
+    ".dependency-cruiser.cjs": {
+      "imports": [
+        "s also a devDependency\n        // ignore the cases where the dependency is used only as a type\n        pathNot: ["
+      ],
+      "imported_by": []
+    },
+    ".eslintrc.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-commercializer-v7.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-commercializer-v8.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-go-live-simple.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-go-live.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-quality-gates-v8.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-quality-gates.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-v12-public-demo.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-v12.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/atlas-v14-oidc-cloudrun.yml": {
+      "imports": [
+        "k6/http",
+        "k6"
+      ],
+      "imported_by": []
+    },
+    ".github/workflows/ci-build-test.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/ci-cleanup-verify.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/ci-release.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-a11y-enforcer.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-atlas-ecosystem.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-backends.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-commercial.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-complete.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-frontends-direct.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-frontends-fixed.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-frontends-simple.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-frontends.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-minimal-v4.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-minimal.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-ruthless.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-simple.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/deploy-ui-a11y-polish.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/release.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/secrets-smoke-test-v3.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/secrets-smoke-test-v4.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/secrets-smoke-test.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/supply-chain.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/ui-conformance-enforcer-v13.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/ui-conformance-simple-v13.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/ux-ci.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".github/workflows/validate-vercel-mapping.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".gitignore": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".prettierignore": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".prettierrc.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    ".tsbuildinfo": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ARTIFACT_MANIFEST.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ARTIFACT_MANIFEST_FINAL.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ARTIFACT_MANIFEST_PROD.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_COMMERCIALIZER_V10_IMPLEMENTATION.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_V12_COMPLETE_SYNTHESIS_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_V12_FINAL_PACKET.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_V14_CLOUD_RUN_IMPLEMENTATION.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_V14_FINAL_IMPLEMENTATION.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_V14_IMPLEMENTATION_SUMMARY.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_V14_OIDC_CLOUDRUN_IMPLEMENTATION.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_V14_README.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ATLAS_V14_REFINED_IMPLEMENTATION.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "CHANGELOG.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "COSIGN_ATTEST_VERIFY.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "COSIGN_VERIFY.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "CRYPTO_SPEC.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "DELETION_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "DOS_ABUSE_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "Dockerfile.app": {
+      "imports": [],
+      "imported_by": []
+    },
+    "Dockerfile.nginx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "EVIDENCE.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "EXECUTIVE_PACKAGE.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "HEADERS_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "INNOVATION_ANNEX.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "KAT_RESULTS.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "LICENSE": {
+      "imports": [],
+      "imported_by": []
+    },
+    "LIVE_URLS.json": {
+      "imports": [],
+      "imported_by": [
+        "packages/config/src/live.ts"
+      ]
+    },
+    "OPA_POLICIES/drive.rego": {
+      "imports": [
+        "GET"
+      ],
+      "imported_by": []
+    },
+    "OPA_POLICIES/gateway.rego": {
+      "imports": [
+        "GET"
+      ],
+      "imported_by": []
+    },
+    "OPA_POLICIES/policy.test.ts": {
+      "imports": [
+        "@openpolicyagent/opa-wasm"
+      ],
+      "imported_by": []
+    },
+    "OPA_POLICIES/witness.rego": {
+      "imports": [
+        "GET"
+      ],
+      "imported_by": []
+    },
+    "OPERATIONS.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "POLICY_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "PRIVACY_LOGGING_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "PRODUCTION_READINESS_NOTE.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "PRODUCTION_READINESS_NOTE_FINAL.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "README.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "RELEASE_ASSETS.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "RELEASE_NOTES_v1.0.0.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "REPO_AUDIT_REPORT.md": {
+      "imports": [
+        "fastify"
+      ],
+      "imported_by": []
+    },
+    "ROLLBACK.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ROOT_CAUSE_MATRIX.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "RUNBOOK.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "SBOM.spdx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "SCHEMA_CHANGES.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "SECURITY_EVIDENCE.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "SECURITY_THREAT_MODEL.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "SHA256.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "SHA256_MANIFEST.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "SHA256_MANIFEST_HOTFIX.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "SLSA_PROVENANCE.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "UPGRADE_SUMMARY.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "VAULT_KMS_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "VERIFICATION_PACK_PASS1.json": {
+      "imports": [
+        "fastify"
+      ],
+      "imported_by": []
+    },
+    "VERIFICATION_PACK_PASS2.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "VERIFY.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "WHAT-WHY-VERIFY.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "WHAT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "WHY.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/BASELINE.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/DELETION_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/ECOSYSTEM_EVIDENCE.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/ECOSYSTEM_EVIDENCE_FINAL.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/ECOSYSTEM_EVIDENCE_HOTFIX.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/ECOSYSTEM_EVIDENCE_ONESHOT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/ECOSYSTEM_EVIDENCE_SHIP.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/EVIDENCE.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/INVENTORY.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/KNIP.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/KNIP.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/TSPRUNE.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/depcruise.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/depgraph.dot": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/depgraph.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/depgraph.mmd": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/k6-backend-summary.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/k6-summary.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/k6-vercel-summary.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/knip-analysis.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/tree.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "_reports/ts-prune-analysis.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "app-artifacts-hotfix.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "app-artifacts-oneshot.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "app-artifacts-ship.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "app-artifacts.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/(legacy-src)/layout-src.tsx": {
+      "imports": [
+        "next",
+        "next/font/google",
+        "@atlas/design-system/src/styles/globals.css",
+        "./globals.css"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/(legacy-src)/page-src.tsx": {
+      "imports": [
+        "react",
+        "@/components/ui/Card",
+        "@/components/ui/Badge",
+        "lucide-react",
+        "date-fns"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/analytics/page.tsx": {
+      "imports": [
+        "react",
+        "@/components/ui/Card",
+        "@/components/ui/Badge",
+        "lucide-react"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/globals.css": {
+      "imports": [],
+      "imported_by": [
+        "apps/admin-insights/app/layout.tsx"
+      ]
+    },
+    "apps/admin-insights/app/layout.tsx": {
+      "imports": [
+        "next",
+        "next/font/google",
+        "@atlas/design-system/src/styles/globals.css",
+        "./globals.css"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/metrics/page.tsx": {
+      "imports": [
+        "react",
+        "@/components/ui/Card",
+        "@/components/ui/Badge",
+        "@atlas/config",
+        "lucide-react"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/page.tsx": {
+      "imports": [
+        "react",
+        "@atlas/config",
+        "@atlas/prism"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/settings/page.tsx": {
+      "imports": [
+        "react",
+        "@/components/ui/Card",
+        "@/components/ui/Button",
+        "lucide-react"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/system-status/page.tsx": {
+      "imports": [
+        "react",
+        "@/components/ui/Card",
+        "@/components/ui/Badge",
+        "lucide-react"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/traces/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/admin-insights/app/witnesses/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/admin-insights/next-env.d.ts": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/admin-insights/next.config.js": {
+      "imports": [
+        "next"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/admin-insights/postcss.config.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/admin-insights/src/components/ui/Badge.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/src/components/ui/Button.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/src/components/ui/Card.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/src/lib/utils.ts": {
+      "imports": [
+        "clsx",
+        "tailwind-merge"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/tailwind.config.js": {
+      "imports": [
+        "tailwindcss"
+      ],
+      "imported_by": []
+    },
+    "apps/admin-insights/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/(legacy-src)/layout-src.tsx": {
+      "imports": [
+        "next",
+        "next/font/google",
+        "@atlas/design-system/src/styles/globals.css",
+        "./globals.css"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/(legacy-src)/page-src.tsx": {
+      "imports": [
+        "react",
+        "../components/ui/Card",
+        "../components/ui/Badge",
+        "../components/ui/Button",
+        "@atlas/config",
+        "@atlas/design-system",
+        "lucide-react",
+        "@atlas/fabric-client",
+        "${gatewayUrl}"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/api/page.tsx": {
+      "imports": [
+        "react",
+        "@/components/ui/Card",
+        "@/components/ui/Button",
+        "@/components/ui/Badge",
+        "lucide-react"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/docs/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/docs/sdk/page.tsx": {
+      "imports": [
+        "react",
+        "../../../components/ui/Card",
+        "../../../components/ui/Button",
+        "lucide-react",
+        "@atlas/sdk"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/examples/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/globals.css": {
+      "imports": [],
+      "imported_by": [
+        "apps/dev-portal/app/layout.tsx"
+      ]
+    },
+    "apps/dev-portal/app/layout.tsx": {
+      "imports": [
+        "next",
+        "next/font/google",
+        "@atlas/design-system/src/styles/globals.css",
+        "./globals.css"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/page.tsx": {
+      "imports": [
+        "react",
+        "@atlas/config",
+        "@atlas/prism"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/plugins/page.tsx": {
+      "imports": [
+        "react",
+        "@/components/ui/Card",
+        "@/components/ui/Button",
+        "@/components/ui/Badge",
+        "lucide-react"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/app/sdk/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/dev-portal/next-env.d.ts": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/dev-portal/next.config.js": {
+      "imports": [
+        "next"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/dev-portal/postcss.config.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/dev-portal/src/components/ui/Badge.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/src/components/ui/Button.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/src/components/ui/Card.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/src/lib/utils.ts": {
+      "imports": [
+        "clsx",
+        "tailwind-merge"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/tailwind.config.js": {
+      "imports": [
+        "tailwindcss"
+      ],
+      "imported_by": []
+    },
+    "apps/dev-portal/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/.gitignore": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/app/evidence/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/app/globals.css": {
+      "imports": [],
+      "imported_by": [
+        "apps/proof-messenger/app/layout.tsx"
+      ]
+    },
+    "apps/proof-messenger/app/layout.tsx": {
+      "imports": [
+        "next",
+        "next/font/google",
+        "@atlas/design-system/src/styles/globals.css",
+        "./globals.css"
+      ],
+      "imported_by": []
+    },
+    "apps/proof-messenger/app/messages/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/app/offline/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/app/page.tsx": {
+      "imports": [
+        "react",
+        "@atlas/config",
+        "@atlas/prism"
+      ],
+      "imported_by": []
+    },
+    "apps/proof-messenger/app/receipts/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/app/settings/page.tsx": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/netlify.toml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/next-env.d.ts": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/next.config.js": {
+      "imports": [
+        "next",
+        "next-pwa"
+      ],
+      "imported_by": []
+    },
+    "apps/proof-messenger/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/postcss.config.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/public/manifest.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/public/sw.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/public/workbox-1d075dc5.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/src/app/globals.css": {
+      "imports": [],
+      "imported_by": []
+    },
+    "apps/proof-messenger/src/components/ThemeToggle.tsx": {
+      "imports": [
+        "next-themes",
+        "./ui/Button",
+        "lucide-react"
+      ],
+      "imported_by": []
+    },
+    "apps/proof-messenger/src/components/ui/Badge.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": []
+    },
+    "apps/proof-messenger/src/components/ui/Button.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": [
+        "apps/proof-messenger/src/components/ThemeToggle.tsx"
+      ]
+    },
+    "apps/proof-messenger/src/components/ui/Card.tsx": {
+      "imports": [
+        "react"
+      ],
+      "imported_by": []
+    },
+    "apps/proof-messenger/tailwind.config.js": {
+      "imports": [
+        "tailwindcss"
+      ],
+      "imported_by": []
+    },
+    "apps/proof-messenger/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "artifact-manifest.csv": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-build-artifact.tar.gz": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-ecosystem-sbom-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-ecosystem-sbom-hotfix.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-ecosystem-sbom-oneshot.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-ecosystem-sbom-ship.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-ecosystem-sbom.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-gateway-sbom.json": {
+      "imports": [
+        ",",
+        " phase syntax in Acorn"
+      ],
+      "imported_by": []
+    },
+    "atlas-gateway-trivy.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-web-sbom.json": {
+      "imports": [
+        " phase syntax in Acorn"
+      ],
+      "imported_by": []
+    },
+    "atlas-web-trivy.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "atlas-witness-sbom.json": {
+      "imports": [
+        ",",
+        " phase syntax in Acorn"
+      ],
+      "imported_by": []
+    },
+    "atlas-witness-trivy.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "blocker.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "brand-assets/favicon.svg": {
+      "imports": [],
+      "imported_by": []
+    },
+    "brand-assets/logo.svg": {
+      "imports": [],
+      "imported_by": []
+    },
+    "cloudbuild.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "component-library.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "cosign-verification-hotfix.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "cosign-verification-oneshot.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "cosign-verification-ship.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "cosign-verification.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "cpu-proof.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "design/brand-kit.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "design/favicon.svg": {
+      "imports": [],
+      "imported_by": []
+    },
+    "design/tokens.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docker-compose.observability.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docker-compose.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/Findings.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/REPLAN/BLUEPRINT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/REPLAN/DELETESET.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/REPLAN/INVENTORY.csv": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/REPLAN/INVENTORY.pre.csv": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/REPLAN/KEEPSET.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/REPLAN/LOCALHOST_HITS.txt": {
+      "imports": [
+        ",",
+        " phase syntax in Acorn"
+      ],
+      "imported_by": []
+    },
+    "docs/REPLAN/MOVESET.csv": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/REPLAN/USAGE_MAP.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/api/atlas-v12.postman_collection.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/api/openapi.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250919-0425/ATLAS_UPGRADE_EVIDENCE_REPORT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250919-0425/LIVE_URLS.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250919-0425/k6-summary.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250919-0425/lighthouse-home.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250919-1209/lighthouse-proof-messenger.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250919-1209/playwright-report.html": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250919-1209/playwright-results.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-0537/nav-check.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-0538/lighthouse-results.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-0644/nav-check.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-0645/lighthouse-results.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1114/nav-crawl.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1503/lighthouse-proof-messenger.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1504/axe-proof-messenger.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1504/lighthouse-admin-insights.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1504/lighthouse-dev-portal.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1537/lighthouse-admin-insights-fixed.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1537/lighthouse-dev-portal-fixed.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1539/k6/k6-results.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1539/lighthouse/lighthouse-dev-portal.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1539/lighthouse-admin-a11y-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1539/lighthouse-dev-a11y-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1601/nav-check.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1602/lighthouse/lighthouse-admin-insights.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250920-1602/lighthouse/lighthouse-proof-messenger.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/WHAT-WHY-VERIFY.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/lighthouse/admin-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/lighthouse/admin-home-updated.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/lighthouse/admin-home.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/lighthouse/admin-system.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/lighthouse/dev-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/lighthouse/dev-home-updated.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/lighthouse/dev-home.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-0945/pages.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1550/lighthouse/lighthouse-admin-a11y.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1550/lighthouse/lighthouse-dev-a11y.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1551/axe-dev-portal.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1552/axe-admin-insights.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1708/WHAT-WHY-VERIFY.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1708/lighthouse/admin-comprehensive.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1708/lighthouse/dev-comprehensive.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1708/lighthouse/proof-comprehensive.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/evidence/20250921-1708/pages.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/ui/ATLAS_UI_CONTRACT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "docs/ui/ROUTING_CONTRACT.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "e2e-screenshot.png": {
+      "imports": [],
+      "imported_by": []
+    },
+    "evidence-pack-final.zip": {
+      "imports": [],
+      "imported_by": []
+    },
+    "evidence-pack-prod.zip": {
+      "imports": [],
+      "imported_by": []
+    },
+    "evidence-pack-v2.zip": {
+      "imports": [],
+      "imported_by": []
+    },
+    "final-results.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/docker/Dockerfile.admin": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/docker/Dockerfile.gateway": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/docker/Dockerfile.web": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/docker/Dockerfile.witness": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/docker/compose.ci.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/docker/compose.dev.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/k8s/atlas/Chart.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/k8s/atlas/templates/_helpers.tpl": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/k8s/atlas/templates/gateway-deployment.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/k8s/atlas/templates/witness-deployment.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/k8s/atlas/values.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "infra/nginx/nginx.conf": {
+      "imports": [],
+      "imported_by": []
+    },
+    "jest.config.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    "k6-atlas-xl-test.js": {
+      "imports": [
+        "k6/http",
+        "k6",
+        "k6/metrics"
+      ],
+      "imported_by": []
+    },
+    "k6-backend-test.js": {
+      "imports": [
+        "k6/http",
+        "k6",
+        "k6/metrics"
+      ],
+      "imported_by": []
+    },
+    "k6-final-ship-test.js": {
+      "imports": [
+        "k6/http",
+        "k6",
+        "k6/metrics"
+      ],
+      "imported_by": []
+    },
+    "k6-final-test.js": {
+      "imports": [
+        "k6/http",
+        "k6",
+        "k6/metrics"
+      ],
+      "imported_by": []
+    },
+    "k6-hotfix-test.js": {
+      "imports": [
+        "k6/http",
+        "k6",
+        "k6/metrics"
+      ],
+      "imported_by": []
+    },
+    "k6-oneshot-test.js": {
+      "imports": [
+        "k6/http",
+        "k6",
+        "k6/metrics"
+      ],
+      "imported_by": []
+    },
+    "k6-performance-summary-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "k6-performance-summary-prod.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "k6-performance-summary.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "k6-results.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "k6-simple-test.js": {
+      "imports": [
+        "k6/http",
+        "k6"
+      ],
+      "imported_by": []
+    },
+    "k6-summary.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "k6-validation-test.js": {
+      "imports": [
+        "k6/http",
+        "k6"
+      ],
+      "imported_by": []
+    },
+    "k6-vercel-test.js": {
+      "imports": [
+        "k6/http",
+        "k6",
+        "k6/metrics"
+      ],
+      "imported_by": []
+    },
+    "knobs-notes.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-analytics.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-basic.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-current.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-detailed.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-fresh.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-insights.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-settings.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-v2.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin-v4.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-admin.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-dev-basic.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-dev-current.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-dev-detailed.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-dev-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-dev-portal.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-dev-v2.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-dev-v4.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-dev.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-home-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-home-prod.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-home.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-keys-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-keys-prod.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-keys.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-metrics-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-metrics-prod.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-metrics.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-playground-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-playground-prod.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-playground.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-proof-basic.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-proof-messenger.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-proof.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouse-runner.js": {
+      "imports": [
+        "https",
+        "fs",
+        "path"
+      ],
+      "imported_by": []
+    },
+    "lighthouserc-cloudrun.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouserc-v14.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "lighthouserc.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "nav-checker.js": {
+      "imports": [
+        "https",
+        "fs",
+        "path"
+      ],
+      "imported_by": []
+    },
+    "nginx-cloudrun.conf": {
+      "imports": [],
+      "imported_by": []
+    },
+    "nginx-oidc-cloudrun.conf": {
+      "imports": [],
+      "imported_by": []
+    },
+    "nginx-proxy.conf": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/docker-compose.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/grafana/dashboards/atlas-overview.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/grafana/provisioning/dashboards/atlas-v12.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/grafana/provisioning/dashboards/dashboard.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/grafana/provisioning/dashboards/dashboards.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/grafana/provisioning/datasources/datasources.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/grafana-datasources.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/loki-config.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/otel-collector-config.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/otel-collector-config.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/otel-collector.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/prometheus-alerts.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/prometheus.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/promtail-config.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/tempo-config.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/tempo.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability/tempo.yml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability-dashboard-hotfix.png": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability-dashboard-oneshot.png": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability-dashboard-ship.png": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability-dashboard.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability-proof-final.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability-proof.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "observability.png": {
+      "imports": [],
+      "imported_by": []
+    },
+    "package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/src/components/Badge.tsx": {
+      "imports": [
+        "react",
+        "class-variance-authority",
+        "../utils/cn"
+      ],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/src/components/Button.tsx": {
+      "imports": [
+        "react",
+        "class-variance-authority",
+        "../utils/cn"
+      ],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/src/components/Card.tsx": {
+      "imports": [
+        "react",
+        "../utils/cn"
+      ],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/src/components/CommandPalette.tsx": {
+      "imports": [
+        "react",
+        "../utils/cn"
+      ],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/src/components/Input.tsx": {
+      "imports": [
+        "react",
+        "../utils/cn"
+      ],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/src/index.ts": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/src/styles/a11y-utilities.css": {
+      "imports": [],
+      "imported_by": [
+        "packages/@atlas/design-system/src/styles/globals.css"
+      ]
+    },
+    "packages/@atlas/design-system/src/styles/globals.css": {
+      "imports": [
+        "./tokens/tokens.css",
+        "./a11y-utilities.css"
+      ],
+      "imported_by": []
+    },
+    "packages/@atlas/design-system/src/tokens/tokens.css": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/config/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/config/src/index.ts": {
+      "imports": [
+        "./live"
+      ],
+      "imported_by": []
+    },
+    "packages/config/src/live.ts": {
+      "imports": [
+        "../../../LIVE_URLS.json"
+      ],
+      "imported_by": [
+        "packages/config/src/index.ts"
+      ]
+    },
+    "packages/config/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/design-system/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/design-system/src/components/Badge.tsx": {
+      "imports": [
+        "react",
+        "class-variance-authority",
+        "../utils/cn"
+      ],
+      "imported_by": [
+        "packages/design-system/src/index.ts"
+      ]
+    },
+    "packages/design-system/src/components/Button.tsx": {
+      "imports": [
+        "react",
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "../utils/cn"
+      ],
+      "imported_by": [
+        "packages/design-system/src/index.ts"
+      ]
+    },
+    "packages/design-system/src/components/Card.tsx": {
+      "imports": [
+        "react",
+        "../utils/cn"
+      ],
+      "imported_by": [
+        "packages/design-system/src/index.ts"
+      ]
+    },
+    "packages/design-system/src/components/Textarea.tsx": {
+      "imports": [
+        "react",
+        "../utils/cn"
+      ],
+      "imported_by": [
+        "packages/design-system/src/index.ts"
+      ]
+    },
+    "packages/design-system/src/index.ts": {
+      "imports": [
+        "./tokens/colors",
+        "./tokens/spacing",
+        "./tokens/typography",
+        "./components/Button",
+        "./components/Card",
+        "./components/Badge",
+        "./components/Textarea",
+        "./utils/cn"
+      ],
+      "imported_by": []
+    },
+    "packages/design-system/src/tokens/colors.ts": {
+      "imports": [],
+      "imported_by": [
+        "packages/design-system/src/index.ts"
+      ]
+    },
+    "packages/design-system/src/tokens/spacing.ts": {
+      "imports": [],
+      "imported_by": [
+        "packages/design-system/src/index.ts"
+      ]
+    },
+    "packages/design-system/src/tokens/typography.ts": {
+      "imports": [],
+      "imported_by": [
+        "packages/design-system/src/index.ts"
+      ]
+    },
+    "packages/design-system/src/utils/cn.ts": {
+      "imports": [
+        "clsx",
+        "tailwind-merge"
+      ],
+      "imported_by": [
+        "packages/design-system/src/components/Badge.tsx",
+        "packages/design-system/src/components/Button.tsx",
+        "packages/design-system/src/components/Card.tsx",
+        "packages/design-system/src/components/Textarea.tsx",
+        "packages/design-system/src/index.ts"
+      ]
+    },
+    "packages/design-system/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-client/jest.config.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-client/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-client/src/client.ts": {
+      "imports": [
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": []
+    },
+    "packages/fabric-client/src/index.ts": {
+      "imports": [
+        "./utils",
+        "./telemetry"
+      ],
+      "imported_by": []
+    },
+    "packages/fabric-client/src/setupTests.ts": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-client/src/utils.test.ts": {
+      "imports": [
+        "./utils",
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": []
+    },
+    "packages/fabric-client/src/utils.ts": {
+      "imports": [
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": [
+        "packages/fabric-client/src/index.ts",
+        "packages/fabric-client/src/utils.test.ts"
+      ]
+    },
+    "packages/fabric-client/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-crypto/jest.config.js": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-crypto/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-crypto/src/index.ts": {
+      "imports": [
+        "crypto"
+      ],
+      "imported_by": [
+        "packages/fabric-crypto/src/kat.test.ts"
+      ]
+    },
+    "packages/fabric-crypto/src/kat.test.ts": {
+      "imports": [
+        "./index"
+      ],
+      "imported_by": []
+    },
+    "packages/fabric-crypto/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/src/api.d.ts.map": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/src/api.js": {
+      "imports": [],
+      "imported_by": [
+        "packages/fabric-protocol/src/index.js"
+      ]
+    },
+    "packages/fabric-protocol/src/api.js.map": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/src/index.d.ts.map": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/src/index.js": {
+      "imports": [
+        "./types",
+        "./api"
+      ],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/src/index.js.map": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/src/index.ts": {
+      "imports": [
+        "./schemas"
+      ],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/src/schemas.ts": {
+      "imports": [
+        "zod"
+      ],
+      "imported_by": [
+        "packages/fabric-protocol/src/index.ts"
+      ]
+    },
+    "packages/fabric-protocol/src/types.d.ts.map": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/src/types.js": {
+      "imports": [],
+      "imported_by": [
+        "packages/fabric-protocol/src/index.js"
+      ]
+    },
+    "packages/fabric-protocol/src/types.js.map": {
+      "imports": [],
+      "imported_by": []
+    },
+    "packages/fabric-protocol/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "playwright-report.html": {
+      "imports": [],
+      "imported_by": []
+    },
+    "playwright-results.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "playwright-results.xml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "playwright-success-result-prod.png": {
+      "imports": [],
+      "imported_by": []
+    },
+    "playwright-success-result.png": {
+      "imports": [],
+      "imported_by": []
+    },
+    "playwright.config.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "pnpm-lock.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "pnpm-workspace.yaml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "repository-audit-artifacts.zip": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/atlas-v14-cache-priming.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/atlas-v14-cloud-run-deploy.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/atlas-v14-evidence-collection.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/atlas-v14-self-healing-diagnostics.sh": {
+      "imports": [
+        "k6/http",
+        "k6"
+      ],
+      "imported_by": []
+    },
+    "scripts/atlas-v14-self-healing.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/build.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/chaos_latency.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/check-vercel-mapping.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/cleanup.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/replan-delete.js": {
+      "imports": [
+        "fs",
+        "path",
+        "child_process"
+      ],
+      "imported_by": []
+    },
+    "scripts/replan-move.js": {
+      "imports": [
+        "fs",
+        "path",
+        "child_process"
+      ],
+      "imported_by": []
+    },
+    "scripts/replan-scan.js": {
+      "imports": [
+        "y",
+        "fs",
+        "path",
+        "crypto"
+      ],
+      "imported_by": []
+    },
+    "scripts/smoke.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/test-observability.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/validate-vercel-setup.sh": {
+      "imports": [],
+      "imported_by": []
+    },
+    "scripts/verify-setup.js": {
+      "imports": [
+        "fs",
+        "path",
+        "child_process"
+      ],
+      "imported_by": []
+    },
+    "services/drive/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/drive/src/index.ts": {
+      "imports": [
+        "fastify",
+        "./telemetry"
+      ],
+      "imported_by": []
+    },
+    "services/drive/src/telemetry.ts": {
+      "imports": [],
+      "imported_by": [
+        "services/drive/src/index.ts"
+      ]
+    },
+    "services/drive/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/gateway/Dockerfile": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/gateway/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/gateway/src/anti-replay.ts": {
+      "imports": [
+        "crypto"
+      ],
+      "imported_by": []
+    },
+    "services/gateway/src/index.ts": {
+      "imports": [
+        "./server",
+        "./telemetry"
+      ],
+      "imported_by": []
+    },
+    "services/gateway/src/quorum.ts": {
+      "imports": [
+        "@atlas/fabric-protocol",
+        "uuid"
+      ],
+      "imported_by": [
+        "services/gateway/src/server.ts",
+        "tests/chaos/fault-tolerance.test.ts",
+        "tests/integration/quorum.test.ts"
+      ]
+    },
+    "services/gateway/src/server.ts": {
+      "imports": [
+        "fastify",
+        "@fastify/cors",
+        "@fastify/websocket",
+        "@fastify/rate-limit",
+        "uuid",
+        "pino",
+        "./quorum",
+        "./witness-client",
+        "./telemetry",
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": [
+        "services/gateway/src/index.ts"
+      ]
+    },
+    "services/gateway/src/telemetry.ts": {
+      "imports": [
+        "@opentelemetry/api"
+      ],
+      "imported_by": [
+        "services/gateway/src/index.ts",
+        "services/gateway/src/server.ts"
+      ]
+    },
+    "services/gateway/src/witness-client.ts": {
+      "imports": [
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": [
+        "services/gateway/src/server.ts",
+        "tests/integration/quorum.test.ts"
+      ]
+    },
+    "services/gateway/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/gateway/wrangler.toml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/witness-node/Dockerfile": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/witness-node/package.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/witness-node/src/index.ts": {
+      "imports": [
+        "./witness",
+        "./server",
+        "./telemetry",
+        "path"
+      ],
+      "imported_by": []
+    },
+    "services/witness-node/src/ledger.ts": {
+      "imports": [
+        "fs-extra",
+        "path",
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": [
+        "services/witness-node/src/witness.ts"
+      ]
+    },
+    "services/witness-node/src/server.ts": {
+      "imports": [
+        "fastify",
+        "@fastify/cors",
+        "./witness",
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": [
+        "services/witness-node/src/index.ts"
+      ]
+    },
+    "services/witness-node/src/telemetry.ts": {
+      "imports": [
+        "@opentelemetry/api"
+      ],
+      "imported_by": [
+        "services/witness-node/src/index.ts"
+      ]
+    },
+    "services/witness-node/src/witness.ts": {
+      "imports": [
+        "uuid",
+        "pino",
+        "@atlas/fabric-protocol",
+        "./ledger"
+      ],
+      "imported_by": [
+        "services/witness-node/src/index.ts",
+        "services/witness-node/src/server.ts"
+      ]
+    },
+    "services/witness-node/tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "services/witness-node/wrangler.toml": {
+      "imports": [],
+      "imported_by": []
+    },
+    "slsa-provenance-hotfix.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "slsa-provenance-oneshot.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "slsa-provenance-ship.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "slsa-provenance.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "storybook-build.html": {
+      "imports": [],
+      "imported_by": []
+    },
+    "tailwind.config.js": {
+      "imports": [
+        "tailwindcss",
+        "tailwindcss-animate"
+      ],
+      "imported_by": []
+    },
+    "tests/accessibility.spec.ts": {
+      "imports": [
+        "@playwright/test",
+        "@axe-core/playwright",
+        "dotenv/config"
+      ],
+      "imported_by": []
+    },
+    "tests/admin.spec.ts": {
+      "imports": [
+        "@playwright/test",
+        "dotenv/config"
+      ],
+      "imported_by": []
+    },
+    "tests/basic.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/chaos/fault-tolerance.test.ts": {
+      "imports": [
+        "../../services/gateway/src/quorum",
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": []
+    },
+    "tests/dev-portal.spec.ts": {
+      "imports": [
+        "@playwright/test",
+        "dotenv/config"
+      ],
+      "imported_by": []
+    },
+    "tests/integration/quorum.test.ts": {
+      "imports": [
+        "@atlas/fabric-client",
+        "../../services/gateway/src/quorum",
+        "../../services/gateway/src/witness-client",
+        "@atlas/fabric-protocol"
+      ],
+      "imported_by": []
+    },
+    "tests/lhci-pro.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "tests/lhci.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "tests/messenger.spec.ts": {
+      "imports": [
+        "@playwright/test",
+        "dotenv/config"
+      ],
+      "imported_by": []
+    },
+    "tests/playwright.config.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/pro.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/specs/a11y.spec.ts": {
+      "imports": [
+        "@playwright/test",
+        "@axe-core/playwright"
+      ],
+      "imported_by": []
+    },
+    "tests/specs/admin.metrics.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/specs/admin.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/specs/dev-portal.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/specs/devportal.quickstart.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/specs/messenger.behavior.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/specs/messenger.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "tests/specs/visual.snapshots.spec.ts": {
+      "imports": [
+        "@playwright/test"
+      ],
+      "imported_by": []
+    },
+    "trace-id-final.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "trace-id-hotfix.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "trace-id-oneshot.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "trace-id-ship.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "trace-id.txt": {
+      "imports": [],
+      "imported_by": []
+    },
+    "tsconfig.base.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "tsconfig.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ui-overhaul-final-results.json": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ui-screenshots-index.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ui-screenshots.md": {
+      "imports": [],
+      "imported_by": []
+    },
+    "ui-walkthrough.md": {
+      "imports": [],
+      "imported_by": []
+    }
+  }
+}

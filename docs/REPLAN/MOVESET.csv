@@ -1,0 +1,24 @@
+from,to,reason
+apps/proof-messenger/src/app/evidence/page.tsx,apps/proof-messenger/app/evidence/page.tsx,Next 13+ app dir unify
+apps/proof-messenger/src/app/messages/page.tsx,apps/proof-messenger/app/messages/page.tsx,Next 13+ app dir unify
+apps/proof-messenger/src/app/offline/page.tsx,apps/proof-messenger/app/offline/page.tsx,Next 13+ app dir unify
+apps/proof-messenger/src/app/receipts/page.tsx,apps/proof-messenger/app/receipts/page.tsx,Next 13+ app dir unify
+apps/proof-messenger/src/app/settings/page.tsx,apps/proof-messenger/app/settings/page.tsx,Next 13+ app dir unify
+
+apps/admin-insights/src/app/analytics/page.tsx,apps/admin-insights/app/analytics/page.tsx,Next 13+ app dir unify
+apps/admin-insights/src/app/layout.tsx,apps/admin-insights/app/(legacy-src)/layout-src.tsx,Duplicate layout under src; preserve as legacy
+apps/admin-insights/src/app/metrics/page.tsx,apps/admin-insights/app/metrics/page.tsx,Next 13+ app dir unify
+apps/admin-insights/src/app/page.tsx,apps/admin-insights/app/(legacy-src)/page-src.tsx,Duplicate page under src; preserve as legacy
+apps/admin-insights/src/app/settings/page.tsx,apps/admin-insights/app/settings/page.tsx,Next 13+ app dir unify
+apps/admin-insights/src/app/system-status/page.tsx,apps/admin-insights/app/system-status/page.tsx,Next 13+ app dir unify
+apps/admin-insights/src/app/traces/page.tsx,apps/admin-insights/app/traces/page.tsx,Next 13+ app dir unify
+apps/admin-insights/src/app/witnesses/page.tsx,apps/admin-insights/app/witnesses/page.tsx,Next 13+ app dir unify
+
+apps/dev-portal/src/app/api/page.tsx,apps/dev-portal/app/api/page.tsx,Next 13+ app dir unify
+apps/dev-portal/src/app/docs/page.tsx,apps/dev-portal/app/docs/page.tsx,Next 13+ app dir unify
+apps/dev-portal/src/app/docs/sdk/page.tsx,apps/dev-portal/app/docs/sdk/page.tsx,Next 13+ app dir unify
+apps/dev-portal/src/app/examples/page.tsx,apps/dev-portal/app/examples/page.tsx,Next 13+ app dir unify
+apps/dev-portal/src/app/layout.tsx,apps/dev-portal/app/(legacy-src)/layout-src.tsx,Duplicate layout under src; preserve as legacy
+apps/dev-portal/src/app/page.tsx,apps/dev-portal/app/(legacy-src)/page-src.tsx,Duplicate page under src; preserve as legacy
+apps/dev-portal/src/app/plugins/page.tsx,apps/dev-portal/app/plugins/page.tsx,Next 13+ app dir unify
+apps/dev-portal/src/app/sdk/page.tsx,apps/dev-portal/app/sdk/page.tsx,Next 13+ app dir unify

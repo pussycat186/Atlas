@@ -155,7 +155,7 @@ This evidence package documents the complete implementation of security hardenin
 
 **Implementation**: SBOM + cosign + SLSA provenance
 **Files**:
-- `_reports/SBOM.spdx` - Software Bill of Materials (3.8MB, real artifact)
+- `atlas-ecosystem-sbom.json` - Software Bill of Materials (ecosystem SBOM)
 - `COSIGN_VERIFY.txt` - Cosign verification status (BLOCKER: OIDC required)
 - `COSIGN_ATTEST_VERIFY.txt` - SBOM attestation verification (BLOCKER: OIDC required)
 - `SLSA_PROVENANCE.json` - SLSA provenance status (BLOCKER: CI integration required)
@@ -309,7 +309,7 @@ This evidence package documents the complete implementation of security hardenin
 - `HEADERS_REPORT.md` - Frontend security headers
 
 ### Supply Chain Security
-- `_reports/SBOM.spdx` - Software Bill of Materials (real, 3.8MB)
+- `atlas-ecosystem-sbom.json` - Software Bill of Materials
 - `COSIGN_VERIFY.txt` - Cosign verification status (BLOCKER: OIDC required)
 - `COSIGN_ATTEST_VERIFY.txt` - SBOM attestation verification (BLOCKER: OIDC required)
 - `SLSA_PROVENANCE.json` - SLSA provenance status (BLOCKER: CI required)
