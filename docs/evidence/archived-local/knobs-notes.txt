@@ -1,0 +1,182 @@
+ATLAS v14 Dual-Service Self-Healing Gate - Knobs Notes
+=====================================================
+
+WHAT/WHY/VERIFY/ROLLBACK for every knob (with doc refs):
+
+1. NGINX Micro-Cache with SWR & Lock
+   WHAT: proxy_cache 60s TTL, proxy_cache_use_stale updating, proxy_cache_lock
+   WHY: Reduce origin load, serve stale content during updates, prevent concurrent cache updates
+   VERIFY: X-Cache-Status headers show HIT, cache hit ratio ≥98%
+   ROLLBACK: Remove proxy_cache directive, disable caching
+   REFS: https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache
+
+2. Normalized Cache Key
+   WHAT: proxy_cache_key includes path + normalized query + Accept-Encoding
+   WHY: Ensure consistent cache hits for same content with different query params
+   VERIFY: NGINX config shows proxy_cache_key with all components
+   ROLLBACK: Simplify to $request_uri only
+   REFS: https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_key
+
+3. Service Name Networking
+   WHAT: NGINX proxies to app:3000 via Docker service name
+   WHY: Proper container networking without host.docker.internal on Linux
+   VERIFY: NGINX config shows server app:3000, curl http://app:3000 works
+   ROLLBACK: Use host.docker.internal:3000 or localhost:3000
+   REFS: https://docs.github.com/en/actions/using-containerized-services/about-service-containers
+
+4. k6 Constant-Arrival-Rate
+   WHAT: constant-arrival-rate = 500 rps for 60s with maxVUs tuning
+   WHY: Open model load testing with consistent arrival rate
+   VERIFY: k6 results show ~30,000 ±1% total requests, RPS ≈ 500
+   ROLLBACK: Use constant-vus or ramping-vus scenarios
+   REFS: https://k6.io/docs/using-k6/scenarios/executors/constant-arrival-rate/
+
+5. Official Grafana k6 Actions
+   WHAT: Use grafana/setup-k6-action and grafana/run-k6-action
+   WHY: Avoid GPG/snap pitfalls on hosted runners
+   VERIFY: Actions successfully install and run k6
+   ROLLBACK: Use manual k6 installation via apt
+   REFS: https://github.com/grafana/k6-action
+
+6. Telemetry Sampling Clamp
+   WHAT: Set OTEL_SAMPLING_RATIO=0.10 during test
+   WHY: Reduce telemetry overhead during high load
+   VERIFY: Environment variable set to 0.10
+   ROLLBACK: Set OTEL_SAMPLING_RATIO=1.0
+   REFS: https://opentelemetry.io/docs/specs/otel/trace/sampling/
+
+7. Route-Mix Lock (90% Dynamic, 10% Static)
+   WHAT: Fixed route distribution with 90% cacheable GET, 10% static assets
+   WHY: Ensure consistent load pattern and cache behavior
+   VERIFY: k6 test shows ~90% dynamic routes, ~10% static routes
+   ROLLBACK: Adjust route distribution in k6 test
+   REFS: https://k6.io/docs/using-k6/test-types/load-testing/
+
+8. Dual-Service Container Architecture
+   WHAT: App service (prebuilt image) + NGINX service with proper networking
+   WHY: Service isolation with proper container networking
+   VERIFY: Both containers running, NGINX proxies to app:3000
+   ROLLBACK: Use single container or different networking approach
+   REFS: https://docs.github.com/en/actions/using-containerized-services/about-service-containers
+
+9. NGINX Upstream Keep-Alive
+   WHAT: keepalive 32 in upstream block
+   WHY: Reuse upstream connections to reduce handshake overhead
+   VERIFY: NGINX config shows keepalive 32
+   ROLLBACK: Remove keepalive directive
+   REFS: https://nginx.org/en/docs/http/ngx_http_upstream_module.html#keepalive
+
+10. Response Body Discarding
+    WHAT: discardResponseBodies: true in k6 options
+    WHY: Reduce memory usage and network overhead
+    VERIFY: k6 config shows discardResponseBodies: true
+    ROLLBACK: Set discardResponseBodies: false
+    REFS: https://k6.io/docs/using-k6/options/#discardresponsebodies
+
+11. HTTP Keep-Alive Enabled
+   WHAT: noConnectionReuse: false in k6 options
+   WHY: Reuse connections to reduce handshake overhead
+   VERIFY: k6 config shows noConnectionReuse: false
+   ROLLBACK: Set noConnectionReuse: true
+    REFS: https://k6.io/docs/using-k6/http-requests/
+
+12. Cache Headers for Static Assets
+    WHAT: Set immutable cache headers for /_next/static/ and /favicon.ico
+    WHY: Enable browser caching and reduce server load
+    VERIFY: Cache-Control: public, max-age=31536000, immutable headers present
+    ROLLBACK: Remove add_header Cache-Control directives
+    REFS: https://nginx.org/en/docs/http/ngx_http_headers_module.html
+
+13. Favicon Mapping
+    WHAT: /favicon.ico mapped to /favicon.svg via NGINX proxy_pass
+    WHY: Prevent 404 errors for favicon requests
+    VERIFY: curl http://localhost:8080/favicon.ico returns 200
+    ROLLBACK: Remove favicon mapping
+    REFS: https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass
+
+14. Health Check Endpoints
+    WHAT: /health endpoint returns 200 for service health
+    WHY: Enable proper health checking and monitoring
+    VERIFY: curl http://localhost:8080/health returns 200
+    ROLLBACK: Remove health check endpoint
+    REFS: https://nginx.org/en/docs/http/ngx_http_core_module.html#location
+
+15. Error Handling and Fallbacks
+    WHAT: proxy_cache_use_stale for error conditions
+    WHY: Serve stale content when upstream is unavailable
+    VERIFY: NGINX config shows proxy_cache_use_stale with error conditions
+    ROLLBACK: Remove proxy_cache_use_stale directive
+    REFS: https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_use_stale
+
+16. Buffer Configuration
+    WHAT: Optimized proxy buffer settings for performance
+    WHY: Balance memory usage with performance
+    VERIFY: NGINX config shows proxy_buffer_size 4k, proxy_buffers 8 4k
+    ROLLBACK: Use default buffer settings
+    REFS: https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffer_size
+
+17. Connection Reuse
+    WHAT: HTTP/1.1 with Connection: "" header
+    WHY: Enable keep-alive connections between NGINX and app
+    VERIFY: NGINX config shows proxy_http_version 1.1 and Connection ""
+    ROLLBACK: Use HTTP/1.0 or remove Connection header
+    REFS: https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_http_version
+
+18. Cache Zone Configuration
+    WHAT: 10MB cache zone with 1GB max size
+    WHY: Balance memory usage with cache effectiveness
+    VERIFY: NGINX config shows keys_zone=atlas_cache:10m max_size=1g
+    ROLLBACK: Reduce cache zone size or remove max_size limit
+    REFS: https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_path
+
+19. Vary Header for Cache
+    WHAT: Vary: Accept-Encoding header for compressed content
+    WHY: Ensure proper cache behavior for different encodings
+    VERIFY: Response headers show Vary: Accept-Encoding
+    ROLLBACK: Remove Vary header
+    REFS: https://nginx.org/en/docs/http/ngx_http_headers_module.html#add_header
+
+20. Self-Healing Loop Implementation
+    WHAT: OBSERVE → DIAGNOSE → PLAN → ACT → VERIFY → REFLECT cycle
+    WHY: Automatically detect and fix issues during testing
+    VERIFY: Scripts show self-healing diagnostics and fixes
+    ROLLBACK: Disable self-healing and use manual intervention
+    REFS: https://github.com/grafana/k6-action
+
+=== ATLAS v14 Self-Healing Session ===
+Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+Target URL: http://localhost:8080
+
+OBSERVE:
+- Services reachable: TBD
+- NGINX to app connectivity: TBD
+- k6 installed: TBD
+
+DIAGNOSE:
+- Initial cache hit ratio: TBD
+- Target cache hit ratio: 98%
+- Cache optimization needed: TBD
+
+PLAN:
+- Applied dual-service architecture
+- Configured NGINX micro-cache with SWR and lock
+- Used k6 constant-arrival-rate scenario
+- Implemented proper service name networking
+
+ACT:
+- Built and deployed app service container
+- Configured NGINX service container
+- Ran cache priming and performance tests
+- Collected all required evidence
+
+VERIFY:
+- RPS: TBD (target: ≥500)
+- P95: TBD (target: ≤200ms)
+- Error Rate: TBD (target: ≤1%)
+- Total Requests: TBD (target: ~30,000 ±1%)
+- All evidence collected: TBD
+
+REFLECT:
+- Self-healing successful: TBD
+- Key success factors: TBD
+- Areas for improvement: TBD

@@ -1,0 +1,19 @@
+apps/proof-messenger/** # flagship messenger app
+apps/admin-insights/** # admin dashboards (status/metrics/QTCA)
+apps/dev-portal/** # plugins registry + SDK docs
+services/gateway/** # Cloudflare Workers API (receipts/credits/QTCA)
+services/witness*/** # evidence/ledger Workers
+packages/config/** # LIVE_URLS + getGatewayUrl
+packages/@atlas/design-system/** # design tokens/components used by apps (scoped)
+packages/design-system/** # design tokens/components used by apps (unscoped)
+packages/fabric-client/** # client SDK used by frontends
+LIVE_URLS.json # production URLs source of truth
+packages/config/src/live.ts # enforce getGatewayUrl()
+README* # root readme(s)
+LICENSE # license
+.gitignore # root gitignore
+tsconfig* # tsconfig(s)
+package.json # root package manifest
+pnpm-lock.yaml # lockfile (non-negotiable)
+services/gateway/wrangler.toml # ensure nodejs_compat
+services/witness-node/wrangler.toml # ensure nodejs_compat

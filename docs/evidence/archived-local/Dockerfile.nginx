@@ -1,0 +1,20 @@
+# ATLAS v14 NGINX Dockerfile
+# Exposes port 80 with micro-cache configuration
+
+FROM nginx:alpine
+
+# Copy NGINX configuration with micro-cache
+COPY nginx-oidc-cloudrun.conf /etc/nginx/nginx.conf
+
+# Create cache directory
+RUN mkdir -p /var/cache/nginx
+
+# Expose port 80
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:80/health || exit 1
+
+# Start NGINX
+CMD ["nginx", "-g", "daemon off;"]

@@ -7,6 +7,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  transpilePackages: ['@atlas/config'],
   webpack: (config) => {
     // Exclude crypto package from browser bundles
     config.resolve.alias = {

@@ -1,0 +1,100 @@
+:root {
+  --bg: #f7f7fb;
+  --surface: #ffffffcc;
+  --border: #e5e7eb;
+  --text: #111827;
+}
+
+.light {
+  --bg: #f7f7fb;
+  --surface: #ffffffcc;
+  --border: #e5e7eb;
+  --text: #111827;
+}
+
+.dark {
+  --bg: #000000;
+  --surface: #111827cc;
+  --border: #374151;
+  --text: #f3f4f6;
+  /* neon-on-ink styles */
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes code-morph {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes execution-pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes success-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.code-morph {
+  animation: code-morph 0.4s ease-out;
+}
+
+.execution-pulse {
+  animation: execution-pulse 1.5s infinite;
+}
+
+.success-bounce {
+  animation: success-bounce 0.6s ease-in-out;
+}
+
+/* View Transitions API support */
+@supports (view-transition-name: none) {
+  .view-transition {
+    view-transition-name: var(--view-transition-name);
+  }
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .code-morph,
+  .execution-pulse,
+  .success-bounce {
+    animation: none;
+  }
+  
+  .transition-all,
+  .transition-opacity,
+  .transition-transform {
+    transition: none;
+  }
+}
+
+/* Focus management for better accessibility */
+.focus-outline:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Touch target size for mobile */
+.tap-24 {
+  min-height: 24px;
+  min-width: 24px;
+}

@@ -1,46 +1,19 @@
-export type LiveUrls = {
-  frontends?: { 
-    proof?: string; 
-    admin?: string; 
-    dev?: string; 
-  };
-  gateway: string;
-  witnesses?: string[];
-};
+import LIVE from '../../../LIVE_URLS.json';
 
-export function readLiveUrls(): LiveUrls {
-  const env = process.env.NEXT_PUBLIC_GATEWAY_URL?.trim();
-  const gw = env || (globalThis as any).__LIVE_URLS__?.gateway;
-  if (!gw) throw new Error("LIVE_URLS not present: gateway");
-  return {
-    gateway: gw,
-    frontends: (globalThis as any).__LIVE_URLS__?.frontends || {},
-    witnesses: (globalThis as any).__LIVE_URLS__?.witnesses || [],
-  };
-}
+export const PROOF_FRONTEND = LIVE?.proof_messenger ?? undefined;
+export const ADMIN_FRONTEND = LIVE?.admin_insights ?? undefined;
+export const DEV_FRONTEND = LIVE?.dev_portal ?? undefined;
 
-export async function getGatewayUrl(): Promise<string> {
-  const env = process.env.NEXT_PUBLIC_GATEWAY_URL?.trim();
-  if (env) return env;
-  // @ts-ignore
-  const g = (globalThis as any).__LIVE_URLS__?.gateway;
-  if (g) return g;
-  const res = await fetch('/LIVE_URLS.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error('LIVE_URLS.json not found');
-  const j = await res.json();
-  if (!j?.gateway) throw new Error('LIVE_URLS.json missing gateway');
-  return j.gateway;
-}
+export const LIVE_URLS = Object.freeze({
+  proof: PROOF_FRONTEND,
+  admin: ADMIN_FRONTEND,
+  dev: DEV_FRONTEND,
+  gateway: LIVE?.gateway ?? undefined,
+});
 
-export function getFrontendUrl(app: 'proof' | 'admin' | 'dev'): string | undefined {
-  return readLiveUrls().frontends?.[app];
-}
-
-export function getWitnessUrls(): string[] {
-  return readLiveUrls().witnesses || [];
-}
-
-// Helper to inject LIVE_URLS into globalThis for SSR
-export function injectLiveUrls(urls: LiveUrls): void {
-  (globalThis as any).__LIVE_URLS__ = urls;
+export function getGatewayUrl(): string {
+  if (typeof LIVE?.gateway === 'string' && LIVE.gateway.length > 0) {
+    return LIVE.gateway;
+  }
+  throw new Error('BLOCKER_NO_LIVE_URLS');
 }

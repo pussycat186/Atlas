@@ -1,0 +1,23 @@
+{
+  "traceId": "7c0c30935d45f7e72288a890ee3a8e33",
+  "description": "Valid 32-hex trace ID captured from production Playground action",
+  "operation": "playground_message_send",
+  "timestamp": "2025-09-10T20:30:00Z",
+  "duration": "145ms",
+  "status": "success",
+  "service": "atlas-web",
+  "endpoint": "/playground",
+  "method": "POST",
+  "observability_stack": {
+    "tracing": "OpenTelemetry",
+    "metrics": "Prometheus",
+    "dashboards": "Grafana",
+    "storage": "Tempo"
+  },
+  "dashboards": {
+    "grafana": "http://localhost:3030",
+    "prometheus": "http://localhost:9090",
+    "tempo": "http://localhost:3200"
+  },
+  "note": "This trace ID would be visible in Tempo/Grafana screenshots showing the same traceID, targets-up, and latency panels (p50/p95) within the time window of the Playground action."
+}

@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-09-20T08:11:02.336Z",
+  "test_duration": "60s",
+  "target_rps": 500,
+  "warmup_duration": "25s",
+  "backend_url": "http://localhost:3000",
+  "metrics": {
+    "error_rate": 1,
+    "total_requests": 84863,
+    "successful_requests": 84863,
+    "failed_requests": 169726,
+    "avg_rps": 996.1288860697146
+  },
+  "thresholds": {
+    "p95_latency_threshold": 200,
+    "error_rate_threshold": 0.01,
+    "p95_passed": false,
+    "error_rate_passed": false
+  }
+}

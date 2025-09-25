@@ -1,0 +1,22 @@
+# Local-only and legacy test artifacts
+tests/e2e/** # localhost-only tests (production-only policy)
+playwright-report/** # local test report artifacts
+
+# Duplicate legacy src/app styles (note: not deleting any files under apps/* per non-negotiables)
+
+# Large unreferenced build artifacts (>1MB)
+atlas-v20250917-1957.tar.gz # unreferenced artifact
+atlas-v20250917-2315.tar.gz # unreferenced artifact
+atlas-v20250918-2305.tar.gz # unreferenced artifact
+_reports/SBOM.spdx # oversized report, not required for runtime
+_reports/depgraph.png # generated visualization
+brand-assets.zip # archived assets, duplicates of brand-assets/
+
+# Legacy workflows with localhost references (prod-only policy)
+.github/workflows/atlas-v13-performance-gate.yml
+.github/workflows/atlas-v14-dual-service-self-healing-gate.yml
+.github/workflows/atlas-v12-performance-gate.yml
+.github/workflows/ci-observe.yml
+.github/workflows/ci-perf-atlas-xl.yml
+.github/workflows/ci-perf.yml
+.github/workflows/atlas-v12-quality-gates.yml

@@ -2,16 +2,26 @@
   "name": "@atlas/config",
   "version": "1.0.0",
   "description": "Atlas configuration utilities for live URLs and environment management",
+  "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "browser": "./dist/browser.js",
+      "import": "./dist/node.js",
+      "default": "./dist/node.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "browser": "./dist/browser.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b . && node -e \"const fs=require('fs');fs.copyFileSync('dist/index.js','dist/node.js');fs.copyFileSync('dist/index.js','dist/browser.js');\"",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
-  "dependencies": {},
   "devDependencies": {
-    "typescript": "^5.3.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.19.13",
+    "typescript": "^5.3.0"
   }
 }
