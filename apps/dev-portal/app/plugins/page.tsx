@@ -46,9 +46,9 @@ export default function PluginsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'verified': return <Badge variant="success">Verified</Badge>;
-      case 'beta': return <Badge variant="warning">Beta</Badge>;
-      case 'deprecated': return <Badge variant="danger">Deprecated</Badge>;
+      case 'verified': return <Badge variant="secondary">Verified</Badge>;
+      case 'beta': return <Badge variant="secondary">Beta</Badge>;
+      case 'deprecated': return <Badge variant="destructive">Deprecated</Badge>;
       default: return <Badge variant="secondary">Unknown</Badge>;
     }
   };

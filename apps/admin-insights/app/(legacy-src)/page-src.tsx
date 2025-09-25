@@ -183,7 +183,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle as="h3" className="text-sm font-medium flex items-center">
+            <CardTitle className="text-sm font-medium flex items-center">
               <Users className="h-4 w-4 mr-2" aria-hidden="true" />
               Witness Quorum
             </CardTitle>
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle as="h3" className="text-sm font-medium flex items-center">
+            <CardTitle className="text-sm font-medium flex items-center">
               <TrendingUp className="h-4 w-4 mr-2" aria-hidden="true" />
               RPS
             </CardTitle>
@@ -215,7 +215,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle as="h3" className="text-sm font-medium flex items-center">
+            <CardTitle className="text-sm font-medium flex items-center">
               <Zap className="h-4 w-4 mr-2" aria-hidden="true" />
               Error Rate
             </CardTitle>
@@ -423,7 +423,7 @@ export default function AdminDashboard() {
       {/* System Resources */}
       <Card>
         <CardHeader>
-          <CardTitle as="h3">System Resources</CardTitle>
+          <CardTitle>System Resources</CardTitle>
           <CardDescription>
             Current resource utilization across the cluster
           </CardDescription>

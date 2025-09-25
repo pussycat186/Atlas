@@ -88,6 +88,7 @@ public
 !public/manifest.json
 !public/icons/
 !public/icons/*.png
+!public/favicon.svg
 
 # Storybook build outputs
 .out

@@ -1,4 +1,4 @@
-'use client';
+{{ ... }}
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -131,7 +131,7 @@ export default function APIPage() {
                       <span className="font-mono font-semibold">{endpoint.path}</span>
                     </div>
                     {endpoint.auth && (
-                      <Badge variant="warning">Auth Required</Badge>
+                      <Badge variant="secondary">Auth Required</Badge>
                     )}
                   </div>
                   <span className="text-muted-foreground">{endpoint.description}</span>
