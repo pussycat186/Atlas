@@ -1,8 +1,8 @@
 import LIVE from '../../../LIVE_URLS.json';
 
-export const PROOF_FRONTEND = LIVE?.proof ?? undefined;
-export const ADMIN_FRONTEND = LIVE?.admin ?? undefined;
-export const DEV_FRONTEND = LIVE?.dev ?? undefined;
+export const PROOF_FRONTEND = LIVE?.proof_messenger ?? undefined;
+export const ADMIN_FRONTEND = LIVE?.admin_insights ?? undefined;
+export const DEV_FRONTEND = LIVE?.dev_portal ?? undefined;
 
 export const LIVE_URLS = Object.freeze({
   proof: PROOF_FRONTEND,

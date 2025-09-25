@@ -2,10 +2,22 @@
   "name": "@atlas/config",
   "version": "1.0.0",
   "description": "Atlas configuration utilities for live URLs and environment management",
+  "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "browser": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "browser": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b .",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
