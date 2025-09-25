@@ -12,6 +12,7 @@ on:
     paths:
       - 'apps/**'
       - 'packages/design-system/**'
+      - '.github/workflows/deploy-frontends.yml'
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
@@ -21,22 +22,41 @@ env:
 jobs:
   deploy-frontends:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      # Secret-indexed per-app project id
+      VERCEL_PROJECT_ID: ${{ secrets[matrix.app.secret] }}
     strategy:
       matrix:
         include:
-          - app: proof-messenger
-            wd: apps/proof-messenger
-            projectId: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
-          - app: admin-insights
-            wd: apps/admin-insights
-            projectId: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
-          - app: dev-portal
-            wd: apps/dev-portal
-            projectId: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
+          - app:
+              id: proof
+              dir: apps/proof-messenger
+              secret: VERCEL_PROJECT_ID_PROOF
+          - app:
+              id: admin
+              dir: apps/admin-insights
+              secret: VERCEL_PROJECT_ID_INSIGHTS
+          - app:
+              id: devportal
+              dir: apps/dev-portal
+              secret: VERCEL_PROJECT_ID_DEVPORTAL
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Check required secrets
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets[matrix.app.secret] }}
+      run: |
+        set -e
+        [ -n "$VERCEL_TOKEN" ] || { echo 'BLOCKER_MISSING_SECRET:VERCEL_TOKEN'; exit 1; }
+        [ -n "$VERCEL_ORG_ID" ] || { echo 'BLOCKER_MISSING_SECRET:VERCEL_ORG_ID'; exit 1; }
+        [ -n "$VERCEL_PROJECT_ID" ] || { echo "BLOCKER_MISSING_SECRET:${{ matrix.app.secret }}"; exit 1; }
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -62,30 +82,30 @@ jobs:
         
     - name: Setup Vercel project config
       run: |
-        mkdir -p ${{ matrix.wd }}/.vercel
-        cat > ${{ matrix.wd }}/.vercel/project.json << EOF
+        mkdir -p ${{ matrix.app.dir }}/.vercel
+        cat > ${{ matrix.app.dir }}/.vercel/project.json << EOF
         {
-          "orgId": "${{ secrets.VERCEL_ORG_ID }}",
-          "projectId": "${{ matrix.projectId }}"
+          "orgId": "${{ env.VERCEL_ORG_ID }}",
+          "projectId": "${{ env.VERCEL_PROJECT_ID }}"
         }
         EOF
         
     - name: Deploy to Vercel
       id: deploy
-      working-directory: ${{ matrix.wd }}
+      working-directory: ${{ matrix.app.dir }}
       run: |
         echo "Pulling Vercel configuration..."
-        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        vercel pull --yes --environment=production --token=${{ env.VERCEL_TOKEN }}
         
         echo "Building for production..."
-        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        vercel build --prod --token=${{ env.VERCEL_TOKEN }}
         
         echo "Deploying to production..."
-        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --yes)
+        DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ env.VERCEL_TOKEN }} --yes)
         echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
-        echo "app_key=${{ matrix.app }}" >> $GITHUB_OUTPUT
+        echo "app_key=${{ matrix.app.id }}" >> $GITHUB_OUTPUT
         
-        echo "✅ Deployed ${{ matrix.app }} to $DEPLOY_URL"
+        echo "✅ Deployed ${{ matrix.app.id }} to $DEPLOY_URL"
         
     - name: Verify deployment
       run: |
