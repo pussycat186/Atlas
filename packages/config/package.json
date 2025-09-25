@@ -8,14 +8,13 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "browser": "./dist/index.js",
+      "browser": "./dist/browser.js",
+      "import": "./dist/node.js",
+      "default": "./dist/node.js",
       "types": "./dist/index.d.ts"
     }
   },
-  "browser": {
-    ".": "./dist/index.js"
-  },
+  "browser": "./dist/browser.js",
   "scripts": {
     "build": "tsc -b .",
     "dev": "tsc --watch",

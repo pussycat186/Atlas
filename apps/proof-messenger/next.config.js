@@ -89,6 +89,7 @@ const withPWA = require('next-pwa')({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ['@atlas/config'],
   env: {
     ATLAS_GATEWAY_URL: process.env.ATLAS_GATEWAY_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev',
     ATLAS_DRIVE_URL: process.env.ATLAS_DRIVE_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev',
