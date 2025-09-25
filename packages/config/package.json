@@ -16,7 +16,7 @@
   },
   "browser": "./dist/browser.js",
   "scripts": {
-    "build": "tsc -b .",
+    "build": "tsc -b . && node -e \"const fs=require('fs');fs.copyFileSync('dist/index.js','dist/node.js');fs.copyFileSync('dist/index.js','dist/browser.js');\"",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
