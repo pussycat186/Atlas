@@ -23,7 +23,7 @@ jobs:
         run: node scripts/replan-nav-audit.js
       - name: Enforce non200 == 0
         run: |
-          node -e "const fs=require('fs');const p='docs/REPLAN/NAV_AUDIT.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));const n=(j.non200??j.summary?.non200??0); if(n>0){console.log('BLOCKER_NAV_ASSETS: non200='+n); process.exit(2);} console.log('NAV_OK');"
+          node -e "const fs=require('fs');const p='docs/REPLAN/NAV_AUDIT.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));const n=(j.non200??j.summary?.non200??j.overall?.non200??0); if(n>0){console.log('BLOCKER_NAV_ASSETS: non200='+n); process.exit(2);} console.log('NAV_OK');"
       - uses: actions/upload-artifact@v4
         with:
           name: nav-audit

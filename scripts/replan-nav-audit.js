@@ -81,9 +81,9 @@ async function auditOne(appKey, startUrl) {
 (async function main() {
   const generated_at_utc = new Date().toISOString();
   const apps = [];
-  if (LIVE.proof_messenger) apps.push(await auditOne('proof_messenger', LIVE.proof_messenger));
-  if (LIVE.admin_insights) apps.push(await auditOne('admin_insights', LIVE.admin_insights));
-  if (LIVE.dev_portal) apps.push(await auditOne('dev_portal', LIVE.dev_portal));
+  if (LIVE.proof_messenger || LIVE.frontends?.proof_messenger) apps.push(await auditOne('proof_messenger', LIVE.proof_messenger || LIVE.frontends.proof_messenger));
+  if (LIVE.admin_insights || LIVE.frontends?.admin_insights) apps.push(await auditOne('admin_insights', LIVE.admin_insights || LIVE.frontends.admin_insights));
+  if (LIVE.dev_portal || LIVE.frontends?.dev_portal) apps.push(await auditOne('dev_portal', LIVE.dev_portal || LIVE.frontends.dev_portal));
   const overall = apps.reduce((acc, a) => ({ ok: acc.ok + a.summary.ok, non200: acc.non200 + a.summary.non200 }), { ok: 0, non200: 0 });
   const out = { schema_version: 2, generated_at_utc, apps, overall };
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
