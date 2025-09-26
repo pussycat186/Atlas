@@ -1,0 +1,66 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import Messenger from './Messenger';
+import Admin from './Admin';
+import DevPortal from './DevPortal';
+
+interface TabsProps {
+  activeTab: 'messenger' | 'admin' | 'dev';
+  setActiveTab: (tab: 'messenger' | 'admin' | 'dev') => void;
+  sku: 'basic' | 'pro';
+  theme: 'dark' | 'light';
+  density: boolean;
+  luxury: boolean;
+}
+
+export default function Tabs({ activeTab, setActiveTab, sku, theme, density, luxury }: TabsProps) {
+  return (
+    <>
+      {/* Tab Navigation */}
+      <div className={`border-b ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+        <div className="container mx-auto px-4">
+          <div className="flex" role="tablist">
+            {(['messenger', 'admin', 'dev'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                role="tab"
+                aria-selected={activeTab === tab}
+                aria-controls={`${tab}-panel`}
+                className={`px-6 py-3 font-medium capitalize transition-colors ${
+                  activeTab === tab
+                    ? `border-b-2 ${sku === 'pro' ? 'border-purple-500 text-purple-400' : 'border-blue-500 text-blue-400'}`
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {tab === 'dev' ? 'Dev Portal' : tab}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="container mx-auto px-4 py-8">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: luxury ? 0.5 : 0.2 }}
+          className={`rounded-2xl p-6 backdrop-blur-sm border ${
+            theme === 'dark' 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-white/50 border-gray-200'
+          } ${density ? 'min-h-[400px]' : 'min-h-[600px]'}`}
+          role="tabpanel"
+          id={`${activeTab}-panel`}
+        >
+          {activeTab === 'messenger' && <Messenger sku={sku} theme={theme} />}
+          {activeTab === 'admin' && <Admin sku={sku} theme={theme} />}
+          {activeTab === 'dev' && <DevPortal sku={sku} theme={theme} />}
+        </motion.div>
+      </div>
+    </>
+  );
+}
