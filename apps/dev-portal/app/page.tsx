@@ -20,7 +20,10 @@ const TEST_IDS = {
 } as const;
 
 export default function DevPortalPage() {
-  const gateway = useMemo(() => getGatewayUrl(), []);
+  const gateway = useMemo(() => {
+    if (typeof window === 'undefined') return 'https://atlas-gateway.sonthenguyen186.workers.dev';
+    return getGatewayUrl();
+  }, []);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [sku, setSku] = useState<"basic" | "pro">("pro");
   const [minimapEnabled, setMinimapEnabled] = useState(true);

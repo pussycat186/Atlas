@@ -35,7 +35,7 @@ export default function MetricsPage() {
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        const gatewayUrl = await getGatewayUrl();
+        const gatewayUrl = typeof window !== 'undefined' ? getGatewayUrl() : 'https://atlas-gateway.sonthenguyen186.workers.dev';
         const response = await fetch(`${gatewayUrl}/metrics`);
         if (response.ok) {
           const data = await response.text();

@@ -62,7 +62,10 @@ const INITIAL_MESSAGES: Message[] = [
 ];
 
 export default function Page() {
-  const gateway = useMemo(() => getGatewayUrl(), []);
+  const gateway = useMemo(() => {
+    if (typeof window === 'undefined') return 'https://atlas-gateway.sonthenguyen186.workers.dev';
+    return getGatewayUrl();
+  }, []);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [sku, setSku] = useState<"basic" | "pro">("basic");
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
