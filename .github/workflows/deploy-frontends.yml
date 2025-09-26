@@ -77,6 +77,12 @@ jobs:
     - name: Install Vercel CLI
       run: npm install -g vercel@latest
         
+    - name: Build app
+      working-directory: ${{ matrix.app.dir }}
+      run: |
+        echo "Building ${{ matrix.app.id }} from $(pwd)"
+        pnpm build
+        
     - name: Deploy to Vercel
       id: deploy
       working-directory: ${{ matrix.app.dir }}
@@ -91,10 +97,9 @@ jobs:
         
         # Deploy with proper working directory handling
         echo "Deploying from $(pwd)"
-        ls -la
         
-        # Use vercel deploy with explicit cwd and proper error handling
-        if DEPLOY_URL=$(vercel deploy --prod --token="$VERCEL_TOKEN" --yes --cwd . 2>&1); then
+        # Use vercel deploy with prebuilt flag since we already built
+        if DEPLOY_URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" --yes 2>&1); then
           # Extract URL from output (vercel returns URL on last line)
           CLEAN_URL=$(echo "$DEPLOY_URL" | grep -E '^https://' | tail -1)
           if [ -n "$CLEAN_URL" ]; then
