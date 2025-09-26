@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { getGatewayUrl } from '@atlas/config';
+// Using static gateway URL for deployment compatibility
 // import { CommandPalette, type Command } from '@atlas/design-system';
 import { 
   Code, 
@@ -141,7 +141,7 @@ export default function DeveloperPortal() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   
-  const gatewayUrl = getGatewayUrl();
+  const gatewayUrl = 'https://atlas-gateway.sonthenguyen186.workers.dev';
   
   const examples = codeExamples(gatewayUrl);
 

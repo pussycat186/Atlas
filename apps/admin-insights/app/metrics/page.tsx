@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { getGatewayUrl } from '@atlas/config';
+// Using static gateway URL for deployment compatibility
 import { Activity, Clock, AlertTriangle, Users, Zap, TrendingUp } from 'lucide-react';
 
 interface Metrics {
@@ -35,7 +35,7 @@ export default function MetricsPage() {
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        const gatewayUrl = getGatewayUrl();
+        const gatewayUrl = 'https://atlas-gateway.sonthenguyen186.workers.dev';
         const response = await fetch(`${gatewayUrl}/metrics`);
         if (response.ok) {
           const data = await response.text();
