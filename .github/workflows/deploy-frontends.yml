@@ -27,7 +27,8 @@ jobs:
           [ -z "$VERCEL_ORG_ID" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_ORG_ID" && exit 1
           [ -z "$VERCEL_PROJECT_ID_PROOF" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_PROOF" && exit 1
           [ -z "$VERCEL_PROJECT_ID_INSIGHTS" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_INSIGHTS" && exit 1
-          [ -z "$VERCEL_PROJECT_ID_DEV" ] && [ -z "$VERCEL_PROJECT_ID_DEVPORTAL" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_DEV" && exit 1
+          : "${VERCEL_PROJECT_ID_DEV:=${VERCEL_PROJECT_ID_DEVPORTAL}}"
+          [ -z "$VERCEL_PROJECT_ID_DEV" ] && { echo "Missing DEV project id"; exit 1; }
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
