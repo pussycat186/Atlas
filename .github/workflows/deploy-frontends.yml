@@ -1,38 +1,22 @@
 name: Deploy Frontends
 on:
-  push: { branches: [ main ] }
-  workflow_dispatch:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
 concurrency:
-  group: deploy-frontends-${{ github.ref }}
+  group: deploy-frontends-main
   cancel-in-progress: true
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app:
-          - { id: PROOF,    path: "apps/proof-messenger" }
-          - { id: INSIGHTS, path: "apps/admin-insights" }
-          - { id: DEV,      path: "apps/dev-portal" }
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - uses: pnpm/action-setup@v2
-        with: { version: 8 }
-      - name: Check required secrets and setup fallback
-        run: |
-          set -euo pipefail
-          if [[ -z "${VERCEL_PROJECT_ID_DEV:-}" && -z "${VERCEL_PROJECT_ID_DEVPORTAL:-}" ]]; then
-            echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_DEV|VERCEL_PROJECT_ID_DEVPORTAL"; exit 1
-          fi
-          : "${VERCEL_PROJECT_ID_DEV:=${VERCEL_PROJECT_ID_DEVPORTAL}}"
-          export VERCEL_PROJECT_ID_DEV
-          : "${VERCEL_TOKEN:?BLOCKER_MISSING_SECRET:VERCEL_TOKEN}"
-          : "${VERCEL_ORG_ID:?BLOCKER_MISSING_SECRET:VERCEL_ORG_ID}"
-          : "${VERCEL_PROJECT_ID_PROOF:?BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_PROOF}"
-          : "${VERCEL_PROJECT_ID_INSIGHTS:?BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_INSIGHTS}"
+        with: { node-version: '18', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - name: Secret fallback + validation
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -40,36 +24,10 @@ jobs:
           VERCEL_PROJECT_ID_INSIGHTS: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
           VERCEL_PROJECT_ID_DEV: ${{ secrets.VERCEL_PROJECT_ID_DEV }}
           VERCEL_PROJECT_ID_DEVPORTAL: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
-      - name: Install workspace deps
-        run: pnpm i --frozen-lockfile=false
-      - name: Build apps
-        run: pnpm --filter './apps/*' build
-      - name: Install Vercel CLI
-        run: pnpm add -g vercel@latest
-      - name: Resolve PROJECT_ID (DEV fallback)
-        id: pid
-        shell: bash
         run: |
-          case "${{ matrix.app.id }}" in
-            PROOF)    PROJECT_ID="$VERCEL_PROJECT_ID_PROOF" ;;
-            INSIGHTS) PROJECT_ID="$VERCEL_PROJECT_ID_INSIGHTS" ;;
-            DEV)      PROJECT_ID="${VERCEL_PROJECT_ID_DEV:-$VERCEL_PROJECT_ID_DEVPORTAL}" ;;
-          esac
-          [ -z "$PROJECT_ID" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_${{ matrix.app.id }}" && exit 1
-          echo "PROJECT_ID=$PROJECT_ID" >> $GITHUB_OUTPUT
-        env:
-          VERCEL_PROJECT_ID_PROOF:     ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
-          VERCEL_PROJECT_ID_INSIGHTS:  ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
-          VERCEL_PROJECT_ID_DEV:       ${{ secrets.VERCEL_PROJECT_ID_DEV }}
-          VERCEL_PROJECT_ID_DEVPORTAL: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
-      - name: Link & pull env
-        run: |
-          vercel link --yes --cwd "${{ matrix.app.path }}" --project "${{ steps.pid.outputs.PROJECT_ID }}" --token "$VERCEL_TOKEN"
-          vercel pull --yes --environment=production --cwd "${{ matrix.app.path }}" --token "$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      - name: Deploy (prebuilt)
-        run: vercel deploy --prebuilt --prod --yes --cwd "${{ matrix.app.path }}" --project "${{ steps.pid.outputs.PROJECT_ID }}" --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          set -euo pipefail
+          : "${VERCEL_PROJECT_ID_DEV:=${VERCEL_PROJECT_ID_DEVPORTAL:-}}"
+          for v in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID_PROOF VERCEL_PROJECT_ID_INSIGHTS VERCEL_PROJECT_ID_DEV; do
+            if [ -z "${!v:-}" ]; then echo "::error::$v missing"; exit 1; fi
+          done
+      - run: pnpm -w build
