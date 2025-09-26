@@ -41,18 +41,33 @@ async function auditOne(appKey, startUrl) {
   let manifestUrl = null;
   const assetUrls = new Set();
   
-  // Check /prism route specifically
-  const prismUrl = origin + '/prism';
-  const prismRes = await fetchUrl(prismUrl);
-  const hasPrismMarker = prismRes.body && prismRes.body.includes('ATLAS • Prism UI — Peak Preview');
-  links.push({ 
-    href: prismUrl, 
-    status: prismRes.status, 
-    referer: startUrl, 
-    content_type: prismRes.contentType, 
-    bytes: prismRes.bytes,
-    prism_marker: hasPrismMarker
-  });
+  // Check required routes explicitly: "/", "/prism", "/favicon.svg", "/manifest.json"
+  const requiredRoutes = ['/prism', '/favicon.svg', '/manifest.json'];
+  let hasPrismMarker = false;
+  
+  for (const route of requiredRoutes) {
+    const routeUrl = origin + route;
+    const routeRes = await fetchUrl(routeUrl);
+    
+    // Check for Prism marker specifically on /prism route
+    if (route === '/prism' && routeRes.body && routeRes.body.includes('ATLAS • Prism UI — Peak Preview')) {
+      hasPrismMarker = true;
+    }
+    
+    links.push({ 
+      href: routeUrl, 
+      status: routeRes.status, 
+      referer: startUrl, 
+      content_type: routeRes.contentType, 
+      bytes: routeRes.bytes,
+      ...(route === '/prism' ? { prism_marker: hasPrismMarker } : {})
+    });
+    
+    // Set manifestUrl if this is the manifest.json route and it's accessible
+    if (route === '/manifest.json' && routeRes.status >= 200 && routeRes.status < 400) {
+      manifestUrl = routeUrl;
+    }
+  }
   
   // Parse page HTML for icon and manifest links
   if (res.status >= 200 && res.status < 400 && res.body) {

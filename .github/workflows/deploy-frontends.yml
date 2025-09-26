@@ -105,8 +105,27 @@ jobs:
             exit 1
           fi
         else
-          echo "❌ Deployment failed: $DEPLOY_URL"
-          exit 1
+          # Auto-fix: If deployment failed with path error, try adjusting the path
+          if echo "$DEPLOY_URL" | grep -q "does not exist"; then
+            echo "🔄 Auto-fix: Path issue detected, trying deployment from repository root..."
+            cd ../..
+            if DEPLOY_URL=$(vercel deploy --prod --token="$VERCEL_TOKEN" --yes --cwd ${{ matrix.app.dir }} 2>&1); then
+              CLEAN_URL=$(echo "$DEPLOY_URL" | grep -E '^https://' | tail -1)
+              if [ -n "$CLEAN_URL" ]; then
+                echo "deploy_url=$CLEAN_URL" >> $GITHUB_OUTPUT
+                echo "✅ Auto-fix successful: Deployed ${{ matrix.app.id }} to $CLEAN_URL"
+              else
+                echo "❌ Auto-fix failed: Could not extract deployment URL from: $DEPLOY_URL"
+                exit 1
+              fi
+            else
+              echo "❌ Auto-fix failed: $DEPLOY_URL"
+              exit 1
+            fi
+          else
+            echo "❌ Deployment failed: $DEPLOY_URL"
+            exit 1
+          fi
         fi
         
     - name: Verify deployment
