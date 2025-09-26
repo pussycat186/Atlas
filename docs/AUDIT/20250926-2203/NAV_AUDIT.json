@@ -1,0 +1,48 @@
+{
+  "schema_version": 2,
+  "generated_at_utc": "2025-09-26T15:31:37.820Z",
+  "status": "DEPLOYMENT_BLOCKED_CI_ISSUES",
+  "apps": [
+    {
+      "app": "proof_messenger",
+      "start_url": "https://atlas-proof-messenger.vercel.app",
+      "prism_url": "https://atlas-proof-messenger.vercel.app/prism",
+      "status": "OLD_DEPLOYMENT_ACTIVE",
+      "prism_marker_present": false,
+      "issues": ["Prism returns 308 redirect", "Manifest references missing PNG icons"]
+    },
+    {
+      "app": "admin_insights", 
+      "start_url": "https://atlas-admin-insights.vercel.app",
+      "prism_url": "https://atlas-admin-insights.vercel.app/prism",
+      "status": "OLD_DEPLOYMENT_ACTIVE",
+      "prism_marker_present": false,
+      "issues": ["Prism returns 404 not found"]
+    },
+    {
+      "app": "dev_portal",
+      "start_url": "https://atlas-dev-portal.vercel.app", 
+      "prism_url": "https://atlas-dev-portal.vercel.app/prism",
+      "status": "OLD_DEPLOYMENT_ACTIVE",
+      "prism_marker_present": false,
+      "issues": ["Prism returns 404 not found"]
+    }
+  ],
+  "fixes_applied": {
+    "build_safety": "Fixed client-side config imports causing build failures",
+    "prism_markers": "All apps have correct 'ATLAS • Prism UI — Peak Preview' markers in source",
+    "asset_hygiene": "SVG-only manifests and favicon setup verified",
+    "workflow_enhancement": "Added concurrency control to deploy workflow"
+  },
+  "deployment_blocker": {
+    "issue": "CI environment module resolution failure",
+    "description": "GitHub Actions cannot resolve @atlas/config workspace dependency",
+    "root_cause": "Workspace build order and dependency caching issues in CI",
+    "local_build_status": "SUCCESS - All apps build locally without errors"
+  },
+  "overall": {
+    "local_ready": true,
+    "ci_blocked": true,
+    "production_updated": false
+  }
+}
