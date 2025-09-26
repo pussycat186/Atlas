@@ -74,9 +74,6 @@ jobs:
     - name: Install dependencies
       run: pnpm install --no-frozen-lockfile
         
-    - name: Build apps only
-      run: pnpm -r --filter "./apps/*" build
-        
     - name: Install Vercel CLI
       run: npm install -g vercel@latest
         
