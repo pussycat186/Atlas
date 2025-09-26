@@ -5,6 +5,17 @@ const https = require('https');
 
 const REPO = process.cwd();
 const LIVE = require(path.join(REPO, 'LIVE_URLS.json'));
+// Resolve URLs from nested schema {frontends:{...}, backends:{...}} or legacy flat keys
+function getFrontend(key) {
+  if (LIVE && LIVE.frontends && typeof LIVE.frontends[key] === 'string') return LIVE.frontends[key];
+  if (typeof LIVE[key] === 'string') return LIVE[key];
+  return undefined;
+}
+function getGateway() {
+  if (LIVE && LIVE.backends && typeof LIVE.backends.gateway === 'string') return LIVE.backends.gateway;
+  if (typeof LIVE.gateway === 'string') return LIVE.gateway;
+  return undefined;
+}
 const OUT = path.join(REPO, 'docs/REPLAN/NAV_AUDIT.json');
 
 function fetchUrl(url) {
@@ -30,7 +41,7 @@ async function auditOne(appKey, startUrl) {
   let manifestUrl = null;
   const assetUrls = new Set();
   // Parse page HTML for icon and manifest links
-  if (res.status === 200 && res.body) {
+  if (res.status >= 200 && res.status < 400 && res.body) {
     const hrefs = Array.from(res.body.matchAll(/href=["']([^"']+)["']/g)).map(m => m[1]);
     const rels = Array.from(res.body.matchAll(/<link[^>]*rel=["']([^"']+)["'][^>]*href=["']([^"']+)["'][^>]*>/gi))
       .map(([, rel, href]) => ({ rel: rel.toLowerCase(), href }));
@@ -74,16 +85,19 @@ async function auditOne(appKey, startUrl) {
     const r = await fetchUrl(u);
     links.push({ href: u, status: r.status, referer: manifestUrl || startUrl, content_type: r.contentType, bytes: r.bytes });
   }
-  const summary = { ok: links.filter(l => l.status === 200).length, non200: links.filter(l => l.status !== 200).length };
+  const summary = { ok: links.filter(l => l.status >= 200 && l.status < 400).length, non200: links.filter(l => !(l.status >= 200 && l.status < 400)).length };
   return { app: appKey, start_url: startUrl, links, summary };
 }
 
 (async function main() {
   const generated_at_utc = new Date().toISOString();
   const apps = [];
-  if (LIVE.proof_messenger) apps.push(await auditOne('proof_messenger', LIVE.proof_messenger));
-  if (LIVE.admin_insights) apps.push(await auditOne('admin_insights', LIVE.admin_insights));
-  if (LIVE.dev_portal) apps.push(await auditOne('dev_portal', LIVE.dev_portal));
+  const proof = getFrontend('proof_messenger');
+  const admin = getFrontend('admin_insights');
+  const dev = getFrontend('dev_portal');
+  if (proof) apps.push(await auditOne('proof_messenger', proof));
+  if (admin) apps.push(await auditOne('admin_insights', admin));
+  if (dev) apps.push(await auditOne('dev_portal', dev));
   const overall = apps.reduce((acc, a) => ({ ok: acc.ok + a.summary.ok, non200: acc.non200 + a.summary.non200 }), { ok: 0, non200: 0 });
   const out = { schema_version: 2, generated_at_utc, apps, overall };
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
