@@ -8,6 +8,9 @@ on:
         description: 'Deployment message'
         required: false
         default: 'Deploy frontends'
+concurrency:
+  group: deploy-frontends-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   deploy:
     runs-on: ubuntu-latest
