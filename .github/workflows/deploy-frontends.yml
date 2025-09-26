@@ -89,22 +89,25 @@ jobs:
         mkdir -p .vercel
         echo '{"orgId":"'$VERCEL_ORG_ID'","projectId":"'$VERCEL_PROJECT_ID'"}' > .vercel/project.json
         
-        # Deploy with retries for reliability
-        for i in {1..3}; do
-          echo "Deployment attempt $i..."
-          if DEPLOY_URL=$(vercel deploy --prod --token="$VERCEL_TOKEN" --yes 2>&1); then
-            echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
-            echo "✅ Deployed ${{ matrix.app.id }} to $DEPLOY_URL"
-            break
+        # Deploy with proper working directory handling
+        echo "Deploying from $(pwd)"
+        ls -la
+        
+        # Use vercel deploy with explicit cwd and proper error handling
+        if DEPLOY_URL=$(vercel deploy --prod --token="$VERCEL_TOKEN" --yes --cwd . 2>&1); then
+          # Extract URL from output (vercel returns URL on last line)
+          CLEAN_URL=$(echo "$DEPLOY_URL" | grep -E '^https://' | tail -1)
+          if [ -n "$CLEAN_URL" ]; then
+            echo "deploy_url=$CLEAN_URL" >> $GITHUB_OUTPUT
+            echo "✅ Deployed ${{ matrix.app.id }} to $CLEAN_URL"
           else
-            echo "❌ Deployment attempt $i failed: $DEPLOY_URL"
-            if [ $i -eq 3 ]; then
-              echo "All deployment attempts failed"
-              exit 1
-            fi
-            sleep 10
+            echo "❌ Could not extract deployment URL from: $DEPLOY_URL"
+            exit 1
           fi
-        done
+        else
+          echo "❌ Deployment failed: $DEPLOY_URL"
+          exit 1
+        fi
         
     - name: Verify deployment
       run: |
