@@ -40,6 +40,20 @@ async function auditOne(appKey, startUrl) {
   const origin = new URL(startUrl).origin;
   let manifestUrl = null;
   const assetUrls = new Set();
+  
+  // Check /prism route specifically
+  const prismUrl = origin + '/prism';
+  const prismRes = await fetchUrl(prismUrl);
+  const hasPrismMarker = prismRes.body && prismRes.body.includes('ATLAS • Prism UI — Peak Preview');
+  links.push({ 
+    href: prismUrl, 
+    status: prismRes.status, 
+    referer: startUrl, 
+    content_type: prismRes.contentType, 
+    bytes: prismRes.bytes,
+    prism_marker: hasPrismMarker
+  });
+  
   // Parse page HTML for icon and manifest links
   if (res.status >= 200 && res.status < 400 && res.body) {
     const hrefs = Array.from(res.body.matchAll(/href=["']([^"']+)["']/g)).map(m => m[1]);
@@ -85,7 +99,13 @@ async function auditOne(appKey, startUrl) {
     const r = await fetchUrl(u);
     links.push({ href: u, status: r.status, referer: manifestUrl || startUrl, content_type: r.contentType, bytes: r.bytes });
   }
-  const summary = { ok: links.filter(l => l.status >= 200 && l.status < 400).length, non200: links.filter(l => !(l.status >= 200 && l.status < 400)).length };
+  const prismLink = links.find(l => l.href && l.href.endsWith('/prism'));
+  const prismOk = prismLink && prismLink.status >= 200 && prismLink.status < 400 && prismLink.prism_marker;
+  const summary = { 
+    ok: links.filter(l => l.status >= 200 && l.status < 400).length, 
+    non200: links.filter(l => !(l.status >= 200 && l.status < 400)).length,
+    prism_ok: prismOk
+  };
   return { app: appKey, start_url: startUrl, links, summary };
 }
 
