@@ -1,19 +1,17 @@
-import LIVE from '../../../LIVE_URLS.json';
-
-export const PROOF_FRONTEND = LIVE?.proof_messenger ?? undefined;
-export const ADMIN_FRONTEND = LIVE?.admin_insights ?? undefined;
-export const DEV_FRONTEND = LIVE?.dev_portal ?? undefined;
+// Browser-safe config without filesystem imports
+// Static fallback URLs for production deployment
+export const PROOF_FRONTEND: string = 'https://atlas-proof-messenger.vercel.app';
+export const ADMIN_FRONTEND: string = 'https://atlas-admin-insights.vercel.app';
+export const DEV_FRONTEND: string = 'https://atlas-dev-portal.vercel.app';
 
 export const LIVE_URLS = Object.freeze({
   proof: PROOF_FRONTEND,
   admin: ADMIN_FRONTEND,
   dev: DEV_FRONTEND,
-  gateway: LIVE?.gateway ?? undefined,
+  gateway: 'https://atlas-gateway.sonthenguyen186.workers.dev',
 });
 
 export function getGatewayUrl(): string {
-  if (typeof LIVE?.gateway === 'string' && LIVE.gateway.length > 0) {
-    return LIVE.gateway;
-  }
-  throw new Error('BLOCKER_NO_LIVE_URLS');
+  // Return static gateway URL for browser compatibility
+  return 'https://atlas-gateway.sonthenguyen186.workers.dev';
 }
