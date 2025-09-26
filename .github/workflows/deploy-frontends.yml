@@ -99,23 +99,27 @@ jobs:
         echo "Project ID: $VERCEL_PROJECT_ID"
         echo "Org ID: $VERCEL_ORG_ID"
         
-        # Use vercel deploy with production flag
-        if DEPLOY_URL=$(vercel deploy --prod --token="$VERCEL_TOKEN" --yes 2>&1); then
-          echo "Raw deployment output:"
-          echo "$DEPLOY_URL"
-          # Extract URL from output (vercel returns URL on last line)
-          CLEAN_URL=$(echo "$DEPLOY_URL" | grep -E '^https://' | tail -1)
-          if [ -n "$CLEAN_URL" ]; then
-            echo "deploy_url=$CLEAN_URL" >> $GITHUB_OUTPUT
-            echo "✅ Deployed ${{ matrix.app.id }} to $CLEAN_URL"
-          else
-            echo "❌ Could not extract deployment URL from output"
-            echo "Full output: $DEPLOY_URL"
-            exit 1
-          fi
-        else
+        # First try to link the project
+        vercel link --yes --token="$VERCEL_TOKEN" || echo "Link failed, continuing..."
+        
+        # Use vercel deploy with production flag and explicit project
+        DEPLOY_URL=$(vercel deploy --prod --token="$VERCEL_TOKEN" --yes 2>&1) || {
           echo "❌ Deployment command failed"
           echo "Error output: $DEPLOY_URL"
+          exit 1
+        }
+        
+        echo "Raw deployment output:"
+        echo "$DEPLOY_URL"
+        
+        # Extract URL from output (vercel returns URL on last line)
+        CLEAN_URL=$(echo "$DEPLOY_URL" | grep -E '^https://' | tail -1)
+        if [ -n "$CLEAN_URL" ]; then
+          echo "deploy_url=$CLEAN_URL" >> $GITHUB_OUTPUT
+          echo "✅ Deployed ${{ matrix.app.id }} to $CLEAN_URL"
+        else
+          echo "❌ Could not extract deployment URL from output"
+          echo "Full output: $DEPLOY_URL"
           exit 1
         fi
         
