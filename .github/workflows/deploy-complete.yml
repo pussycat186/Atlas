@@ -1,18 +1,6 @@
-name: Deploy Complete ATLAS Ecosystem
+name: Deploy Complete Atlas Ecosystem
 
-on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag to deploy'
-        required: true
-        default: 'latest'
-      rollback_to_tag:
-        description: 'Optional: Rollback to specific tag'
-        required: false
+on: {}
 
 concurrency:
   group: deploy-complete-${{ github.ref }}
