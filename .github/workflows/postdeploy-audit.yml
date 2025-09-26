@@ -1,0 +1,59 @@
+name: Post-Deploy Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Audit message'
+        required: false
+        default: 'Run post-deployment audit'
+
+jobs:
+  postdeploy-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Run navigation audit
+      run: node scripts/replan-nav-audit.js
+      
+    - name: Check audit results
+      run: |
+        # Check if the audit file was created
+        if [ ! -f "docs/REPLAN/NAV_AUDIT.json" ]; then
+          echo "❌ Audit file not found"
+          exit 1
+        fi
+        
+        # Parse audit results
+        non200=$(jq -r '.overall.non200' docs/REPLAN/NAV_AUDIT.json)
+        prism_ok=$(jq -r '.apps[] | select(.app == "proof_messenger") | .summary.prism_ok' docs/REPLAN/NAV_AUDIT.json)
+        
+        echo "Non-200 responses: $non200"
+        echo "Prism marker found: $prism_ok"
+        
+        # Check for failures
+        if [ "$non200" -gt 0 ]; then
+          echo "❌ Found $non200 non-200 responses"
+          exit 1
+        fi
+        
+        if [ "$prism_ok" != "true" ]; then
+          echo "❌ Prism marker 'ATLAS • Prism UI — Peak Preview' not found"
+          exit 1
+        fi
+        
+        echo "✅ Post-deployment audit passed"
+        
+    - name: Upload audit report
+      uses: actions/upload-artifact@v4
+      with:
+        name: nav-audit-report
+        path: docs/REPLAN/NAV_AUDIT.json
