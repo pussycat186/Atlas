@@ -1,188 +1,112 @@
 name: Deploy Frontends
-
 on:
-  workflow_dispatch:
-    inputs:
-      message:
-        description: 'Deployment message'
-        required: false
-        default: 'Deploy frontends'
   push:
-    branches: [main]
-    paths:
-      - 'apps/**'
-      - 'packages/design-system/**'
-      - '.github/workflows/deploy-frontends.yml'
-
-env:
-  NODE_OPTIONS: --max-old-space-size=4096
-  NPM_CONFIG_FROZEN_LOCKFILE: false
-  NPM_CONFIG_SHAMEFULLY_HOIST: true
-
+    branches: [ main ]
+  workflow_dispatch:
 jobs:
-  deploy-frontends:
+  deploy:
     runs-on: ubuntu-latest
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      # Secret-indexed per-app project id
-      VERCEL_PROJECT_ID: ${{ secrets[matrix.app.secret] }}
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - app:
-              id: proof
-              dir: apps/proof-messenger
-              secret: VERCEL_PROJECT_ID_PROOF
-          - app:
-              id: admin
-              dir: apps/admin-insights
-              secret: VERCEL_PROJECT_ID_INSIGHTS
-          - app:
-              id: devportal
-              dir: apps/dev-portal
-              secret: VERCEL_PROJECT_ID_DEVPORTAL
-    
+        app:
+          - { id: PROOF,     path: "apps/proof-messenger" }
+          - { id: INSIGHTS,  path: "apps/admin-insights" }
+          - { id: DEV,       path: "apps/dev-portal" }
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Check required secrets
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets[matrix.app.secret] }}
-      run: |
-        set -e
-        [ -n "$VERCEL_TOKEN" ] || { echo 'BLOCKER_MISSING_SECRET:VERCEL_TOKEN'; exit 1; }
-        [ -n "$VERCEL_ORG_ID" ] || { echo 'BLOCKER_MISSING_SECRET:VERCEL_ORG_ID'; exit 1; }
-        [ -n "$VERCEL_PROJECT_ID" ] || { echo "BLOCKER_MISSING_SECRET:${{ matrix.app.secret }}"; exit 1; }
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-        
-    - name: Configure pnpm
-      run: pnpm config set shamefully-hoist true
-        
-    - name: Install dependencies
-      run: pnpm install --no-frozen-lockfile
-        
-    - name: Install Vercel CLI
-      run: npm install -g vercel@latest
-        
-    - name: Build app
-      run: |
-        echo "Building ${{ matrix.app.id }} from workspace root"
-        pnpm --filter "${{ matrix.app.dir }}" build
-        
-    - name: Deploy to Vercel
-      id: deploy
-      working-directory: ${{ matrix.app.dir }}
-      env:
-        VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
-      run: |
-        # Create .vercel directory and project config
-        mkdir -p .vercel
-        echo '{"orgId":"'$VERCEL_ORG_ID'","projectId":"'$VERCEL_PROJECT_ID'"}' > .vercel/project.json
-        
-        # Deploy with proper working directory handling
-        echo "Deploying from $(pwd)"
-        echo "Project ID: $VERCEL_PROJECT_ID"
-        echo "Org ID: $VERCEL_ORG_ID"
-        
-        # First try to link the project
-        vercel link --yes --token="$VERCEL_TOKEN" || echo "Link failed, continuing..."
-        
-        # Use vercel deploy with production flag and explicit project
-        DEPLOY_URL=$(vercel deploy --prod --token="$VERCEL_TOKEN" --yes 2>&1) || {
-          echo "❌ Deployment command failed"
-          echo "Error output: $DEPLOY_URL"
-          exit 1
-        }
-        
-        echo "Raw deployment output:"
-        echo "$DEPLOY_URL"
-        
-        # Extract URL from output (vercel returns URL on last line)
-        CLEAN_URL=$(echo "$DEPLOY_URL" | grep -E '^https://' | tail -1)
-        if [ -n "$CLEAN_URL" ]; then
-          echo "deploy_url=$CLEAN_URL" >> $GITHUB_OUTPUT
-          echo "✅ Deployed ${{ matrix.app.id }} to $CLEAN_URL"
-        else
-          echo "❌ Could not extract deployment URL from output"
-          echo "Full output: $DEPLOY_URL"
-          exit 1
-        fi
-        
-    - name: Verify deployment
-      run: |
-        echo "Verifying deployment at ${{ steps.deploy.outputs.deploy_url }}"
-        curl -f -s "${{ steps.deploy.outputs.deploy_url }}" > /dev/null || {
-          echo "❌ Deployment failed health check"
-          exit 1
-        }
-        echo "✅ Deployment is healthy"
-        
-    - name: Save deployment URL
-      run: |
-        echo "${{ matrix.app.id }}_url=${{ steps.deploy.outputs.deploy_url }}" >> $GITHUB_OUTPUT
-        
-  generate-urls:
-    needs: deploy-frontends
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - uses: pnpm/action-setup@v2
+        with: { version: 8 }
+      - name: Check required secrets
+        run: |
+          need=(VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID_PROOF VERCEL_PROJECT_ID_INSIGHTS VERCEL_PROJECT_ID_DEV VERCEL_PROJECT_ID_DEVPORTAL)
+          missing=0
+          for k in "${need[@]}"; do
+            v="${!k}"
+            if [ -z "$v" ]; then echo "::notice::Secret $k not set (may be unused)"; fi
+          done
+          # Hard gates for token/org and proj ids (DEV allows fallback)
+          for k in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID_PROOF VERCEL_PROJECT_ID_INSIGHTS; do
+            v="${!k}"; if [ -z "$v" ]; then echo "BLOCKER_MISSING_SECRET:$k"; exit 1; fi
+          done
+        env:
+          VERCEL_TOKEN:              ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID:             ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID_PROOF:   ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
+          VERCEL_PROJECT_ID_INSIGHTS:${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
+          VERCEL_PROJECT_ID_DEV:     ${{ secrets.VERCEL_PROJECT_ID_DEV }}
+          VERCEL_PROJECT_ID_DEVPORTAL: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
+      - name: Install workspace deps
+        run: pnpm i --frozen-lockfile
+      - name: Build all apps (monorepo root)
+        run: pnpm --filter "./apps/*" build
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+      - name: Resolve PROJECT_ID per app (with DEV fallback)
+        id: pid
+        shell: bash
+        run: |
+          case "${{ matrix.app.id }}" in
+            PROOF)    PROJECT_ID="$VERCEL_PROJECT_ID_PROOF" ;;
+            INSIGHTS) PROJECT_ID="$VERCEL_PROJECT_ID_INSIGHTS" ;;
+            DEV)      PROJECT_ID="${VERCEL_PROJECT_ID_DEV:-$VERCEL_PROJECT_ID_DEVPORTAL}" ;;
+          esac
+          if [ -z "$PROJECT_ID" ]; then
+            echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_${{ matrix.app.id }}"; exit 1
+          fi
+          echo "PROJECT_ID=$PROJECT_ID" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_PROJECT_ID_PROOF:     ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
+          VERCEL_PROJECT_ID_INSIGHTS:  ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
+          VERCEL_PROJECT_ID_DEV:       ${{ secrets.VERCEL_PROJECT_ID_DEV }}
+          VERCEL_PROJECT_ID_DEVPORTAL: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
+      - name: Link project
+        run: vercel link --yes --cwd "${{ matrix.app.path }}" --project "${{ steps.pid.outputs.PROJECT_ID }}" --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Pull env (production)
+        run: vercel pull --yes --environment=production --cwd "${{ matrix.app.path }}" --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy (cloud build)
+        run: vercel deploy --prod --yes --cwd "${{ matrix.app.path }}" --project "${{ steps.pid.outputs.PROJECT_ID }}" --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  audit:
     runs-on: ubuntu-latest
+    needs: deploy
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Generate LIVE_URLS.json
-      run: |
-        # Get deployment URLs from job outputs
-        PROOF_URL=""
-        INSIGHTS_URL=""
-        DEV_URL=""
-        
-        # This is a simplified approach - in practice, we'd need to get these from the matrix job outputs
-        # For now, we'll use the existing URLs from LIVE_URLS.json as fallback
-        if [ -f "LIVE_URLS.json" ]; then
-          PROOF_URL=$(jq -r '.frontends.proof_messenger // "https://atlas-proof-messenger.vercel.app"' LIVE_URLS.json)
-          INSIGHTS_URL=$(jq -r '.frontends.admin_insights // "https://atlas-admin-insights.vercel.app"' LIVE_URLS.json)
-          DEV_URL=$(jq -r '.frontends.dev_portal // "https://atlas-dev-portal.vercel.app"' LIVE_URLS.json)
-        else
-          PROOF_URL="https://atlas-proof-messenger.vercel.app"
-          INSIGHTS_URL="https://atlas-admin-insights.vercel.app"
-          DEV_URL="https://atlas-dev-portal.vercel.app"
-        fi
-        
-        cat > LIVE_URLS.json << EOF
-        {
-          "status": "LIVE",
-          "tag": "manual-deploy-$(date +%Y%m%d-%H%M)",
-          "frontends": {
-            "proof_messenger": "$PROOF_URL",
-            "admin_insights": "$INSIGHTS_URL",
-            "dev_portal": "$DEV_URL"
-          },
-          "backends": {
-            "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
-            "quantum_sync": "https://atlas-quantum-sync.sonthenguyen186.workers.dev"
-          }
-        }
-        EOF
-        
-        echo "Generated LIVE_URLS.json:"
-        cat LIVE_URLS.json
-        
-    - name: Upload LIVE_URLS.json
-      uses: actions/upload-artifact@v4
-      with:
-        name: live-urls-final
-        path: LIVE_URLS.json
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: node -v
+      - name: Ensure audit script exists (create if missing)
+        run: |
+          if [ ! -f scripts/replan-nav-audit.js ]; then
+            cat > scripts/replan-nav-audit.js <<'JS'
+const fs = require('fs'); const https = require('https'); const path = require('path');
+const live = JSON.parse(fs.readFileSync('LIVE_URLS.json','utf8')); const base = live.frontends||live;
+const paths = ['/', '/prism', '/favicon.svg', '/manifest.json']; const marker='ATLAS • Prism UI — Peak Preview';
+function get(u){return new Promise(r=>{https.get(u,res=>{let b='';res.on('data',x=>b+=x);res.on('end',()=>r({u,sc:res.statusCode,ok:res.statusCode>=200&&res.statusCode<400,body:b}))}).on('error',e=>r({u,sc:0,ok:false,err:e.message}))})}
+(async()=>{
+  const out={ts:new Date().toISOString(),results:{},non200:0,markerMissing:0};
+  for(const [k,baseUrl] of Object.entries(base)){ out.results[k]={};
+    for(const p of paths){ const r=await get(baseUrl+p); out.results[k][p]={status:r.sc,ok:r.ok};
+      if(!r.ok) out.non200++; if(p==='/prism'&&r.ok){const has=r.body.includes(marker); out.results[k][p].hasMarker=has; if(!has) out.markerMissing++;}}
+  }
+  fs.mkdirSync('docs/REPLAN',{recursive:true});
+  fs.writeFileSync('docs/REPLAN/NAV_AUDIT.json',JSON.stringify(out,null,2));
+  if(out.non200===0 && out.markerMissing===0){console.log('AUDIT_PASS')} else {console.log('AUDIT_FAIL'); process.exit(1);}
+})();
+JS
+          fi
+      - name: Run production audit
+        run: node scripts/replan-nav-audit.js
+      - name: Print success JSON
+        if: success()
+        run: |
+          SHA=$(git rev-parse HEAD)
+          echo '{"status":"PRISM_LIVE","routes":{"proof_messenger":"'$(jq -r '.frontends.proof_messenger' LIVE_URLS.json)'/prism","admin_insights":"'$(jq -r '.frontends.admin_insights' LIVE_URLS.json)'/prism","dev_portal":"'$(jq -r '.frontends.dev_portal' LIVE_URLS.json)'/prism"},"audit":"docs/REPLAN/NAV_AUDIT.json","commit":"'$SHA'"}'
