@@ -1,6 +1,6 @@
 {
   "status": "CI_GREEN_DEPLOYED_BASIC&PRO",
-  "tag": "quality-gates-20250926-1038",
+  "tag": "quality-gates-20250926-1049",
   "frontends": {
     "proof_messenger": "https://atlas-proof-messenger.vercel.app",
     "admin_insights": "https://atlas-admin-insights.vercel.app",
