@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getGatewayUrl } from "@atlas/config";
 
 type ClusterStatus = "healthy" | "degraded";
 
@@ -40,10 +39,7 @@ const TEST_IDS = {
 } as const;
 
 export default function AdminPage() {
-  const gateway = useMemo(() => {
-    if (typeof window === 'undefined') return 'https://atlas-gateway.sonthenguyen186.workers.dev';
-    return getGatewayUrl();
-  }, []);
+  const gateway = 'https://atlas-gateway.sonthenguyen186.workers.dev';
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [sku, setSku] = useState<"basic" | "pro">("pro");
   const [clusterStatus, setClusterStatus] = useState<ClusterStatus>("healthy");
