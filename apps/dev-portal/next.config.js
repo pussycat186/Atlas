@@ -8,6 +8,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ['@atlas/config'],
+  // Disable font optimization to avoid network calls during build
+  optimizeFonts: false,
   webpack: (config) => {
     // Exclude crypto package from browser bundles
     config.resolve.alias = {
