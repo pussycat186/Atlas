@@ -41,7 +41,7 @@ jobs:
           - app:
               id: devportal
               dir: apps/dev-portal
-              secret: VERCEL_PROJECT_ID_DEVPORTAL
+              secret: VERCEL_PROJECT_ID_DEV
     
     steps:
     - name: Checkout code
