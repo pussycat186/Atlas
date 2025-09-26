@@ -24,7 +24,7 @@ jobs:
     - name: Run navigation audit
       run: node scripts/replan-nav-audit.js
       
-    - name: Check audit results
+    - name: Check audit results and generate success JSON
       run: |
         # Check if the audit file was created
         if [ ! -f "docs/REPLAN/NAV_AUDIT.json" ]; then
@@ -34,26 +34,66 @@ jobs:
         
         # Parse audit results
         non200=$(jq -r '.overall.non200' docs/REPLAN/NAV_AUDIT.json)
-        prism_ok=$(jq -r '.apps[] | select(.app == "proof_messenger") | .summary.prism_ok' docs/REPLAN/NAV_AUDIT.json)
+        
+        # Check each app for prism_ok status
+        proof_prism_ok=$(jq -r '.apps[] | select(.app == "proof_messenger") | .summary.prism_ok' docs/REPLAN/NAV_AUDIT.json)
+        admin_prism_ok=$(jq -r '.apps[] | select(.app == "admin_insights") | .summary.prism_ok' docs/REPLAN/NAV_AUDIT.json)
+        dev_prism_ok=$(jq -r '.apps[] | select(.app == "dev_portal") | .summary.prism_ok' docs/REPLAN/NAV_AUDIT.json)
         
         echo "Non-200 responses: $non200"
-        echo "Prism marker found: $prism_ok"
+        echo "Proof Prism OK: $proof_prism_ok"
+        echo "Admin Prism OK: $admin_prism_ok"
+        echo "Dev Prism OK: $dev_prism_ok"
         
         # Check for failures
         if [ "$non200" -gt 0 ]; then
           echo "❌ Found $non200 non-200 responses"
+          echo "Opening PR with fixes needed:"
+          
+          # Extract specific failures for reporting
+          failed_urls=$(jq -r '.apps[].links[] | select(.status < 200 or .status >= 400) | .href' docs/REPLAN/NAV_AUDIT.json)
+          echo "Failed URLs:"
+          echo "$failed_urls"
+          
           exit 1
         fi
         
-        if [ "$prism_ok" != "true" ]; then
-          echo "❌ Prism marker 'ATLAS • Prism UI — Peak Preview' not found"
+        if [ "$proof_prism_ok" != "true" ] || [ "$admin_prism_ok" != "true" ] || [ "$dev_prism_ok" != "true" ]; then
+          echo "❌ Prism marker 'ATLAS • Prism UI — Peak Preview' not found in one or more apps"
+          echo "Proof: $proof_prism_ok, Admin: $admin_prism_ok, Dev: $dev_prism_ok"
           exit 1
         fi
         
         echo "✅ Post-deployment audit passed"
         
+        # Generate success JSON as per problem statement requirements
+        proof_url=$(jq -r '.apps[] | select(.app == "proof_messenger") | .start_url' docs/REPLAN/NAV_AUDIT.json)
+        admin_url=$(jq -r '.apps[] | select(.app == "admin_insights") | .start_url' docs/REPLAN/NAV_AUDIT.json)
+        dev_url=$(jq -r '.apps[] | select(.app == "dev_portal") | .start_url' docs/REPLAN/NAV_AUDIT.json)
+        
+        success_json=$(cat << EOF
+        {
+          "status": "PRISM_LIVE",
+          "routes": {
+            "proof_messenger": "${proof_url}/prism",
+            "admin_insights": "${admin_url}/prism",
+            "dev_portal": "${dev_url}/prism"
+          },
+          "audit": "docs/REPLAN/NAV_AUDIT.json"
+        }
+        EOF
+        )
+        
+        echo "Success JSON:"
+        echo "$success_json"
+        
+        # Save success JSON
+        echo "$success_json" > success_result.json
+        
     - name: Upload audit report
       uses: actions/upload-artifact@v4
       with:
         name: nav-audit-report
-        path: docs/REPLAN/NAV_AUDIT.json
+        path: |
+          docs/REPLAN/NAV_AUDIT.json
+          success_result.json

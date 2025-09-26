@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2025-09-26T12:16:56.563Z",
+  "generated_at_utc": "2025-09-26T12:14:39.698Z",
   "apps": [
     {
       "app": "proof_messenger",
@@ -8,38 +8,38 @@
       "links": [
         {
           "href": "https://atlas-proof-messenger.vercel.app",
-          "status": 200,
+          "status": 0,
           "referer": "",
-          "content_type": "text/html; charset=utf-8",
-          "bytes": 23257
+          "content_type": "",
+          "bytes": 0
         },
         {
           "href": "https://atlas-proof-messenger.vercel.app/prism",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-proof-messenger.vercel.app",
-          "content_type": "text/html; charset=utf-8",
-          "bytes": 34801,
-          "prism_marker": true
+          "content_type": "",
+          "bytes": 0,
+          "prism_marker": false
         },
         {
           "href": "https://atlas-proof-messenger.vercel.app/favicon.svg",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-proof-messenger.vercel.app",
-          "content_type": "image/svg+xml",
-          "bytes": 1024
+          "content_type": "",
+          "bytes": 0
         },
         {
           "href": "https://atlas-proof-messenger.vercel.app/manifest.json",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-proof-messenger.vercel.app",
-          "content_type": "application/json; charset=utf-8",
-          "bytes": 1547
+          "content_type": "",
+          "bytes": 0
         }
       ],
       "summary": {
-        "ok": 4,
-        "non200": 0,
-        "prism_ok": true
+        "ok": 0,
+        "non200": 4,
+        "prism_ok": false
       }
     },
     {
@@ -48,38 +48,38 @@
       "links": [
         {
           "href": "https://atlas-admin-insights.vercel.app",
-          "status": 200,
+          "status": 0,
           "referer": "",
-          "content_type": "text/html; charset=utf-8",
-          "bytes": 28591
+          "content_type": "",
+          "bytes": 0
         },
         {
           "href": "https://atlas-admin-insights.vercel.app/prism",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-admin-insights.vercel.app",
-          "content_type": "text/html; charset=utf-8",
-          "bytes": 32451,
-          "prism_marker": true
+          "content_type": "",
+          "bytes": 0,
+          "prism_marker": false
         },
         {
           "href": "https://atlas-admin-insights.vercel.app/favicon.svg",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-admin-insights.vercel.app",
-          "content_type": "image/svg+xml",
-          "bytes": 1024
+          "content_type": "",
+          "bytes": 0
         },
         {
           "href": "https://atlas-admin-insights.vercel.app/manifest.json",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-admin-insights.vercel.app",
-          "content_type": "application/json; charset=utf-8",
-          "bytes": 1547
+          "content_type": "",
+          "bytes": 0
         }
       ],
       "summary": {
-        "ok": 4,
-        "non200": 0,
-        "prism_ok": true
+        "ok": 0,
+        "non200": 4,
+        "prism_ok": false
       }
     },
     {
@@ -88,43 +88,43 @@
       "links": [
         {
           "href": "https://atlas-dev-portal.vercel.app",
-          "status": 200,
+          "status": 0,
           "referer": "",
-          "content_type": "text/html; charset=utf-8",
-          "bytes": 34801
+          "content_type": "",
+          "bytes": 0
         },
         {
           "href": "https://atlas-dev-portal.vercel.app/prism",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-dev-portal.vercel.app",
-          "content_type": "text/html; charset=utf-8",
-          "bytes": 31256,
-          "prism_marker": true
+          "content_type": "",
+          "bytes": 0,
+          "prism_marker": false
         },
         {
           "href": "https://atlas-dev-portal.vercel.app/favicon.svg",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-dev-portal.vercel.app",
-          "content_type": "image/svg+xml",
-          "bytes": 1024
+          "content_type": "",
+          "bytes": 0
         },
         {
           "href": "https://atlas-dev-portal.vercel.app/manifest.json",
-          "status": 200,
+          "status": 0,
           "referer": "https://atlas-dev-portal.vercel.app",
-          "content_type": "application/json; charset=utf-8",
-          "bytes": 1547
+          "content_type": "",
+          "bytes": 0
         }
       ],
       "summary": {
-        "ok": 4,
-        "non200": 0,
-        "prism_ok": true
+        "ok": 0,
+        "non200": 4,
+        "prism_ok": false
       }
     }
   ],
   "overall": {
-    "ok": 12,
-    "non200": 0
+    "ok": 0,
+    "non200": 12
   }
 }
