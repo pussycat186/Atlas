@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2025-09-26T17:31:40.972Z",
+  "generated_at_utc": "2025-09-26T16:20:17.286Z",
   "apps": [
     {
       "app": "proof_messenger",
@@ -15,11 +15,11 @@
         },
         {
           "href": "https://atlas-proof-messenger.vercel.app/prism",
-          "status": 200,
+          "status": 308,
           "referer": "https://atlas-proof-messenger.vercel.app",
-          "content_type": "text/html; charset=utf-8",
-          "bytes": 13555,
-          "prism_marker": true
+          "content_type": "text/plain",
+          "bytes": 15,
+          "prism_marker": false
         },
         {
           "href": "https://atlas-proof-messenger.vercel.app/_next/static/media/e4af272ccee01ff0-s.p.woff2",
@@ -74,7 +74,7 @@
       "summary": {
         "ok": 7,
         "non200": 2,
-        "prism_ok": true
+        "prism_ok": false
       }
     },
     {
@@ -104,14 +104,14 @@
           "bytes": 48432
         },
         {
-          "href": "https://atlas-admin-insights.vercel.app/_next/static/css/099e6cd60ef23ca2.css?dpl=dpl_DSmN79bKXx6n1Wg5wGZ1CLkkUPfw",
+          "href": "https://atlas-admin-insights.vercel.app/_next/static/css/099e6cd60ef23ca2.css?dpl=dpl_qYR2hF3LPVybmi261LKpKxUS3t9d",
           "status": 200,
           "referer": "https://atlas-admin-insights.vercel.app",
           "content_type": "text/css; charset=utf-8",
           "bytes": 11982
         },
         {
-          "href": "https://atlas-admin-insights.vercel.app/_next/static/chunks/webpack-bebae29010375b4e.js?dpl=dpl_DSmN79bKXx6n1Wg5wGZ1CLkkUPfw",
+          "href": "https://atlas-admin-insights.vercel.app/_next/static/chunks/webpack-bebae29010375b4e.js?dpl=dpl_qYR2hF3LPVybmi261LKpKxUS3t9d",
           "status": 200,
           "referer": "https://atlas-admin-insights.vercel.app",
           "content_type": "application/javascript; charset=utf-8",

@@ -18,9 +18,18 @@ function getGateway() {
 }
 const OUT = path.join(REPO, 'docs/REPLAN/NAV_AUDIT.json');
 
-function fetchUrl(url) {
+function fetchUrl(url, followRedirects = true, maxRedirects = 5) {
   return new Promise((resolve) => {
     const req = https.get(url, { timeout: 10000 }, (res) => {
+      // Handle redirects
+      if (followRedirects && maxRedirects > 0 && (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307 || res.statusCode === 308)) {
+        const location = res.headers.location;
+        if (location) {
+          const redirectUrl = location.startsWith('http') ? location : new URL(location, url).href;
+          return fetchUrl(redirectUrl, true, maxRedirects - 1).then(resolve);
+        }
+      }
+      
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
       res.on('end', () => {

@@ -21,14 +21,18 @@ jobs:
         with: { node-version: '20' }
       - uses: pnpm/action-setup@v2
         with: { version: 8 }
-      - name: Check required secrets
+      - name: Check required secrets and setup fallback
         run: |
-          [ -z "$VERCEL_TOKEN" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_TOKEN" && exit 1
-          [ -z "$VERCEL_ORG_ID" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_ORG_ID" && exit 1
-          [ -z "$VERCEL_PROJECT_ID_PROOF" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_PROOF" && exit 1
-          [ -z "$VERCEL_PROJECT_ID_INSIGHTS" ] && echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_INSIGHTS" && exit 1
+          set -euo pipefail
+          if [[ -z "${VERCEL_PROJECT_ID_DEV:-}" && -z "${VERCEL_PROJECT_ID_DEVPORTAL:-}" ]]; then
+            echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_DEV|VERCEL_PROJECT_ID_DEVPORTAL"; exit 1
+          fi
           : "${VERCEL_PROJECT_ID_DEV:=${VERCEL_PROJECT_ID_DEVPORTAL}}"
-          [ -z "$VERCEL_PROJECT_ID_DEV" ] && { echo "Missing DEV project id"; exit 1; }
+          export VERCEL_PROJECT_ID_DEV
+          : "${VERCEL_TOKEN:?BLOCKER_MISSING_SECRET:VERCEL_TOKEN}"
+          : "${VERCEL_ORG_ID:?BLOCKER_MISSING_SECRET:VERCEL_ORG_ID}"
+          : "${VERCEL_PROJECT_ID_PROOF:?BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_PROOF}"
+          : "${VERCEL_PROJECT_ID_INSIGHTS:?BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_INSIGHTS}"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
