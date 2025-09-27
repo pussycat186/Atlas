@@ -47,6 +47,18 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -w build
       
+      - name: Build apps for Vercel
+        run: |
+          if [ "${{ github.event.inputs.app }}" = "all" ] || [ "${{ github.event_name }}" = "push" ]; then
+            pnpm --filter "./apps/*" build
+          elif [ "${{ github.event.inputs.app }}" = "proof-messenger" ]; then
+            pnpm --filter "@atlas/proof-messenger" build
+          elif [ "${{ github.event.inputs.app }}" = "admin-insights" ]; then
+            pnpm --filter "@atlas/admin-insights" build
+          elif [ "${{ github.event.inputs.app }}" = "dev-portal" ]; then
+            pnpm --filter "@atlas/dev-portal" build
+          fi
+      
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
       
