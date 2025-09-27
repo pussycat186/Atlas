@@ -2,7 +2,18 @@ name: Deploy Frontends
 on:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Deploy specific app (all, proof-messenger, admin-insights, dev-portal)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - proof-messenger
+          - admin-insights
+          - dev-portal
 concurrency:
   group: deploy-frontends
   cancel-in-progress: true
@@ -40,12 +51,15 @@ jobs:
         run: npm install -g vercel@latest
       
       - name: Deploy admin-insights
+        if: ${{ github.event.inputs.app == 'all' || github.event.inputs.app == 'admin-insights' || github.event_name == 'push' }}
         run: vercel deploy --prebuilt --prod --cwd apps/admin-insights --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
         
       - name: Deploy dev-portal
+        if: ${{ github.event.inputs.app == 'all' || github.event.inputs.app == 'dev-portal' || github.event_name == 'push' }}
         run: vercel deploy --prebuilt --prod --cwd apps/dev-portal --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project "${{ env.DEV_ID }}"
           
       - name: Deploy proof-messenger
+        if: ${{ github.event.inputs.app == 'all' || github.event.inputs.app == 'proof-messenger' || github.event_name == 'push' }}
         run: vercel deploy --prebuilt --prod --cwd apps/proof-messenger --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
       
       - name: Audit Prism endpoints
