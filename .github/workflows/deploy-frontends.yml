@@ -4,7 +4,7 @@ on:
     branches: [main]
   workflow_dispatch: {}
 concurrency:
-  group: deploy-frontends-main
+  group: deploy-frontends
   cancel-in-progress: true
 jobs:
   build-and-deploy:
@@ -15,6 +15,15 @@ jobs:
         with: { version: 9 }
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'pnpm' }
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}
+      
       - run: pnpm install --frozen-lockfile
       
       - name: Secrets check
@@ -27,12 +36,12 @@ jobs:
           VERCEL_PROJECT_ID_DEVPORTAL: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
         run: |
           set -euo pipefail
-          PROJECT_ID_DEV="${VERCEL_PROJECT_ID_DEV:-${VERCEL_PROJECT_ID_DEVPORTAL:-}}"
+          DEV_ID=${VERCEL_PROJECT_ID_DEV:-$VERCEL_PROJECT_ID_DEVPORTAL}
           for v in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID_PROOF VERCEL_PROJECT_ID_INSIGHTS; do
-            if [ -z "${!v:-}" ]; then echo 'BLOCKER_MISSING_SECRET:'$v; exit 2; fi
+            if [ -z "${!v:-}" ]; then echo "BLOCKER_MISSING_SECRET:$v"; exit 2; fi
           done
-          if [ -z "$PROJECT_ID_DEV" ]; then echo 'BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_DEV'; exit 2; fi
-          echo "PROJECT_ID_DEV=$PROJECT_ID_DEV" >> $GITHUB_ENV
+          if [ -z "$DEV_ID" ]; then echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_DEV"; exit 2; fi
+          echo "DEV_ID=$DEV_ID" >> $GITHUB_ENV
       
       - run: pnpm -w build
       
@@ -46,25 +55,10 @@ jobs:
         run: npm install -g vercel@latest
       
       - name: Deploy proof-messenger
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        run: |
-          cd apps/proof-messenger
-          vercel --token $VERCEL_TOKEN --scope $VERCEL_ORG_ID --prod --prebuilt --yes
+        run: vercel deploy --prebuilt --prod --cwd apps/proof-messenger --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
         
       - name: Deploy admin-insights
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        run: |
-          cd apps/admin-insights
-          vercel --token $VERCEL_TOKEN --scope $VERCEL_ORG_ID --prod --prebuilt --yes
+        run: vercel deploy --prebuilt --prod --cwd apps/admin-insights --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
           
       - name: Deploy dev-portal
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        run: |
-          cd apps/dev-portal
-          vercel --token $VERCEL_TOKEN --scope $VERCEL_ORG_ID --prod --prebuilt --yes
+        run: vercel deploy --prebuilt --prod --cwd apps/dev-portal --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ env.DEV_ID }}

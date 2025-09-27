@@ -1,14 +1,23 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'fs';
 import https from 'https';
 import http from 'http';
 
 const MARKER = 'ATLAS • Prism UI — Peak Preview';
-const URLS = {
-  admin_insights: 'https://atlas-admin-insights.vercel.app/prism',
-  dev_portal: 'https://atlas-dev-portal.vercel.app/prism', 
-  proof_messenger: 'https://atlas-proof-messenger.vercel.app/prism'
-};
+
+let URLS;
+try {
+  const liveUrls = JSON.parse(readFileSync('LIVE_URLS.json', 'utf8'));
+  URLS = {
+    admin_insights: liveUrls.frontends.admin_insights + '/prism',
+    dev_portal: liveUrls.frontends.dev_portal + '/prism',
+    proof_messenger: liveUrls.frontends.proof_messenger + '/prism'
+  };
+} catch {
+  console.error('BLOCKER_WORKFLOW_ERROR:audit-prism.mjs');
+  process.exit(1);
+}
 
 async function fetchWithRedirects(url) {
   return new Promise((resolve, reject) => {
@@ -49,10 +58,13 @@ async function main() {
     results[name] = await checkApp(name, url);
   }
   
-  console.log(JSON.stringify(results, null, 2));
+  console.log(JSON.stringify(results));
+  
+  const allGood = Object.values(results).every(r => r.marker);
+  process.exit(allGood ? 0 : 1);
 }
 
-main().catch(err => {
+main().catch(() => {
   console.error('BLOCKER_WORKFLOW_ERROR:audit-prism.mjs');
   process.exit(1);
 });
