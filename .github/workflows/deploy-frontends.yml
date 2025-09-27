@@ -14,9 +14,10 @@ jobs:
       - uses: pnpm/action-setup@v4
         with: { version: 9 }
       - uses: actions/setup-node@v4
-        with: { node-version: '18', cache: 'pnpm' }
+        with: { node-version: '20', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
-      - name: Secret fallback + validation
+      
+      - name: Secrets check
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -26,8 +27,44 @@ jobs:
           VERCEL_PROJECT_ID_DEVPORTAL: ${{ secrets.VERCEL_PROJECT_ID_DEVPORTAL }}
         run: |
           set -euo pipefail
-          : "${VERCEL_PROJECT_ID_DEV:=${VERCEL_PROJECT_ID_DEVPORTAL:-}}"
-          for v in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID_PROOF VERCEL_PROJECT_ID_INSIGHTS VERCEL_PROJECT_ID_DEV; do
-            if [ -z "${!v:-}" ]; then echo "::error::$v missing"; exit 1; fi
+          PROJECT_ID_DEV="${VERCEL_PROJECT_ID_DEV:-${VERCEL_PROJECT_ID_DEVPORTAL:-}}"
+          for v in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID_PROOF VERCEL_PROJECT_ID_INSIGHTS; do
+            if [ -z "${!v:-}" ]; then echo 'BLOCKER_MISSING_SECRET:'$v; exit 2; fi
           done
+          if [ -z "$PROJECT_ID_DEV" ]; then echo 'BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_DEV'; exit 2; fi
+          echo "PROJECT_ID_DEV=$PROJECT_ID_DEV" >> $GITHUB_ENV
+      
       - run: pnpm -w build
+      
+      - name: Build apps
+        run: |
+          pnpm --filter "./apps/proof-messenger" build
+          pnpm --filter "./apps/admin-insights" build  
+          pnpm --filter "./apps/dev-portal" build
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+      
+      - name: Deploy proof-messenger
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        run: |
+          cd apps/proof-messenger
+          vercel --token $VERCEL_TOKEN --scope $VERCEL_ORG_ID --prod --prebuilt --yes
+        
+      - name: Deploy admin-insights
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        run: |
+          cd apps/admin-insights
+          vercel --token $VERCEL_TOKEN --scope $VERCEL_ORG_ID --prod --prebuilt --yes
+          
+      - name: Deploy dev-portal
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        run: |
+          cd apps/dev-portal
+          vercel --token $VERCEL_TOKEN --scope $VERCEL_ORG_ID --prod --prebuilt --yes
