@@ -19,13 +19,13 @@ try {
   process.exit(1);
 }
 
-async function fetchWithRedirects(url) {
+async function fetchWithRedirects(url, maxRedirects = 5) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https:') ? https : http;
     
     const req = client.get(url, { timeout: 10000 }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchWithRedirects(res.headers.location).then(resolve).catch(reject);
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && maxRedirects > 0) {
+        return fetchWithRedirects(res.headers.location, maxRedirects - 1).then(resolve).catch(reject);
       }
       
       let data = '';
@@ -43,9 +43,13 @@ async function fetchWithRedirects(url) {
 
 async function checkApp(name, url) {
   try {
-    const { status, body } = await fetchWithRedirects(url);
-    const marker = body.includes(MARKER);
-    return { status, marker };
+    // Check both /prism and /prism/
+    let result = await fetchWithRedirects(url);
+    if (result.status < 200 || result.status >= 300) {
+      result = await fetchWithRedirects(url + '/');
+    }
+    const marker = result.body.includes(MARKER);
+    return { status: result.status, marker };
   } catch (error) {
     return { status: 0, marker: false };
   }

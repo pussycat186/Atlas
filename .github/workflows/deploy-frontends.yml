@@ -15,16 +15,6 @@ jobs:
         with: { version: 9 }
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'pnpm' }
-      - uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}
-      
-      - run: pnpm install --frozen-lockfile
       
       - name: Secrets check
         env:
@@ -43,22 +33,17 @@ jobs:
           if [ -z "$DEV_ID" ]; then echo "BLOCKER_MISSING_SECRET:VERCEL_PROJECT_ID_DEV"; exit 2; fi
           echo "DEV_ID=$DEV_ID" >> $GITHUB_ENV
       
+      - run: pnpm install --frozen-lockfile
       - run: pnpm -w build
-      
-      - name: Build apps
-        run: |
-          pnpm --filter "./apps/proof-messenger" build
-          pnpm --filter "./apps/admin-insights" build  
-          pnpm --filter "./apps/dev-portal" build
       
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
       
-      - name: Deploy proof-messenger
-        run: vercel deploy --prebuilt --prod --cwd apps/proof-messenger --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
-        
       - name: Deploy admin-insights
         run: vercel deploy --prebuilt --prod --cwd apps/admin-insights --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
-          
+        
       - name: Deploy dev-portal
-        run: vercel deploy --prebuilt --prod --cwd apps/dev-portal --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ env.DEV_ID }}
+        run: vercel deploy --prebuilt --prod --cwd apps/dev-portal --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project "${{ env.DEV_ID }}"
+          
+      - name: Deploy proof-messenger
+        run: vercel deploy --prebuilt --prod --cwd apps/proof-messenger --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
