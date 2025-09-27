@@ -52,15 +52,21 @@ jobs:
       
       - name: Deploy admin-insights
         if: ${{ github.event.inputs.app == 'all' || github.event.inputs.app == 'admin-insights' || github.event_name == 'push' }}
-        run: vercel deploy --prebuilt --prod --cwd apps/admin-insights --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INSIGHTS }}
+        run: vercel deploy --prebuilt --prod --cwd apps/admin-insights --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }}
         
       - name: Deploy dev-portal
         if: ${{ github.event.inputs.app == 'all' || github.event.inputs.app == 'dev-portal' || github.event_name == 'push' }}
-        run: vercel deploy --prebuilt --prod --cwd apps/dev-portal --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project "${{ env.DEV_ID }}"
+        env:
+          VERCEL_PROJECT_ID: ${{ env.DEV_ID }}
+        run: vercel deploy --prebuilt --prod --cwd apps/dev-portal --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }}
           
       - name: Deploy proof-messenger
         if: ${{ github.event.inputs.app == 'all' || github.event.inputs.app == 'proof-messenger' || github.event_name == 'push' }}
-        run: vercel deploy --prebuilt --prod --cwd apps/proof-messenger --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
+        run: vercel deploy --prebuilt --prod --cwd apps/proof-messenger --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_ORG_ID }}
       
       - name: Audit Prism endpoints
         run: node scripts/audit-prism.mjs
