@@ -1,76 +1,155 @@
 # Atlas Monorepo
 
-Production-first monorepo for the **Atlas** web apps.
+Production-first monorepo for **Atlas** web applications with quantum-grade architecture.
 
-## Live
+## Live Applications
 
-- Proof Messenger: **https://atlas-proof-messenger.vercel.app**
-- Admin Insights: **https://atlas-admin-insights.vercel.app**
-- Dev Portal: **https://atlas-dev-portal.vercel.app**
+- **Proof Messenger**: https://atlas-proof-messenger.vercel.app
+- **Admin Insights**: https://atlas-admin-insights.vercel.app  
+- **Dev Portal**: https://atlas-dev-portal.vercel.app
 
 ### Prism UI Preview
-- Proof `/prism` : **https://atlas-proof-messenger.vercel.app/prism**
-- Insights `/prism` : **https://atlas-admin-insights.vercel.app/prism**
-- Dev `/prism` : **https://atlas-dev-portal.vercel.app/prism**
+- Proof `/prism`: https://atlas-proof-messenger.vercel.app/prism
+- Insights `/prism`: https://atlas-admin-insights.vercel.app/prism
+- Dev `/prism`: https://atlas-dev-portal.vercel.app/prism
 
-> Each `/prism`  page includes the marker text: `ATLAS • Prism UI — Peak Preview` .
+> Each `/prism` page contains the marker: `ATLAS • Prism UI — Peak Preview`
 
-## Structure
+## Quantum-Grade Architecture
 
+**Runtime Strategy:**
+- Server Components + Route Handlers (RSC-first)
+- Edge runtime for IO-light endpoints
+- No Node.js APIs in client code
+- Client config via `NEXT_PUBLIC_*` only
+
+**Performance Guardrails:**
+- Minimal client JS bundles
+- SVG-only icons (no PNG/bitmap)
+- WASM-ready hot paths (feature-flagged)
+- Low-overhead data adapters
+
+**Build Strategy:**
+- Single root build → prebuilt Vercel deploys
+- Shared packages via pnpm workspace
+- Transpiled packages for Next.js compatibility
+
+## Repository Structure
+
+```
 apps/
-proof-messenger/
-admin-insights/
-dev-portal/
+├── admin-insights/     # Admin dashboard
+├── dev-portal/         # Developer portal  
+└── proof-messenger/    # Messaging app
 packages/
-scripts/
-docs/
+├── @atlas/design-system/
+├── config/
+├── fabric-client/
+├── fabric-crypto/
+└── fabric-protocol/
+services/               # Backend services
+scripts/               # Build & audit tools
+```
 
-python
-Sao chép mã
+## Required Secrets
 
-## Quickstart (local)
+Configure in GitHub Repository Settings → Actions → Secrets:
+
+- `VERCEL_TOKEN` - Vercel CLI authentication
+- `VERCEL_ORG_ID` - Vercel organization ID
+- `VERCEL_PROJECT_ID_PROOF` - proof-messenger project
+- `VERCEL_PROJECT_ID_INSIGHTS` - admin-insights project  
+- `VERCEL_PROJECT_ID_DEV` or `VERCEL_PROJECT_ID_DEVPORTAL` - dev-portal project (fallback)
+
+## CI/CD Pipeline
+
+**Trigger:** Push to `main` or manual dispatch
+
+**Steps:**
+1. **Secret Gate** - Validates all required secrets, computes DEV fallback
+2. **Build** - Single root build with pnpm workspace
+3. **Deploy** - Prebuilt deployment to Vercel per app
+4. **Audit** - Validates `/prism` endpoints contain required marker
+
+**Concurrency:** `deploy-frontends` group with cancel-in-progress
+
+## Local Development
 
 ```bash
-pnpm -w i
+# Install dependencies
+pnpm install
+
+# Start all apps in development
 pnpm --filter "./apps/*" dev
-Build
-bash
-Sao chép mã
+
+# Build all apps
 pnpm --filter "./apps/*" build
-Deploy (CI)
-This repo uses GitHub Actions + Vercel CLI. Required repo Secrets:
 
-VERCEL_TOKEN
+# Run tests
+pnpm test
+```
 
-VERCEL_ORG_ID
+## Deployment Runbook
 
-VERCEL_PROJECT_ID_PROOF
+### Manual Deploy
+```bash
+# Trigger via GitHub Actions
+gh workflow run deploy-frontends.yml
 
-VERCEL_PROJECT_ID_INSIGHTS
+# Or via GitHub UI: Actions → Deploy Frontends → Run workflow
+```
 
-VERCEL_PROJECT_ID_DEV
+### Emergency Rollback
+```bash
+# Revert to previous commit
+git revert HEAD
+git push origin main
 
-Workflow: .github/workflows/deploy-frontends.yml
+# Or rollback via Vercel dashboard per app
+```
 
-Navigation Audit
-Asset-aware audit script:
+### Audit Verification
+```bash
+# Run audit locally
+node scripts/audit-prism.mjs
 
-bash
-Sao chép mã
-node scripts/replan-nav-audit.js
-Checks each app for: /, /prism, /favicon.svg, /manifest.json
+# Expected output (success):
+{"admin_insights":{"status":200,"marker":true},"dev_portal":{"status":200,"marker":true},"proof_messenger":{"status":200,"marker":true}}
+```
 
-Accepts 2xx/3xx; /prism must contain the marker text.
+## Troubleshooting
 
-Writes: docs/REPLAN/NAV_AUDIT.json and timestamped evidence.
+| Code | Meaning / Fix |
+|------|---------------|
+| `BLOCKER_MISSING_SECRET:<NAME>` | Add missing secret in Repo Settings → Actions → Secrets |
+| `BLOCKER_WORKFLOW_ERROR:deploy-frontends.yml` | Check workflow run logs for failing step |
+| `BLOCKER_VERCEL_CONNECT_GIT:<project>` | Connect Vercel project to Git repository |
 
-Troubleshooting (CI gates)
-Code	Meaning / Fix
-BLOCKER_MISSING_SECRET:<NAME>	Add the missing secret in Repo Settings → Actions → Secrets.
-BLOCKER_NAV_ASSETS	Fix manifest/icons (SVG-only) and redeploy.
-BLOCKER_LIVE_URLS	Ensure LIVE_URLS.json matches the required schema.
-BLOCKER_WORKFLOW_ERROR:<file>	Open the workflow run, check the failing step/logs.
+### Common Issues
 
-License
+**Build Failures:**
+- Ensure pnpm version ≥8.0.0
+- Check `pnpm-lock.yaml` is committed
+- Verify workspace dependencies in `package.json`
+
+**Deploy Failures:**  
+- Validate Vercel project IDs match repository secrets
+- Ensure Vercel CLI has proper permissions
+- Check build outputs exist in `apps/*/dist` or `.next`
+
+**Audit Failures:**
+- Verify `/prism` routes return 200 status
+- Check HTML contains exact marker text
+- Ensure no redirect loops
+
+## Acceptance Criteria
+
+✅ `/prism` endpoints return 200 with marker: `ATLAS • Prism UI — Peak Preview`  
+✅ Single robust GitHub Actions workflow with secret fallback  
+✅ Prebuilt Vercel deployments from root build  
+✅ SVG-only assets, no PNG references  
+✅ Quantum-grade architecture (RSC + Edge + WASM-ready)
+
+## License
+
 MIT
-
