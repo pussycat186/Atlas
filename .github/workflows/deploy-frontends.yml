@@ -81,7 +81,7 @@ jobs:
         env:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROOF }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        run: vercel deploy --prod --cwd apps/proof-messenger --token ${{ secrets.VERCEL_TOKEN }} --yes
+        run: vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
       
       - name: Audit Prism endpoints
         run: node scripts/audit-prism.mjs
