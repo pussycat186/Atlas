@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 
-// Mock visual regression testing - would normally compare with Figma exports
-// Since FIGMA_TOKEN is not available, using placeholder validation
-
 import fs from 'fs';
+
+// Check for required FIGMA_TOKEN
+if (!process.env.FIGMA_TOKEN) {
+  console.log('BLOCKER_MISSING_SECRET:FIGMA_TOKEN');
+  process.exit(1);
+}
+
+// Mock visual regression testing - would normally compare with Figma exports
 
 const THRESHOLD = 0.005; // 0.5% difference threshold
 
