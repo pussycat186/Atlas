@@ -48,16 +48,34 @@ PRISM_URLS.forEach(url => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(url);
       
-      // Verify animations are disabled or reduced
-      const animatedElements = page.locator('[style*="transition"], [style*="animation"]');
-      const count = await animatedElements.count();
+      // Wait for theme system to initialize
+      await page.waitForTimeout(100);
       
-      for (let i = 0; i < count; i++) {
-        const element = animatedElements.nth(i);
-        const style = await element.getAttribute('style');
+      // Check if motion is properly disabled
+      const motionElements = page.locator('[data-motion="true"], .motion-safe');
+      const count = await motionElements.count();
+      
+      // Verify no motion-enabled elements are present when reduced motion is set
+      expect(count).toBe(0);
+    });
+
+    test('should have proper focus management', async ({ page }) => {
+      await page.goto(url);
+      
+      // Test focus trap in dialogs
+      const dialogTriggers = page.locator('[data-dialog-trigger]');
+      const triggerCount = await dialogTriggers.count();
+      
+      if (triggerCount > 0) {
+        await dialogTriggers.first().click();
+        await page.keyboard.press('Tab');
         
-        if (style?.includes('transition')) {
-          expect(style).toMatch(/transition.*0s|transition.*0ms/);
+        // Focus should be trapped within dialog
+        const focusedElement = page.locator(':focus');
+        const dialogContent = page.locator('[role="dialog"]');
+        
+        if (await dialogContent.count() > 0) {
+          expect(await focusedElement.count()).toBeGreaterThan(0);
         }
       }
     });

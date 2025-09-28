@@ -19,6 +19,8 @@
     "clean": "turbo run clean && rimraf packages/**/dist services/**/dist apps/**/dist || true",
     "test:e2e": "playwright test",
     "smoke": "./scripts/smoke.sh",
+    "tokens:pull": "node scripts/tokens-pull.mjs",
+    "tokens:build": "cd packages/ui-tokens && pnpm build",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"

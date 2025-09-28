@@ -8,6 +8,9 @@
     "build:tokens": {
       "outputs": ["dist/**"]
     },
+    "tokens:pull": {
+      "cache": false
+    },
     "build:wasm": {
       "outputs": ["packages/core-wasm/**"]
     },

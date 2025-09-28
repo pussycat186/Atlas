@@ -21,6 +21,7 @@
     "@atlas/ui": "workspace:*",
     "@atlas/ui-system": "workspace:*",
     "@atlas/ui-tokens": "workspace:*",
+    "@atlas/ui-primitives": "workspace:*",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.2.6",

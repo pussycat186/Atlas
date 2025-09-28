@@ -81,6 +81,9 @@ importers:
       '@atlas/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@atlas/ui-primitives':
+        specifier: workspace:*
+        version: link:../../packages/ui-primitives
       '@atlas/ui-system':
         specifier: workspace:*
         version: link:../../packages/ui-system
@@ -190,6 +193,9 @@ importers:
       '@atlas/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@atlas/ui-primitives':
+        specifier: workspace:*
+        version: link:../../packages/ui-primitives
       '@atlas/ui-system':
         specifier: workspace:*
         version: link:../../packages/ui-system
@@ -302,6 +308,9 @@ importers:
       '@atlas/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@atlas/ui-primitives':
+        specifier: workspace:*
+        version: link:../../packages/ui-primitives
       '@atlas/ui-system':
         specifier: workspace:*
         version: link:../../packages/ui-system
@@ -511,9 +520,6 @@ importers:
 
   packages/ui:
     dependencies:
-      '@atlas/ui-system':
-        specifier: workspace:*
-        version: link:../ui-system
       framer-motion:
         specifier: ^10.16.16
         version: 10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
