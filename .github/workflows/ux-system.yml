@@ -32,6 +32,8 @@ jobs:
         run: pnpm tokens:pull
         env:
           FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+          FIGMA_PAGE_NAME: Atlas UI
           
       - name: Build tokens
         run: pnpm tokens:build
@@ -49,7 +51,7 @@ jobs:
         run: pnpm test
         
       - name: Check performance budgets
-        run: node scripts/performance-check.mjs
+        run: pnpm analyze:bundles
         
       - name: Install Playwright
         run: npx playwright install --with-deps
@@ -62,6 +64,9 @@ jobs:
         
       - name: Visual regression test
         run: node scripts/visual-compare.mjs
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
         
   deploy:
     needs: build-and-test
