@@ -41,3 +41,26 @@
 2025-09-28T17:41:01.516505Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
 2025-09-28T17:41:06.665400Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Tooltip.tsx")}
 2025-09-28T17:41:06.665423Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:42:25.766273Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(""), AnchoredSystemPathBuf("_tmp_87920_8f1862614edef5e98177c40953bc2cf2")}
+2025-09-28T17:42:25.766286Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-28T17:42:26.446841Z  WARN turborepo_filewatch::package_watcher: lagged behind 86 processing file watching events
+2025-09-28T17:42:26.448118Z  WARN turborepo_filewatch::package_watcher: lagged behind 192 processing file watching events
+2025-09-28T17:42:26.448903Z  WARN turborepo_filewatch::globwatcher: encountered filewatching error, flushing all globs: channel lagged by 203
+2025-09-28T17:42:26.456166Z  WARN turborepo_filewatch::globwatcher: encountered filewatching error, flushing all globs: channel lagged by 390
+2025-09-28T17:42:26.457455Z  WARN turborepo_lib::package_changes_watcher: file event lagged
+2025-09-28T17:42:26.458172Z  WARN turborepo_filewatch::package_watcher: lagged behind 207 processing file watching events
+2025-09-28T17:42:33.767321Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/db/.turbo"), AnchoredSystemPathBuf("packages/config/.turbo"), AnchoredSystemPathBuf("packages/fabric-client/.turbo"), AnchoredSystemPathBuf("packages/ui/.turbo"), AnchoredSystemPathBuf("packages/fabric-crypto/.turbo"), AnchoredSystemPathBuf("services/drive/.turbo"), AnchoredSystemPathBuf("services/witness-node/.turbo"), AnchoredSystemPathBuf("packages/fabric-protocol/.turbo"), AnchoredSystemPathBuf("packages/design-system/.turbo"), AnchoredSystemPathBuf("services/gateway/.turbo"), AnchoredSystemPathBuf("packages/core/.turbo")}
+2025-09-28T17:42:33.767551Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/config"), path: AnchoredSystemPathBuf("packages/config") }, WorkspacePackage { name: Other("@atlas/db"), path: AnchoredSystemPathBuf("packages/db") }, WorkspacePackage { name: Other("@atlas/core"), path: AnchoredSystemPathBuf("packages/core") }, WorkspacePackage { name: Other("@atlas/fabric-crypto"), path: AnchoredSystemPathBuf("packages/fabric-crypto") }, WorkspacePackage { name: Other("@atlas/drive"), path: AnchoredSystemPathBuf("services/drive") }, WorkspacePackage { name: Other("@atlas/fabric-protocol"), path: AnchoredSystemPathBuf("packages/fabric-protocol") }, WorkspacePackage { name: Other("@atlas/fabric-client"), path: AnchoredSystemPathBuf("packages/fabric-client") }, WorkspacePackage { name: Other("@atlas/ui"), path: AnchoredSystemPathBuf("packages/ui") }, WorkspacePackage { name: Other("@atlas/gateway"), path: AnchoredSystemPathBuf("services/gateway") }, WorkspacePackage { name: Other("@atlas/witness-node"), path: AnchoredSystemPathBuf("services/witness-node") }, WorkspacePackage { name: Other("@atlas/design-system"), path: AnchoredSystemPathBuf("packages/design-system") }}))
+2025-09-28T17:42:33.913114Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913146Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913164Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913184Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913200Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913218Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913239Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913256Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913277Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913296Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:42:33.913319Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-28T17:43:19.168923Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-tokens/package.json")}
+2025-09-28T17:43:19.168947Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-tokens"), path: AnchoredSystemPathBuf("packages/ui-tokens") }}))
