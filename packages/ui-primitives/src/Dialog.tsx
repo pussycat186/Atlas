@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useEffect, useRef, KeyboardEvent } from 'react';
 
 interface DialogContextValue {

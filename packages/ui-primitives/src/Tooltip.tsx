@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useRef, useEffect } from 'react';
 
 interface TooltipContextValue {

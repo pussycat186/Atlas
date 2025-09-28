@@ -23,3 +23,21 @@
 2025-09-28T17:39:09.362170Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/dev-portal"), path: AnchoredSystemPathBuf("apps/dev-portal") }}))
 2025-09-28T17:39:14.776509Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps/proof-messenger/app/layout.tsx")}
 2025-09-28T17:39:14.776529Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/proof-messenger"), path: AnchoredSystemPathBuf("apps/proof-messenger") }}))
+2025-09-28T17:40:02.763851Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Button.tsx")}
+2025-09-28T17:40:02.763984Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:40:24.964332Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Dialog.tsx")}
+2025-09-28T17:40:24.964348Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:40:34.564528Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Menu.tsx")}
+2025-09-28T17:40:34.564555Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:40:39.465277Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Select.tsx")}
+2025-09-28T17:40:39.465329Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:40:44.364860Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Tabs.tsx")}
+2025-09-28T17:40:44.364883Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:40:48.564876Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Toast.tsx")}
+2025-09-28T17:40:48.564890Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:40:56.765604Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Switch.tsx")}
+2025-09-28T17:40:56.765619Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:41:01.516459Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Input.tsx")}
+2025-09-28T17:41:01.516505Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-28T17:41:06.665400Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Tooltip.tsx")}
+2025-09-28T17:41:06.665423Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))

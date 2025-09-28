@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useEffect } from 'react';
 
 interface ToastContextValue {
