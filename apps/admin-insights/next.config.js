@@ -6,7 +6,15 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  transpilePackages: ['@atlas/config', '@atlas/core', '@atlas/ui', '@atlas/ui-system', '@atlas/ui-tokens', '@atlas/ui-primitives', '@atlas/db'],
+  transpilePackages: [
+    '@atlas/ui',
+    '@atlas/ui-primitives', 
+    '@atlas/ui-system',
+    '@atlas/ui-tokens',
+    '@atlas/config',
+    '@atlas/core',
+    '@atlas/db'
+  ],
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
