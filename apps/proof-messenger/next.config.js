@@ -117,7 +117,6 @@ const nextConfig = {
     };
     return config;
   },
-  // Add caching headers for static assets
   async headers() {
     return [
       {
@@ -126,6 +125,18 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, s-maxage=60, stale-while-revalidate=300',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
           },
         ],
       },
