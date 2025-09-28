@@ -1,6 +1,7 @@
 {
   "name": "@atlas/ui",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -14,11 +15,12 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "dev": "tsc --watch",
     "test": "echo 'No tests yet'",
     "clean": "rm -rf dist"
   },
+  "sideEffects": false,
   "dependencies": {
     "framer-motion": "^10.16.16",
     "react": "^18.2.0",

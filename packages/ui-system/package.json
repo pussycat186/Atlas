@@ -1,6 +1,7 @@
 {
   "name": "@atlas/ui-system",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -14,10 +15,11 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
+  "sideEffects": false,
   "dependencies": {
     "@atlas/ui-primitives": "workspace:*",
     "@atlas/ui-tokens": "workspace:*",

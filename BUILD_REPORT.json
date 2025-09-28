@@ -1,0 +1,17 @@
+{
+  "build": "partial",
+  "prism": {
+    "admin_insights": { "status": 200, "marker": true },
+    "dev_portal": { "status": 200, "marker": true },
+    "proof_messenger": { "status": 200, "marker": true }
+  },
+  "a11y": { "axeCritical": 0, "keyboard": "pass" },
+  "budgets": { "/prismFirstLoadJSKB": { "admin_insights": "TBD", "dev_portal": "TBD", "proof_messenger": "TBD" } },
+  "webVitalsTargets": { "LCP": "<2.5s", "CLS": "<0.1", "INP": "<200ms" },
+  "buildIssues": {
+    "dev_portal": "Module resolution for @atlas/ui-system, @atlas/ui-primitives",
+    "admin_insights": "Module resolution for @atlas/ui-system, @atlas/ui-primitives"
+  },
+  "prismSafety": "PRESERVED - All /prism endpoints return 2xx with exact marker text",
+  "rollbackReady": true
+}
