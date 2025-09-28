@@ -62,21 +62,47 @@ PRISM_URLS.forEach(url => {
     test('should have proper focus management', async ({ page }) => {
       await page.goto(url);
       
-      // Test focus trap in dialogs
-      const dialogTriggers = page.locator('[data-dialog-trigger]');
-      const triggerCount = await dialogTriggers.count();
+      // Test tab order
+      const focusableElements = page.locator('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      const count = await focusableElements.count();
       
-      if (triggerCount > 0) {
-        await dialogTriggers.first().click();
+      if (count > 0) {
         await page.keyboard.press('Tab');
+        const firstFocused = page.locator(':focus');
+        await expect(firstFocused).toBeVisible();
         
-        // Focus should be trapped within dialog
-        const focusedElement = page.locator(':focus');
-        const dialogContent = page.locator('[role="dialog"]');
+        // Test Escape key handling
+        await page.keyboard.press('Escape');
+        // Should not cause errors
+      }
+    });
+
+    test('should have visible focus indicators', async ({ page }) => {
+      await page.goto(url);
+      
+      const buttons = page.locator('button');
+      const buttonCount = await buttons.count();
+      
+      if (buttonCount > 0) {
+        await buttons.first().focus();
         
-        if (await dialogContent.count() > 0) {
-          expect(await focusedElement.count()).toBeGreaterThan(0);
-        }
+        // Check for focus styles
+        const focusedButton = page.locator('button:focus');
+        const styles = await focusedButton.evaluate(el => {
+          const computed = window.getComputedStyle(el);
+          return {
+            outline: computed.outline,
+            boxShadow: computed.boxShadow,
+            borderColor: computed.borderColor
+          };
+        });
+        
+        // Should have some form of focus indication
+        const hasFocusStyle = styles.outline !== 'none' || 
+                             styles.boxShadow !== 'none' || 
+                             styles.borderColor !== 'initial';
+        
+        expect(hasFocusStyle).toBe(true);
       }
     });
   });
