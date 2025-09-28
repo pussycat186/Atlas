@@ -81,6 +81,12 @@ importers:
       '@atlas/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@atlas/ui-system':
+        specifier: workspace:*
+        version: link:../../packages/ui-system
+      '@atlas/ui-tokens':
+        specifier: workspace:*
+        version: link:../../packages/ui-tokens
       '@radix-ui/react-select':
         specifier: ^2.2.6
         version: 2.2.6(@types/react-dom@18.3.7(@types/react@18.3.24))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -184,6 +190,12 @@ importers:
       '@atlas/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@atlas/ui-system':
+        specifier: workspace:*
+        version: link:../../packages/ui-system
+      '@atlas/ui-tokens':
+        specifier: workspace:*
+        version: link:../../packages/ui-tokens
       '@radix-ui/react-select':
         specifier: ^2.2.6
         version: 2.2.6(@types/react-dom@18.3.7(@types/react@18.3.24))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -290,6 +302,12 @@ importers:
       '@atlas/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@atlas/ui-system':
+        specifier: workspace:*
+        version: link:../../packages/ui-system
+      '@atlas/ui-tokens':
+        specifier: workspace:*
+        version: link:../../packages/ui-tokens
       '@radix-ui/react-select':
         specifier: ^2.2.6
         version: 2.2.6(@types/react-dom@18.3.7(@types/react@18.3.24))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -493,6 +511,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@atlas/ui-system':
+        specifier: workspace:*
+        version: link:../ui-system
       framer-motion:
         specifier: ^10.16.16
         version: 10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -509,6 +530,65 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.0
         version: 18.3.7(@types/react@18.3.24)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.2
+
+  packages/ui-primitives:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.8
+        version: 29.5.14
+      '@types/react':
+        specifier: ^18.2.0
+        version: 18.3.24
+      '@types/react-dom':
+        specifier: ^18.2.0
+        version: 18.3.7(@types/react@18.3.24)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.13)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.2
+
+  packages/ui-system:
+    dependencies:
+      '@atlas/ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@atlas/ui-tokens':
+        specifier: workspace:*
+        version: link:../ui-tokens
+      framer-motion:
+        specifier: ^10.16.16
+        version: 10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.0
+        version: 18.3.24
+      '@types/react-dom':
+        specifier: ^18.2.0
+        version: 18.3.7(@types/react@18.3.24)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.2
+
+  packages/ui-tokens:
+    devDependencies:
       typescript:
         specifier: ^5.3.0
         version: 5.9.2
