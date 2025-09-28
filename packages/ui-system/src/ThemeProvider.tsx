@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark' | 'high-contrast' | 'system';
 
 interface ThemeContextValue {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  resolvedTheme: 'light' | 'dark';
+  resolvedTheme: 'light' | 'dark' | 'high-contrast';
   reducedMotion: boolean;
 }
 
@@ -23,7 +23,7 @@ export function ThemeProvider({
   storageKey = 'atlas-theme'
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark' | 'high-contrast'>('light');
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -39,10 +39,16 @@ export function ThemeProvider({
   useEffect(() => {
     const updateResolvedTheme = () => {
       if (theme === 'system') {
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        setResolvedTheme(systemTheme);
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+        
+        if (prefersHighContrast) {
+          setResolvedTheme('high-contrast');
+        } else {
+          setResolvedTheme(prefersDark ? 'dark' : 'light');
+        }
       } else {
-        setResolvedTheme(theme);
+        setResolvedTheme(theme as 'light' | 'dark' | 'high-contrast');
       }
     };
 
@@ -70,7 +76,8 @@ export function ThemeProvider({
   useEffect(() => {
     // Apply theme to document
     const root = document.documentElement;
-    root.classList.remove('light', 'dark');
+    root.setAttribute('data-theme', resolvedTheme);
+    root.classList.remove('light', 'dark', 'high-contrast');
     root.classList.add(resolvedTheme);
   }, [resolvedTheme]);
 
