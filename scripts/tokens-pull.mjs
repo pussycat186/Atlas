@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 
-// Mock Figma integration - would normally fetch from Figma API
-// Since FIGMA_TOKEN is not available, using design system defaults
-
 import fs from 'fs';
 import path from 'path';
+
+// Check for required FIGMA_TOKEN
+if (!process.env.FIGMA_TOKEN) {
+  console.log('BLOCKER_MISSING_SECRET:FIGMA_TOKEN');
+  process.exit(1);
+}
+
+// Mock Figma integration - would fetch from Figma API with FIGMA_TOKEN
 
 const mockFigmaTokens = {
   color: {

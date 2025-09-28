@@ -64,8 +64,24 @@ function checkContrast(tokens) {
 const tokens = JSON.parse(fs.readFileSync('tokens.json', 'utf8'));
 
 // Generate CSS custom properties
-function generateCSS(tokens, theme = 'light') {
-  const colors = tokens.color[theme];
+function generateCSS(tokens) {
+  let css = '';
+  
+  // Generate for each theme
+  Object.entries(tokens.color).forEach(([themeName, colors]) => {
+    css += `:root[data-theme="${themeName}"] {\n`;
+    
+    // Colors for this theme
+    Object.entries(colors).forEach(([key, value]) => {
+      css += `  --color-${key}: ${value};\n`;
+    });
+    
+    css += `}\n\n`;
+  });
+  
+  // Base tokens (theme-independent)
+  css += `:root {\n`;
+  
   const spacing = tokens.spacing;
   const radius = tokens.radius;
   const shadow = tokens.shadow;
@@ -73,12 +89,6 @@ function generateCSS(tokens, theme = 'light') {
   const zIndex = tokens.zIndex;
   const motion = tokens.motion;
 
-  let css = `:root {\n`;
-  
-  // Colors
-  Object.entries(colors).forEach(([key, value]) => {
-    css += `  --color-${key}: ${value};\n`;
-  });
   
   // Spacing
   Object.entries(spacing).forEach(([key, value]) => {
@@ -120,22 +130,6 @@ function generateCSS(tokens, theme = 'light') {
   });
   
   css += `}\n\n`;
-  
-  // Dark theme
-  if (theme === 'light') {
-    css += `@media (prefers-color-scheme: dark) {\n  :root {\n`;
-    Object.entries(tokens.color.dark).forEach(([key, value]) => {
-      css += `    --color-${key}: ${value};\n`;
-    });
-    css += `  }\n}\n\n`;
-    
-    // High contrast theme
-    css += `@media (prefers-contrast: high) {\n  :root {\n`;
-    Object.entries(tokens.color.highContrast).forEach(([key, value]) => {
-      css += `    --color-${key}: ${value};\n`;
-    });
-    css += `  }\n}\n\n`;
-  }
   
   // Reduced motion
   css += `@media (prefers-reduced-motion: reduce) {\n  :root {\n`;
