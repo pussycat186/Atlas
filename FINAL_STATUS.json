@@ -1,0 +1,9 @@
+{
+  "build": "partial",
+  "prism": {
+    "admin_insights": { "status": 200, "marker": true },
+    "dev_portal": { "status": 200, "marker": true },
+    "proof_messenger": { "status": 200, "marker": true }
+  },
+  "a11y": { "axeCritical": 0, "keyboard": "pass" }
+}
