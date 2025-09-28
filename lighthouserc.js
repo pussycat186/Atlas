@@ -19,7 +19,9 @@ module.exports = {
         'speed-index': ['error', { maxNumericValue: 3400 }],
         'interactive': ['error', { maxNumericValue: 3800 }],
         'resource-summary:script:size': ['error', { maxNumericValue: 204800 }], // 200KB
-        'resource-summary:total:size': ['error', { maxNumericValue: 1048576 }] // 1MB
+        'resource-summary:total:size': ['error', { maxNumericValue: 1048576 }], // 1MB
+        'first-meaningful-paint': ['error', { maxNumericValue: 2500 }],
+        'max-potential-fid': ['error', { maxNumericValue: 200 }]
       }
     },
     upload: {

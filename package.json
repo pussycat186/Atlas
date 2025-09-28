@@ -21,6 +21,7 @@
     "smoke": "./scripts/smoke.sh",
     "tokens:pull": "node scripts/tokens-pull.mjs",
     "tokens:build": "cd packages/ui-tokens && pnpm build",
+    "analyze:bundles": "node scripts/bundle-analyzer.mjs",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
