@@ -1,6 +1,6 @@
-# Atlas Monorepo
+# Atlas Quantum-Grade Monorepo
 
-Production-first monorepo for **Atlas** web applications with quantum-grade architecture.
+Production-first monorepo for **Atlas** web applications with quantum-grade architecture featuring WASM-accelerated core, edge runtime optimization, and sub-200KB client bundles.
 
 ## Live Applications
 
@@ -17,22 +17,27 @@ Production-first monorepo for **Atlas** web applications with quantum-grade arch
 
 ## Quantum-Grade Architecture
 
+**Core Compute (WASM-first):**
+- Rust crate `packages/core-rs` for hot-path operations (hashing, validation)
+- WebAssembly via `wasm-pack` producing `@atlas/core-wasm` npm package
+- TypeScript wrapper `@atlas/core` with graceful JS fallback
+
 **Runtime Strategy:**
-- Server Components + Route Handlers (RSC-first)
-- Edge runtime for IO-light endpoints
-- No Node.js APIs in client code
-- Client config via `NEXT_PUBLIC_*` only
+- Next.js 14 App Router with RSC streaming
+- Edge runtime for lightweight API handlers (`export const runtime = 'edge'`)
+- Turborepo build caching and incremental compilation
+- Client bundles ≤ 200KB first-load per app
 
-**Performance Guardrails:**
-- Minimal client JS bundles
-- SVG-only icons (no PNG/bitmap)
-- WASM-ready hot paths (feature-flagged)
-- Low-overhead data adapters
+**Data & API:**
+- Drizzle ORM + SQLite for minimal data layer
+- tRPC over HTTP for type-safe APIs
+- Health check endpoints at `/api/trpc/[trpc]`
 
-**Build Strategy:**
-- Single root build → prebuilt Vercel deploys
-- Shared packages via pnpm workspace
-- Transpiled packages for Next.js compatibility
+**Performance & Security:**
+- Strict CSP headers via Next.js config
+- SVG-only assets, no bitmap images
+- Tree-shaking with Turborepo cache
+- OpenTelemetry-ready observability hooks
 
 ## Repository Structure
 
@@ -42,16 +47,82 @@ apps/
 ├── dev-portal/         # Developer portal  
 └── proof-messenger/    # Messaging app
 packages/
-├── @atlas/design-system/
-├── config/
-├── fabric-client/
-├── fabric-crypto/
-└── fabric-protocol/
-services/               # Backend services
-scripts/               # Build & audit tools
+├── core-rs/           # Rust WASM core
+├── core-wasm/         # Generated WASM package
+├── core/              # TypeScript WASM wrapper
+├── ui/                # Shared UI components
+├── db/                # Database layer
+├── config/            # Shared configs
+├── fabric-client/     # Legacy client
+├── fabric-crypto/     # Legacy crypto
+└── fabric-protocol/   # Legacy protocol
 ```
 
-## Required Secrets
+## Local Development
+
+### Prerequisites
+
+```bash
+# Install Rust toolchain
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup target add wasm32-unknown-unknown
+
+# Install wasm-pack
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+# Install Node.js 20+ and pnpm
+npm install -g pnpm@9.0.0
+```
+
+### Build & Run
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build WASM core (required first)
+pnpm build:wasm
+
+# Build all packages and apps
+pnpm build
+
+# Start all apps in development
+pnpm dev
+
+# Run specific app
+cd apps/proof-messenger && pnpm dev
+```
+
+### Testing
+
+```bash
+# Unit tests
+pnpm test
+
+# E2E tests
+pnpm test:e2e
+
+# Type checking
+pnpm type-check
+
+# Linting
+pnpm lint
+```
+
+## Deployment
+
+### CI/CD Pipeline
+
+**Trigger:** Push to `main` or manual dispatch via GitHub Actions
+
+**Steps:**
+1. **Secret Validation** - Checks all required Vercel secrets
+2. **Turborepo Build** - Cached incremental builds
+3. **WASM Compilation** - Rust → WebAssembly → npm package
+4. **Multi-App Deploy** - Parallel Vercel deployments
+5. **Prism Audit** - Validates `/prism` endpoints contain required marker
+
+### Required Secrets
 
 Configure in GitHub Repository Settings → Actions → Secrets:
 
@@ -59,96 +130,53 @@ Configure in GitHub Repository Settings → Actions → Secrets:
 - `VERCEL_ORG_ID` - Vercel organization ID
 - `VERCEL_PROJECT_ID_PROOF` - proof-messenger project
 - `VERCEL_PROJECT_ID_INSIGHTS` - admin-insights project  
-- `VERCEL_PROJECT_ID_DEV` or `VERCEL_PROJECT_ID_DEVPORTAL` - dev-portal project (fallback)
-
-## CI/CD Pipeline
-
-**Trigger:** Push to `main` or manual dispatch
-
-**Steps:**
-1. **Secret Gate** - Validates all required secrets, computes DEV fallback
-2. **Build** - Single root build with pnpm workspace
-3. **Deploy** - Prebuilt deployment to Vercel per app
-4. **Audit** - Validates `/prism` endpoints contain required marker
-
-**Concurrency:** `deploy-frontends` group with cancel-in-progress
-
-## Local Development
-
-```bash
-# Install dependencies
-pnpm install
-
-# Start all apps in development
-pnpm --filter "./apps/*" dev
-
-# Build all apps
-pnpm --filter "./apps/*" build
-
-# Run tests
-pnpm test
-```
-
-## Deployment Runbook
+- `VERCEL_PROJECT_ID_DEV` - dev-portal project
 
 ### Manual Deploy
+
 ```bash
-# Trigger via GitHub Actions
+# Trigger via GitHub CLI
 gh workflow run deploy-frontends.yml
 
 # Or via GitHub UI: Actions → Deploy Frontends → Run workflow
 ```
 
-### Emergency Rollback
-```bash
-# Revert to previous commit
-git revert HEAD
-git push origin main
+## Performance Metrics
 
-# Or rollback via Vercel dashboard per app
-```
-
-### Audit Verification
-```bash
-# Run audit locally
-node scripts/audit-prism.mjs
-
-# Expected output (success):
-{"admin_insights":{"status":200,"marker":true},"dev_portal":{"status":200,"marker":true},"proof_messenger":{"status":200,"marker":true}}
-```
+- **Bundle Size**: ≤ 200KB first-load per app
+- **Build Cache**: 80%+ cache hit rate via Turborepo
+- **WASM Loading**: <50ms initialization with JS fallback
+- **Edge Runtime**: <100ms cold start for API routes
 
 ## Troubleshooting
 
-| Code | Meaning / Fix |
-|------|---------------|
+| Error | Solution |
+|-------|----------|
 | `BLOCKER_MISSING_SECRET:<NAME>` | Add missing secret in Repo Settings → Actions → Secrets |
-| `BLOCKER_WORKFLOW_ERROR:deploy-frontends.yml` | Check workflow run logs for failing step |
-| `BLOCKER_VERCEL_CONNECT_GIT:<project>` | Connect Vercel project to Git repository |
+| `wasm-pack not found` | Install via `curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf \| sh` |
+| `Build cache miss` | Check `.turbo/` directory permissions |
+| `WASM load failed` | Verify `@atlas/core-wasm` package built correctly |
 
 ### Common Issues
 
-**Build Failures:**
-- Ensure pnpm version ≥8.0.0
-- Check `pnpm-lock.yaml` is committed
-- Verify workspace dependencies in `package.json`
+**WASM Build Failures:**
+- Ensure Rust toolchain installed: `rustup --version`
+- Check wasm32 target: `rustup target list --installed`
+- Verify wasm-pack: `wasm-pack --version`
 
-**Deploy Failures:**  
-- Validate Vercel project IDs match repository secrets
-- Ensure Vercel CLI has proper permissions
-- Check build outputs exist in `apps/*/dist` or `.next`
+**Bundle Size Violations:**
+- Run `pnpm build` and check Next.js bundle analyzer
+- Remove unused dependencies with `knip`
+- Ensure tree-shaking working correctly
 
-**Audit Failures:**
-- Verify `/prism` routes return 200 status
-- Check HTML contains exact marker text
-- Ensure no redirect loops
+**Edge Runtime Errors:**
+- Check Node.js APIs not used in edge handlers
+- Verify `export const runtime = 'edge'` in API routes
+- Use `@atlas/core` instead of Node-specific crypto
 
-## Acceptance Criteria
+## Architecture Decision Records
 
-✅ `/prism` endpoints return 200 with marker: `ATLAS • Prism UI — Peak Preview`  
-✅ Single robust GitHub Actions workflow with secret fallback  
-✅ Prebuilt Vercel deployments from root build  
-✅ SVG-only assets, no PNG references  
-✅ Quantum-grade architecture (RSC + Edge + WASM-ready)
+See `docs/adr/0001-quantum-arch.md` for detailed rationale and trade-offs.
 
 ## License
 

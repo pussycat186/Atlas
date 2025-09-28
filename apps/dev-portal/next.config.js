@@ -1,21 +1,40 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Build healing: disable type checking and eslint during builds
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
   },
-  transpilePackages: ['@atlas/config'],
+  transpilePackages: ['@atlas/config', '@atlas/core', '@atlas/ui', '@atlas/db'],
   webpack: (config) => {
-    // Exclude crypto package from browser bundles
     config.resolve.alias = {
       ...config.resolve.alias,
       '@atlas/fabric-crypto': false,
       'fabric-crypto': false,
     };
     return config;
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+    ];
   },
 };
 
