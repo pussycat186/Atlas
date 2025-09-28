@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useRef, KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
+import { useTheme } from './ThemeProvider';
 
 // Inline simplified tabs for build compatibility
 interface TabsContextValue {
@@ -68,6 +69,7 @@ export function AtlasTabs({
   luxury = false,
   className 
 }: AtlasTabsProps) {
+  const { reducedMotion } = useTheme();
   const tabListClass = `border-b ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`;
   const containerClass = `container mx-auto px-4`;
   const flexClass = `flex`;
@@ -109,9 +111,9 @@ export function AtlasTabs({
         {tabs.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: luxury ? 0.5 : 0.2 }}
+              initial={reducedMotion ? {} : { opacity: 0, y: 20 }}
+              animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
+              transition={reducedMotion ? { duration: 0 } : { duration: luxury ? 0.5 : 0.2 }}
               className={contentClass}
             >
               {tab.content}

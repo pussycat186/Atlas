@@ -6,6 +6,7 @@ interface ThemeContextValue {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   resolvedTheme: 'light' | 'dark';
+  reducedMotion: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -23,6 +24,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     // Load theme from localStorage on mount
@@ -44,13 +46,25 @@ export function ThemeProvider({
       }
     };
 
-    updateResolvedTheme();
+    const updateReducedMotion = () => {
+      setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    };
 
+    updateResolvedTheme();
+    updateReducedMotion();
+
+    const colorQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    
     if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      mediaQuery.addEventListener('change', updateResolvedTheme);
-      return () => mediaQuery.removeEventListener('change', updateResolvedTheme);
+      colorQuery.addEventListener('change', updateResolvedTheme);
     }
+    motionQuery.addEventListener('change', updateReducedMotion);
+    
+    return () => {
+      colorQuery.removeEventListener('change', updateResolvedTheme);
+      motionQuery.removeEventListener('change', updateReducedMotion);
+    };
   }, [theme]);
 
   useEffect(() => {
@@ -68,7 +82,7 @@ export function ThemeProvider({
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme, reducedMotion }}>
       {children}
     </ThemeContext.Provider>
   );

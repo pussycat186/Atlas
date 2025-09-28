@@ -1,6 +1,66 @@
 const fs = require('fs');
 const path = require('path');
 
+// WCAG contrast checker
+function getLuminance(hex) {
+  const rgb = parseInt(hex.slice(1), 16);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = (rgb >> 0) & 0xff;
+  
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    c = c / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function getContrastRatio(hex1, hex2) {
+  const l1 = getLuminance(hex1);
+  const l2 = getLuminance(hex2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function checkContrast(tokens) {
+  const violations = [];
+  
+  Object.entries(tokens.color).forEach(([themeName, colors]) => {
+    const textColors = ['text', 'textMuted'];
+    const bgColors = ['bg', 'surface'];
+    
+    textColors.forEach(textKey => {
+      bgColors.forEach(bgKey => {
+        if (colors[textKey] && colors[bgKey]) {
+          const ratio = getContrastRatio(colors[textKey], colors[bgKey]);
+          if (ratio < 4.5) {
+            violations.push({
+              theme: themeName,
+              text: textKey,
+              bg: bgKey,
+              ratio: ratio.toFixed(2),
+              textColor: colors[textKey],
+              bgColor: colors[bgKey]
+            });
+          }
+        }
+      });
+    });
+  });
+  
+  if (violations.length > 0) {
+    console.error('❌ WCAG AA Contrast Violations:');
+    violations.forEach(v => {
+      console.error(`  ${v.theme}: ${v.text} (${v.textColor}) on ${v.bg} (${v.bgColor}) = ${v.ratio}:1 (need 4.5:1)`);
+    });
+    process.exit(1);
+  }
+  
+  console.log('✅ All color combinations meet WCAG AA (4.5:1+)');
+}
+
 const tokens = JSON.parse(fs.readFileSync('tokens.json', 'utf8'));
 
 // Generate CSS custom properties
@@ -116,6 +176,9 @@ function generateTypes(tokens) {
 if (!fs.existsSync('dist')) {
   fs.mkdirSync('dist');
 }
+
+// Check contrast compliance first
+checkContrast(tokens);
 
 // Generate files
 const css = generateCSS(tokens);

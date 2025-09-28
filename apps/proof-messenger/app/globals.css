@@ -1,31 +1,11 @@
-:root {
-  --bg: #f7f7fb;
-  --surface: #ffffffcc;
-  --border: #e5e7eb;
-  --text: #111827;
-}
+@import '@atlas/ui-tokens/src/globals.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.light {
-  --bg: #f7f7fb;
-  --surface: #ffffffcc;
-  --border: #e5e7eb;
-  --text: #111827;
-}
-
-.dark {
-  --bg: #000000;
-  --surface: #111827cc;
-  --border: #374151;
-  --text: #f3f4f6;
-  /* neon-on-ink styles */
-}
-
-.light .neon {
-  --neon-color: #f3f4f6;
-  --neon-shadow: 0 0 10px #f3f4f6;
-}
-
-.dark .neon {
-  --neon-color: #111827;
-  --neon-shadow: 0 0 10px #111827;
+/* App-specific styles */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
