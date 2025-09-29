@@ -59,3 +59,27 @@
 2025-09-29T03:29:17.226124Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps/proof-messenger/out")}
 2025-09-29T03:29:17.226138Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/proof-messenger"), path: AnchoredSystemPathBuf("apps/proof-messenger") }}))
 2025-09-29T03:29:17.238502Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-29T04:19:19.839632Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("docs/evidence/20250929-1119")}
+2025-09-29T04:19:19.842092Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T04:21:37.824254Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("playwright-report/index.html"), AnchoredSystemPathBuf("playwright-report"), AnchoredSystemPathBuf("test-results")}
+2025-09-29T04:21:37.824269Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T04:21:56.522752Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("_tmp_17008_cbc789d54261b799acb7c03aa42a98a1"), AnchoredSystemPathBuf("")}
+2025-09-29T04:21:56.522765Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T04:22:02.828841Z  WARN turborepo_filewatch::package_watcher: lagged behind 356 processing file watching events
+2025-09-29T04:22:02.829140Z  WARN turborepo_lib::package_changes_watcher: file event lagged
+2025-09-29T04:22:02.830454Z  WARN turborepo_filewatch::globwatcher: encountered filewatching error, flushing all globs: channel lagged by 356
+2025-09-29T04:22:02.848437Z  WARN turborepo_filewatch::package_watcher: lagged behind 588 processing file watching events
+2025-09-29T04:22:03.722256Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("pnpm-lock.yaml.2786286530"), AnchoredSystemPathBuf("pnpm-lock.yaml")}
+2025-09-29T04:22:03.722273Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T04:22:03.852581Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("package.json"), AnchoredSystemPathBuf("package.json.155466019")}
+2025-09-29T04:22:03.859421Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(All)
+2025-09-29T04:22:36.824521Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("test-results")}
+2025-09-29T04:22:36.824540Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T04:22:48.822551Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("playwright-report/index.html"), AnchoredSystemPathBuf("playwright-report"), AnchoredSystemPathBuf("playwright-report/data")}
+2025-09-29T04:22:48.822587Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T04:45:22.960928Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".github/workflows/deploy-vercel-preview.yml")}
+2025-09-29T04:45:22.961601Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T04:45:31.158471Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".github/workflows/deploy-vercel-preview.yml")}
+2025-09-29T04:45:31.159114Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T04:45:47.553047Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".github/workflows/deploy-vercel-preview.yml")}
+2025-09-29T04:45:47.553059Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
