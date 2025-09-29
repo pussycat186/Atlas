@@ -8,3 +8,5 @@ export { Input } from './Input';
 export { Button } from './Button';
 export { Switch } from './Switch';
 export { VisuallyHidden } from './VisuallyHidden';
+export { ChatBubble } from './ChatBubble';
+export { Minimap } from './Minimap';

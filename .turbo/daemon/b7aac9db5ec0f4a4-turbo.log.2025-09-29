@@ -1,0 +1,29 @@
+2025-09-29T03:19:39.453941Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".github/workflows/deploy-vercel-preview.yml")}
+2025-09-29T03:19:39.457584Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T03:19:39.527446Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo/daemon/b7aac9db5ec0f4a4-turbo.log.2025-09-29"), AnchoredSystemPathBuf(".turbo/daemon/b7aac9db5ec0f4a4-turbo.log.2025-09-28")}
+2025-09-29T03:19:39.527460Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T03:19:50.428199Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".github/workflows/e2e-playwright.yml")}
+2025-09-29T03:19:50.428213Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T03:20:05.933043Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".github/workflows/perf-k6.yml")}
+2025-09-29T03:20:05.933065Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T03:20:20.427359Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".github/workflows/lhci-accessibility.yml")}
+2025-09-29T03:20:20.427372Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-09-29T03:20:29.627256Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps/proof-messenger/vercel.json")}
+2025-09-29T03:20:29.627865Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/proof-messenger"), path: AnchoredSystemPathBuf("apps/proof-messenger") }}))
+2025-09-29T03:20:39.842218Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps/proof-messenger/next.config.js")}
+2025-09-29T03:20:39.842267Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/proof-messenger"), path: AnchoredSystemPathBuf("apps/proof-messenger") }}))
+2025-09-29T03:21:24.326363Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-tokens/tokens.json")}
+2025-09-29T03:21:24.326377Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-tokens"), path: AnchoredSystemPathBuf("packages/ui-tokens") }}))
+2025-09-29T03:21:39.428493Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/ChatBubble.tsx")}
+2025-09-29T03:21:39.428508Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-29T03:22:00.625811Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/Minimap.tsx")}
+2025-09-29T03:22:00.625826Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-29T03:22:21.326185Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/index.ts")}
+2025-09-29T03:22:21.326200Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-29T03:23:42.127357Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/__tests__")}
+2025-09-29T03:23:42.127370Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-29T03:23:42.155311Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-09-29T03:23:51.126462Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/ui-primitives/src/__tests__/ChatBubble.test.tsx")}
+2025-09-29T03:23:51.126481Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@atlas/ui-primitives"), path: AnchoredSystemPathBuf("packages/ui-primitives") }}))
+2025-09-29T03:24:04.628348Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("tests/minimap.spec.ts")}
+2025-09-29T03:24:04.628367Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))

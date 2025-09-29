@@ -125,52 +125,7 @@ const nextConfig = {
     };
     return config;
   },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, s-maxage=60, stale-while-revalidate=300',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-        ],
-      },
-      {
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-    ];
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/gateway/:path*',
-        destination: `${process.env.ATLAS_GATEWAY_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev'}/:path*`,
-      },
-      {
-        source: '/api/drive/:path*',
-        destination: `${process.env.ATLAS_DRIVE_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev'}/:path*`,
-      },
-    ];
-  },
+
 };
 
 // Export plain Next config to avoid next-pwa manifest/icon generation on production
