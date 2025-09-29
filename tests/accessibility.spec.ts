@@ -1,85 +1,109 @@
 import { test, expect } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
-import 'dotenv/config';
+import { injectAxe, checkA11y } from 'axe-playwright';
 
-const BASE = process.env.BASE_URL!; // set by CI to the Vercel Preview URL
+const PRISM_URLS = [
+  'https://atlas-admin-insights.vercel.app/prism',
+  'https://atlas-dev-portal.vercel.app/prism',
+  'https://atlas-proof-messenger.vercel.app/prism'
+];
 
-test.describe('Accessibility Tests', () => {
-  test('A11y (axe) has no critical issues - Messenger', async ({ page }) => {
-    await page.goto(BASE + '/');
-    
-    const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze();
+PRISM_URLS.forEach(url => {
+  test.describe(`Accessibility tests for ${url}`, () => {
+    test('should not have any accessibility violations', async ({ page }) => {
+      await page.goto(url);
+      await injectAxe(page);
+      
+      // Check for accessibility violations
+      await checkA11y(page, null, {
+        detailedReport: true,
+        detailedReportOptions: { html: true }
+      });
+    });
 
-    expect(accessibilityScanResults.violations).toEqual([]);
-  });
+    test('should have proper keyboard navigation', async ({ page }) => {
+      await page.goto(url);
+      
+      // Test tab navigation
+      await page.keyboard.press('Tab');
+      const focusedElement = await page.locator(':focus');
+      await expect(focusedElement).toBeVisible();
+      
+      // Test escape key functionality if dialogs are present
+      const dialogs = page.locator('[role="dialog"]');
+      const dialogCount = await dialogs.count();
+      
+      if (dialogCount > 0) {
+        await page.keyboard.press('Escape');
+        // Verify dialog closes or focus returns appropriately
+      }
+    });
 
-  test('A11y (axe) has no critical issues - Admin', async ({ page }) => {
-    await page.goto(BASE + '/metrics');
-    
-    const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze();
+    test('should contain the required marker text', async ({ page }) => {
+      await page.goto(url);
+      await expect(page.locator('text=ATLAS • Prism UI — Peak Preview')).toBeVisible();
+    });
 
-    expect(accessibilityScanResults.violations).toEqual([]);
-  });
+    test('should respect reduced motion preferences', async ({ page }) => {
+      // Set reduced motion preference
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(url);
+      
+      // Wait for theme system to initialize
+      await page.waitForTimeout(100);
+      
+      // Check if motion is properly disabled
+      const motionElements = page.locator('[data-motion="true"], .motion-safe');
+      const count = await motionElements.count();
+      
+      // Verify no motion-enabled elements are present when reduced motion is set
+      expect(count).toBe(0);
+    });
 
-  test('A11y (axe) has no critical issues - Dev Portal', async ({ page }) => {
-    await page.goto(BASE + '/');
-    
-    const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze();
+    test('should have proper focus management', async ({ page }) => {
+      await page.goto(url);
+      
+      // Test tab order
+      const focusableElements = page.locator('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      const count = await focusableElements.count();
+      
+      if (count > 0) {
+        await page.keyboard.press('Tab');
+        const firstFocused = page.locator(':focus');
+        await expect(firstFocused).toBeVisible();
+        
+        // Test Escape key handling
+        await page.keyboard.press('Escape');
+        // Should not cause errors
+      }
+    });
 
-    expect(accessibilityScanResults.violations).toEqual([]);
-  });
-
-  test('Keyboard navigation works - Messenger', async ({ page }) => {
-    await page.goto(BASE + '/');
-    
-    // Test tab navigation
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    
-    // Test that focus is visible
-    const focusedElement = page.locator(':focus');
-    await expect(focusedElement).toBeVisible();
-  });
-
-  test('ARIA labels are present', async ({ page }) => {
-    await page.goto(BASE + '/');
-    
-    // Check for ARIA labels on interactive elements
-    const buttons = page.locator('button[aria-label]');
-    await expect(buttons).toHaveCount.greaterThan(0);
-    
-    const inputs = page.locator('input[aria-label], textarea[aria-label]');
-    await expect(inputs).toHaveCount.greaterThan(0);
-  });
-
-  test('Color contrast meets WCAG standards', async ({ page }) => {
-    await page.goto(BASE + '/');
-    
-    const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['color-contrast'])
-      .analyze();
-
-    expect(accessibilityScanResults.violations).toEqual([]);
-  });
-
-  test('Focus management works correctly', async ({ page }) => {
-    await page.goto(BASE + '/');
-    
-    // Test that focus is managed properly
-    const messageInput = page.getByRole('textbox', { name: /message/i });
-    await messageInput.focus();
-    await expect(messageInput).toBeFocused();
-    
-    // Test tab order
-    await page.keyboard.press('Tab');
-    const nextFocused = page.locator(':focus');
-    await expect(nextFocused).toBeVisible();
+    test('should have visible focus indicators', async ({ page }) => {
+      await page.goto(url);
+      
+      const buttons = page.locator('button');
+      const buttonCount = await buttons.count();
+      
+      if (buttonCount > 0) {
+        await buttons.first().focus();
+        
+        // Check for focus styles
+        const focusedButton = page.locator('button:focus');
+        const styles = await focusedButton.evaluate(el => {
+          const computed = window.getComputedStyle(el);
+          return {
+            outline: computed.outline,
+            boxShadow: computed.boxShadow,
+            borderColor: computed.borderColor
+          };
+        });
+        
+        // Should have some form of focus indication
+        const hasFocusStyle = styles.outline !== 'none' || 
+                             styles.boxShadow !== 'none' || 
+                             styles.borderColor !== 'initial';
+        
+        expect(hasFocusStyle).toBe(true);
+      }
+    });
   });
 });

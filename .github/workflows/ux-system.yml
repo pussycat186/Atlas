@@ -1,0 +1,94 @@
+name: UX System CI/CD
+
+on:
+  push:
+    branches: [main, chore/ux-system-rollout]
+  pull_request:
+    branches: [main]
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9.0.0
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Pull design tokens
+        run: pnpm tokens:pull
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+          FIGMA_PAGE_NAME: Atlas UI
+          
+      - name: Build tokens
+        run: pnpm tokens:build
+        
+      - name: Build packages
+        run: pnpm build
+        
+      - name: Type check
+        run: pnpm type-check
+        
+      - name: Lint
+        run: pnpm lint
+        
+      - name: Test
+        run: pnpm test
+        
+      - name: Check performance budgets
+        run: pnpm analyze:bundles
+        
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+        
+      - name: Run accessibility tests
+        run: npx playwright test tests/accessibility.spec.ts
+        
+      - name: Build Storybook
+        run: pnpm build-storybook
+        
+      - name: Visual regression test
+        run: node scripts/visual-compare.mjs
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+        
+  deploy:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+          working-directory: apps/admin-insights
+          
+      - name: Post-deploy audit
+        run: |
+          sleep 30
+          node scripts/audit-prism.mjs
+          
+      - name: Lighthouse CI
+        run: npx lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

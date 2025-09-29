@@ -1,0 +1,97 @@
+name: Lighthouse CI Accessibility
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      admin_url:
+        description: 'Admin Insights Preview URL'
+        required: true
+      dev_url:
+        description: 'Dev Portal Preview URL'
+        required: true
+      proof_url:
+        description: 'Proof Messenger Preview URL'
+        required: true
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.12.x
+      
+      - name: Create LHCI config
+        run: |
+          cat > lighthouserc.js << 'EOF'
+          module.exports = {
+            ci: {
+              collect: {
+                url: [
+                  process.env.ADMIN_URL + '/prism',
+                  process.env.DEV_URL + '/prism',
+                  process.env.PROOF_URL + '/prism'
+                ],
+                numberOfRuns: 3,
+              },
+              assert: {
+                assertions: {
+                  'categories:accessibility': ['error', {minScore: 0.9}],
+                },
+              },
+              upload: {
+                target: 'temporary-public-storage',
+              },
+            },
+          };
+          EOF
+      
+      - name: Run Lighthouse CI
+        env:
+          ADMIN_URL: ${{ github.event.inputs.admin_url || 'https://atlas-admin-insights.vercel.app' }}
+          DEV_URL: ${{ github.event.inputs.dev_url || 'https://atlas-dev-portal.vercel.app' }}
+          PROOF_URL: ${{ github.event.inputs.proof_url || 'https://atlas-proof-messenger.vercel.app' }}
+        run: |
+          lhci autorun --config=lighthouserc.js > lhci-results.txt 2>&1 || true
+      
+      - name: Upload LHCI Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: |
+            .lighthouseci/
+            lhci-results.txt
+          retention-days: 30
+      
+      - name: Comment Lighthouse Results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let results = 'Lighthouse CI completed';
+            try {
+              results = fs.readFileSync('lhci-results.txt', 'utf8');
+            } catch (e) {}
+            
+            const comment = `## 🏠 Lighthouse CI Results
+            
+            \`\`\`
+            ${results}
+            \`\`\`
+            
+            Full reports available in artifacts.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

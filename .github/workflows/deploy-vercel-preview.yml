@@ -1,0 +1,94 @@
+name: Deploy Vercel Preview
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build tokens
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+        run: |
+          pnpm -w run tokens:pull
+          pnpm -w run tokens:build
+      
+      - name: Build packages
+        run: pnpm -w build
+      
+      - name: Deploy Admin Insights
+        id: deploy-admin
+        run: |
+          cd apps/admin-insights
+          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          URL=$(npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+      
+      - name: Deploy Dev Portal
+        id: deploy-dev
+        run: |
+          cd apps/dev-portal
+          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          URL=$(npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+      
+      - name: Deploy Proof Messenger
+        id: deploy-proof
+        run: |
+          cd apps/proof-messenger
+          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          URL=$(npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+      
+      - name: Comment Preview URLs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## 🚀 Preview Deployments
+
+            PREVIEW_URL_ADMIN_INSIGHTS: ${{ steps.deploy-admin.outputs.url }}
+            PREVIEW_URL_DEV_PORTAL: ${{ steps.deploy-dev.outputs.url }}
+            PREVIEW_URL_PROOF_MESSENGER: ${{ steps.deploy-proof.outputs.url }}
+
+            All apps deployed to Vercel Preview. Ready for testing.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

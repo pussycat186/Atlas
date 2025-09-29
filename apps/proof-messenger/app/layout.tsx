@@ -1,39 +1,36 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import Providers from './providers';
+import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Atlas Proof Messenger - Verifiable Messaging',
-  description: 'Zero-crypto messaging with multi-witness quorum verification and integrity timeline',
-  manifest: '/manifest.json',
-  themeColor: '#2563eb',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Atlas Messenger',
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  icons: {
-    shortcut: '/favicon.svg',
-  },
-}
+  title: 'Atlas Proof Messenger',
+  description: 'Secure messaging with cryptographic proof verification',
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f172a' }
+  ],
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
-  )
+  );
 }
-

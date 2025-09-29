@@ -90,7 +90,15 @@ const withPWA = require('next-pwa')({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@atlas/config'],
+  transpilePackages: [
+    '@atlas/ui',
+    '@atlas/ui-primitives', 
+    '@atlas/ui-system',
+    '@atlas/ui-tokens',
+    '@atlas/config',
+    '@atlas/core',
+    '@atlas/db'
+  ],
   env: {
     ATLAS_GATEWAY_URL: process.env.ATLAS_GATEWAY_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev',
     ATLAS_DRIVE_URL: process.env.ATLAS_DRIVE_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev',
@@ -117,41 +125,7 @@ const nextConfig = {
     };
     return config;
   },
-  // Add caching headers for static assets
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, s-maxage=60, stale-while-revalidate=300',
-          },
-        ],
-      },
-      {
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-    ];
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/gateway/:path*',
-        destination: `${process.env.ATLAS_GATEWAY_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev'}/:path*`,
-      },
-      {
-        source: '/api/drive/:path*',
-        destination: `${process.env.ATLAS_DRIVE_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev'}/:path*`,
-      },
-    ];
-  },
+
 };
 
 // Export plain Next config to avoid next-pwa manifest/icon generation on production

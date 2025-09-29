@@ -1,0 +1,82 @@
+name: E2E Playwright Tests
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install pnpm
+        run: npm install -g pnpm@9.0.0
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build tokens
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+        run: |
+          pnpm -w run tokens:pull
+          pnpm -w run tokens:build
+      
+      - name: Build packages
+        run: pnpm -w build
+      
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+      
+      - name: Run Prism Audit
+        run: node scripts/audit-prism.mjs > prism-audit.json
+      
+      - name: Run Playwright tests
+        run: npx playwright test
+      
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+      
+      - name: Upload Prism Audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-audit
+          path: prism-audit.json
+          retention-days: 30
+      
+      - name: Comment Test Results
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            let auditResult = 'N/A';
+            try {
+              auditResult = fs.readFileSync('prism-audit.json', 'utf8');
+            } catch (e) {}
+            
+            const comment = `## 🎭 Playwright E2E Results
+            
+            **Prism Audit:** ${auditResult}
+            
+            Full report available in artifacts.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
