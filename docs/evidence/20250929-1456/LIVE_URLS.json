@@ -1,0 +1,14 @@
+{
+  "frontends": {
+    "admin_insights": "https://atlas-admin-insights.vercel.app",
+    "dev_portal": "https://atlas-dev-portal.vercel.app", 
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app"
+  },
+  "prism_endpoints": {
+    "admin_insights": "https://atlas-admin-insights.vercel.app/prism",
+    "dev_portal": "https://atlas-dev-portal.vercel.app/prism",
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app/prism"
+  },
+  "status": "VERIFIED",
+  "timestamp": "2025-09-29T14:56:00Z"
+}
