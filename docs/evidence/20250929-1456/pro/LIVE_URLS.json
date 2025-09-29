@@ -1,0 +1,23 @@
+{
+  "sku": "pro",
+  "flags": {
+    "ATLAS_SKU": "pro",
+    "ATLAS_QTCA": "full", 
+    "ATLAS_PQC": 1,
+    "ATLAS_PLUGINS_MODE": "market",
+    "ATLAS_MULTI_TENANT": 1,
+    "ATLAS_WALLET_CREDITS": 1
+  },
+  "frontends": {
+    "admin_insights": "https://atlas-admin-insights.vercel.app",
+    "dev_portal": "https://atlas-dev-portal.vercel.app",
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app"
+  },
+  "qtca": {
+    "tick": "https://atlas-admin-insights.vercel.app/qtca/tick",
+    "summary": "https://atlas-admin-insights.vercel.app/qtca/summary",
+    "stream": "https://atlas-admin-insights.vercel.app/qtca/stream"
+  },
+  "timestamp": "2025-09-29T15:55:00Z",
+  "status": "DEPLOYED"
+}

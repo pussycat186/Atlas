@@ -1,0 +1,22 @@
+{
+  "sku": "basic",
+  "flags": {
+    "ATLAS_SKU": "basic",
+    "ATLAS_QTCA": "lite", 
+    "ATLAS_PQC": 0,
+    "ATLAS_PLUGINS_MODE": "curated",
+    "ATLAS_MULTI_TENANT": 0,
+    "ATLAS_WALLET_CREDITS": 1
+  },
+  "frontends": {
+    "admin_insights": "https://atlas-admin-insights.vercel.app",
+    "dev_portal": "https://atlas-dev-portal.vercel.app",
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app"
+  },
+  "qtca": {
+    "tick": "https://atlas-admin-insights.vercel.app/qtca/tick",
+    "summary": "https://atlas-admin-insights.vercel.app/qtca/summary"
+  },
+  "timestamp": "2025-09-29T15:50:00Z",
+  "status": "DEPLOYED"
+}
