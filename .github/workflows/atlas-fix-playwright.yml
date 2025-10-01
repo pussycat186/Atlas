@@ -1,0 +1,37 @@
+name: Atlas Fix Playwright
+
+on:
+  workflow_dispatch:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+        
+      - name: Run Playwright tests
+        env:
+          BASE_ADMIN: https://atlas-admin-insights.vercel.app
+          BASE_DEV: https://atlas-dev-portal.vercel.app
+          BASE_PROOF: https://atlas-proof-messenger.vercel.app
+        run: |
+          npx playwright test --project=admin --project=dev --project=proof || { echo "BLOCKER_PLAYWRIGHT"; exit 1; }
+          
+      - name: Save evidence
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/playwright
+          cp -r playwright-report docs/evidence/$TS/playwright/
+          echo "{\"status\":\"PLAYWRIGHT_OK\",\"projects\":{\"admin\":\"PASS\",\"dev\":\"PASS\",\"proof\":\"PASS\"},\"evidence\":\"docs/evidence/$TS/playwright/\"}"

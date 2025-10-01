@@ -11,7 +11,7 @@ export default function PrismPage() {
   return (
     <>
       {/* SSR-visible marker (must be literal text, not computed) */}
-      <div data-prism-marker className="hidden">
+      <div data-prism-marker data-testid="prism-marker" className="hidden">
         ATLAS • Prism UI — Peak Preview
       </div>
       <div className={`min-h-screen transition-colors ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
