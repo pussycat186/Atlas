@@ -38,11 +38,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Build tokens
-        env:
-          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-        run: |
-          pnpm -w run tokens:pull
-          pnpm -w run tokens:build
+        run: pnpm -w run tokens:build
       
       - name: Build packages
         run: pnpm -w build

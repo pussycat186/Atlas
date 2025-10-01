@@ -1,0 +1,18 @@
+{
+  "light": {
+    "bg": {"$value": "{color.base.white}", "$type": "color"},
+    "surface": {"$value": "{color.gray.50}", "$type": "color"},
+    "text": {"$value": "{color.gray.900}", "$type": "color"},
+    "textMuted": {"$value": "{color.gray.600}", "$type": "color"},
+    "border": {"$value": "{color.gray.200}", "$type": "color"},
+    "primary": {"$value": "{color.blue.600}", "$type": "color"}
+  },
+  "dark": {
+    "bg": {"$value": "{color.gray.900}", "$type": "color"},
+    "surface": {"$value": "{color.gray.800}", "$type": "color"},
+    "text": {"$value": "{color.gray.100}", "$type": "color"},
+    "textMuted": {"$value": "{color.gray.400}", "$type": "color"},
+    "border": {"$value": "{color.gray.700}", "$type": "color"},
+    "primary": {"$value": "{color.blue.500}", "$type": "color"}
+  }
+}
