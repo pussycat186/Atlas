@@ -1,0 +1,70 @@
+name: Atlas Gates Step 2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      - uses: grafana/setup-k6-action@v1
+      
+      - name: Setup
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq ripgrep
+          pnpm i
+          
+      - name: Lighthouse CI
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+          DEV: https://atlas-dev-portal.vercel.app
+          PROOF: https://atlas-proof-messenger.vercel.app
+        run: |
+          npx @lhci/cli autorun \
+            --collect.url="$ADMIN" --collect.url="$DEV" --collect.url="$PROOF" \
+            --assert.assertions.performance>=0.90 --assert.assertions.accessibility>=0.95 \
+            --upload.target=filesystem \
+            --upload.outputDir="docs/evidence/$(date -u +%Y%m%d-%H%M)/lighthouse" \
+          || { echo "BLOCKER_LHCI"; exit 1; }
+          
+      - name: Playwright
+        run: |
+          npx playwright install --with-deps
+          npx playwright test --reporter=html || { echo "BLOCKER_PLAYWRIGHT"; exit 1; }
+          mkdir -p docs/evidence/$(date -u +%Y%m%d-%H%M)/playwright
+          cp -r playwright-report docs/evidence/$(date -u +%Y%m%d-%H%M)/playwright/
+          
+      - name: k6 Performance
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          k6 version >/dev/null 2>&1 || { echo "BLOCKER_K6_NOT_INSTALLED"; exit 1; }
+          mkdir -p tests/k6
+          cat > tests/k6/smoke.js <<'JS'
+          import http from 'k6/http'; import {check} from 'k6';
+          export const options={vus:50,duration:'60s',thresholds:{http_req_duration:['p(95)<200'],http_req_failed:['rate<0.01']}};
+          export default function(){ const r=http.get(`${__ENV.BASE}/prism`); check(r,{ok:(res)=>res.status===200}); }
+          JS
+          BASE="$ADMIN" k6 run tests/k6/smoke.js --summary-export=docs/evidence/$(date -u +%Y%m%d-%H%M)/k6-summary.json || { echo "BLOCKER_PERF_GATE"; exit 1; }
+          
+      - name: Evidence Manifest
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+          DEV: https://atlas-dev-portal.vercel.app
+          PROOF: https://atlas-proof-messenger.vercel.app
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS
+          jq -n --arg admin "$ADMIN" --arg dev "$DEV" --arg proof "$PROOF" \
+               --arg ev "docs/evidence/$TS/" \
+               '{status:"VERIFIED", frontends:{admin:$admin,dev:$dev,proof:$proof}, evidence:$ev}' \
+               > docs/evidence/$TS/FINAL_STATUS.json
+          cat docs/evidence/$TS/FINAL_STATUS.json
