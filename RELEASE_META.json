@@ -1,0 +1,23 @@
+{
+  "status": "READY_TO_RELEASE",
+  "urls": {
+    "frontends": {
+      "admin_insights": "https://atlas-admin-insights.vercel.app",
+      "dev_portal": "https://atlas-dev-portal.vercel.app",
+      "proof_messenger": "https://atlas-proof-messenger.vercel.app"
+    },
+    "qtca": {
+      "tick": "https://atlas-admin-insights.vercel.app/qtca/tick",
+      "summary": "https://atlas-admin-insights.vercel.app/qtca/summary",
+      "stream": "https://atlas-admin-insights.vercel.app/qtca/stream"
+    }
+  },
+  "perf": {
+    "k6": {
+      "p95_ms": 88.5,
+      "error_pct": 0.2
+    }
+  },
+  "evidence": "docs/evidence/20251001-1902/",
+  "evidence_ts": "20251001-1902"
+}
