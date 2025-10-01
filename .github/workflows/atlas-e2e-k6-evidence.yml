@@ -1,0 +1,78 @@
+name: Atlas E2E K6 Evidence
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e-k6:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      - uses: grafana/setup-k6-action@v1
+      
+      - name: Setup
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+          pnpm i
+          
+      - name: Playwright E2E
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+          DEV: https://atlas-dev-portal.vercel.app
+          PROOF: https://atlas-proof-messenger.vercel.app
+        run: |
+          npx playwright install --with-deps
+          BASE_ADMIN="$ADMIN" BASE_DEV="$DEV" BASE_PROOF="$PROOF" npx playwright test --reporter=html \
+            || { echo "BLOCKER_PLAYWRIGHT"; exit 1; }
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/playwright
+          cp -r playwright-report docs/evidence/$TS/playwright/
+          echo "TS=$TS" >> $GITHUB_ENV
+          
+      - name: k6 Performance
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          k6 version >/dev/null 2>&1 || { echo "BLOCKER_K6_NOT_INSTALLED"; exit 1; }
+          mkdir -p tests/k6
+          cat > tests/k6/smoke.js <<'JS'
+          import http from 'k6/http';
+          import { check } from 'k6';
+          export const options = {
+            vus: 50, duration: '60s',
+            thresholds: { http_req_duration: ['p(95)<200'], http_req_failed: ['rate<0.01'] }
+          };
+          export default function () {
+            const r = http.get(`${__ENV.BASE}/prism`);
+            check(r, { ok: (res) => res.status === 200 });
+          }
+          JS
+          mkdir -p docs/evidence/$TS/k6
+          BASE="$ADMIN" k6 run tests/k6/smoke.js --summary-export=docs/evidence/$TS/k6/summary.json \
+            || { echo "BLOCKER_PERF_GATE"; exit 1; }
+          P95=$(jq '.metrics.http_req_duration["p(95)"]' docs/evidence/$TS/k6/summary.json)
+          ERR=$(jq '.metrics.http_req_failed.rate*100' docs/evidence/$TS/k6/summary.json)
+          awk "BEGIN{ if ($P95>200 || $ERR>1) { print \"BLOCKER_PERF_GATE:p95=\"$P95\" error=\"$ERR; exit 1 } }"
+          echo "P95=$P95" >> $GITHUB_ENV
+          echo "ERR=$ERR" >> $GITHUB_ENV
+          
+      - name: Evidence Manifest
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+          DEV: https://atlas-dev-portal.vercel.app
+          PROOF: https://atlas-proof-messenger.vercel.app
+        run: |
+          find docs/evidence/$TS -type f -printf "%P\n" | sort > docs/evidence/$TS/MANIFEST.txt
+          sha256sum $(find docs/evidence/$TS -type f -maxdepth 1 -name '*.json' -o -name '*.txt' | tr '\n' ' ') > docs/evidence/$TS/SHA256_MANIFEST.txt || true
+          jq -n --arg admin "$ADMIN" --arg dev "$DEV" --arg proof "$PROOF" \
+                --arg ev "docs/evidence/$TS/" --argjson p95 "$P95" --argjson err "$ERR" \
+                '{status:"VERIFIED", frontends:{admin:$admin,dev:$dev,proof:$proof},
+                  checks:{playwright:"PASS", k6:{p95_ms:($p95), error_pct:($err)}},
+                  evidence:$ev }'

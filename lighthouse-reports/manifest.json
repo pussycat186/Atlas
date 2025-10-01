@@ -1,0 +1,41 @@
+[
+  {
+    "url": "https://atlas-admin-insights.vercel.app/",
+    "isRepresentativeRun": true,
+    "htmlPath": "/Users/simon/Atlas-1/Atlas-1/lighthouse-reports/atlas_admin_insights_vercel_app-_-2025_10_01_15_33_05.report.html",
+    "jsonPath": "/Users/simon/Atlas-1/Atlas-1/lighthouse-reports/atlas_admin_insights_vercel_app-_-2025_10_01_15_33_05.report.json",
+    "summary": {
+      "performance": 0.99,
+      "accessibility": 1,
+      "best-practices": 0.92,
+      "seo": 0.97,
+      "pwa": 0.22
+    }
+  },
+  {
+    "url": "https://atlas-dev-portal.vercel.app/",
+    "isRepresentativeRun": true,
+    "htmlPath": "/Users/simon/Atlas-1/Atlas-1/lighthouse-reports/atlas_dev_portal_vercel_app-_-2025_10_01_15_33_31.report.html",
+    "jsonPath": "/Users/simon/Atlas-1/Atlas-1/lighthouse-reports/atlas_dev_portal_vercel_app-_-2025_10_01_15_33_31.report.json",
+    "summary": {
+      "performance": 0.99,
+      "accessibility": 1,
+      "best-practices": 0.92,
+      "seo": 0.95,
+      "pwa": 0.22
+    }
+  },
+  {
+    "url": "https://atlas-proof-messenger.vercel.app/",
+    "isRepresentativeRun": true,
+    "htmlPath": "/Users/simon/Atlas-1/Atlas-1/lighthouse-reports/atlas_proof_messenger_vercel_app-_-2025_10_01_15_34_01.report.html",
+    "jsonPath": "/Users/simon/Atlas-1/Atlas-1/lighthouse-reports/atlas_proof_messenger_vercel_app-_-2025_10_01_15_34_01.report.json",
+    "summary": {
+      "performance": 0.99,
+      "accessibility": 1,
+      "best-practices": 0.92,
+      "seo": 0.95,
+      "pwa": 0.22
+    }
+  }
+]
