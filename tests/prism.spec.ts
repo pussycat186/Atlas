@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-test('SSR prism marker exists', async ({ page, browserName }, testInfo) => {
-  const path = testInfo.project.name === 'proof' ? '/prism/' : '/prism';
-  await page.goto(path);
-  // Check for the marker in any element (including hidden ones)
-  await expect(page.locator('[data-prism-marker]')).toHaveCount(1);
+const MARKER = 'ATLAS • Prism UI — Peak Preview';
+
+test('SSR prism marker exists (Unicode-safe)', async ({ page }) => {
+  await page.goto('/prism', { waitUntil: 'domcontentloaded' });
+  // Prefer locator assertions; Playwright auto-waits. If missing, fall back to raw HTML.
+  await expect(page.locator('body')).toContainText(MARKER, { useInnerText: true });
+  const html = (await page.content()).normalize('NFKC');
+  expect(html).toContain(MARKER); // redundancy to avoid flakiness
 });
