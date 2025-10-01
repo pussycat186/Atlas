@@ -1,0 +1,65 @@
+name: Verify Live Atlas
+
+on:
+  workflow_dispatch:
+    inputs:
+      admin_url:
+        description: 'Admin URL'
+        required: true
+        default: 'https://atlas-admin-insights.vercel.app'
+      dev_url:
+        description: 'Dev URL'
+        required: true
+        default: 'https://atlas-dev-portal.vercel.app'
+      proof_url:
+        description: 'Proof URL'
+        required: true
+        default: 'https://atlas-proof-messenger.vercel.app'
+      evidence_ts:
+        description: 'Evidence timestamp'
+        required: true
+        default: '20251001-1902'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup and verify
+        env:
+          ADMIN: ${{ github.event.inputs.admin_url }}
+          DEV: ${{ github.event.inputs.dev_url }}
+          PROOF: ${{ github.event.inputs.proof_url }}
+          EVIDENCE_TS: ${{ github.event.inputs.evidence_ts }}
+        run: |
+          if ! command -v jq >/dev/null; then sudo apt-get update -y && sudo apt-get install -y jq; fi
+          set -euo pipefail
+          
+          M1=$(curl -sS "$ADMIN/prism" | grep -F "ATLAS • Prism UI — Peak Preview" >/dev/null && echo true || echo false)
+          M2=$(curl -sS "$DEV/prism"    | grep -F "ATLAS • Prism UI — Peak Preview" >/dev/null && echo true || echo false)
+          M3=$(curl -sS "$PROOF/prism"  | grep -F "ATLAS • Prism UI — Peak Preview" >/dev/null && echo true || echo false)
+          if [ "$M1" != true ] || [ "$M2" != true ] || [ "$M3" != true ]; then echo "BLOCKER_PRISM_MARKER"; exit 1; fi
+          
+          QT_TICK_OK=$(curl -fsS "$ADMIN/qtca/tick"    | jq 'has("tick")' || echo false)
+          QT_SUMM_OK=$(curl -fsS "$ADMIN/qtca/summary" | jq 'has("total_ticks")' || echo false)
+          QT_STREAM_CODE=$(curl -sSI "$ADMIN/qtca/stream" | awk 'toupper($2)~/^200/ {print "200"}')
+          if [ "$QT_TICK_OK" != true ] || [ "$QT_SUMM_OK" != true ] || [ "$QT_STREAM_CODE" != "200" ]; then echo "BLOCKER_QTCA_ENDPOINTS"; exit 1; fi
+          
+          EV_URL="https://api.github.com/repos/pussycat186/Atlas/contents/docs/evidence/$EVIDENCE_TS"
+          EV_LIST=$(curl -fsS "$EV_URL" | jq '.[].name' | wc -l | tr -d ' ')
+          if [ "${EV_LIST:-0}" -eq 0 ]; then echo "BLOCKER_EVIDENCE_MISSING"; exit 1; fi
+          
+          printf '%s\n' "$(jq -n \
+            --arg admin "$ADMIN" --arg dev "$DEV" --arg proof "$PROOF" \
+            --arg tick "$ADMIN/qtca/tick" --arg summary "$ADMIN/qtca/summary" --arg stream "$ADMIN/qtca/stream" \
+            --arg ev "docs/evidence/$EVIDENCE_TS/" \
+            '{
+               status:"VERIFIED",
+               frontends:{admin_insights:$admin,dev_portal:$dev,proof_messenger:$proof},
+               qtca:{tick:$tick,summary:$summary,stream:$stream},
+               checks:{
+                 prism_marker:{admin:true,dev:true,proof:true},
+                 evidence:true,
+                 qtca:true
+               },
+               evidence:$ev
+             }')"
