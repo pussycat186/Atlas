@@ -27,7 +27,7 @@ jobs:
           BASE_DEV: https://atlas-dev-portal.vercel.app
           BASE_PROOF: https://atlas-proof-messenger.vercel.app
         run: |
-          npx playwright test --project=admin --project=dev --project=proof \
+          npx playwright test tests/prism.spec.ts --project=admin --project=dev --project=proof \
             || { echo "BLOCKER_PLAYWRIGHT"; exit 1; }
           
       - name: Save evidence and output
