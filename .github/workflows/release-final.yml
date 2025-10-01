@@ -77,7 +77,8 @@ jobs:
           git add RELEASE_META.json docs/pricing/BASIC.md docs/pricing/PRO.md SECURITY_EVIDENCE.md
           git commit -m "release: ${VERSION_TAG} + pricing + evidence rollup" || true
           git tag -f "${VERSION_TAG}"
-          git push origin main --follow-tags
+          git push origin main
+          git push origin "${VERSION_TAG}"
           
           BODY=$(jq -r '
             "## Atlas Release\n"
