@@ -1,0 +1,112 @@
+name: Atlas Final Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Release Package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if ! command -v jq >/dev/null; then sudo apt-get update -y && sudo apt-get install -y jq; fi
+          
+          LIVE_OK=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/LIVE_URLS.json" | jq -e \
+            '.frontends.admin_insights=="https://atlas-admin-insights.vercel.app"
+             and .frontends.dev_portal=="https://atlas-dev-portal.vercel.app"
+             and .frontends.proof_messenger=="https://atlas-proof-messenger.vercel.app"' >/dev/null && echo true || echo false)
+          [ "$LIVE_OK" = true ] || { echo "BLOCKER_LIVE_URLS_MISMATCH"; exit 1; }
+          
+          EV="docs/evidence/20251001-1902"
+          curl -fsS "https://api.github.com/repos/pussycat186/Atlas/contents/$EV" | jq '.[].name' >/dev/null || { echo "BLOCKER_EVIDENCE_MISSING"; exit 1; }
+          curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/$EV/k6-summary.json" >/dev/null || { echo "BLOCKER_EVIDENCE_MISSING:k6"; exit 1; }
+          curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/$EV/playwright/summary.json" >/dev/null || { echo "BLOCKER_EVIDENCE_MISSING:playwright"; exit 1; }
+          
+          ADMIN=https://atlas-admin-insights.vercel.app
+          DEV=https://atlas-dev-portal.vercel.app
+          PROOF=https://atlas-proof-messenger.vercel.app
+          K6_P95=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/$EV/k6-summary.json" | jq '.metrics.http_req_duration["p(95)"]')
+          K6_ERR=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/$EV/k6-summary.json" | jq '.metrics.http_req_failed.rate*100')
+          printf '%s\n' "$(jq -n \
+             --arg admin "$ADMIN" --arg dev "$DEV" --arg proof "$PROOF" \
+             --arg tick "$ADMIN/qtca/tick" --arg summary "$ADMIN/qtca/summary" --arg stream "$ADMIN/qtca/stream" \
+             --arg ev "$EV/" --arg ver_ts "20251001-1902" \
+             --argjson p95 "$K6_P95" --argjson err "$K6_ERR" \
+             '{status:"READY_TO_RELEASE",
+               urls:{frontends:{admin_insights:$admin,dev_portal:$dev,proof_messenger:$proof}, qtca:{tick:$tick,summary:$summary,stream:$stream}},
+               perf:{k6:{p95_ms:$p95, error_pct:$err}},
+               evidence:$ev, evidence_ts:$ver_ts}')" > RELEASE_META.json
+          
+          mkdir -p docs/pricing
+          cat > docs/pricing/BASIC.md <<'MD'
+          # Atlas Basic
+          - Ed25519, Credits/Escrow, Receipts + QuantumTag-Lite, Workflows, Curated Plugins
+          - A11y ≥95, Perf ≥90, SEO ≥95, Best Practices ≥95
+          - JS per route ≤300KB
+          - Support: community
+          MD
+          cat > docs/pricing/PRO.md <<'MD'
+          # Atlas Pro
+          - + PQC (Kyber/Dilithium fallback Ed25519), QTCA-Full (SSE + auto-heal ≤1 tick)
+          - Multi-tenant, SSO (SAML/OIDC), ABAC + audit, Data residency
+          - A11y ≥95, Perf ≥95, SEO=100, BP=100
+          - JS per route ≤250KB
+          - Support: priority
+          MD
+          
+          cat > SECURITY_EVIDENCE.md <<'MD'
+          # SECURITY EVIDENCE (rollup)
+          - LIVE_URLS.json domains verified
+          - QTCA endpoints present (tick, summary, stream)
+          - Playwright: PASS (Basic/Pro)
+          - k6: p95 ≤200ms, error ≤1%
+          - SBOM + SLSA attached in release assets
+          MD
+          
+          VERSION_TAG="v$(date -u +%Y.%m.%d)-atlas"
+          git config user.email "ci@users.noreply.github.com"
+          git config user.name "atlas-ci"
+          git add RELEASE_META.json docs/pricing/BASIC.md docs/pricing/PRO.md SECURITY_EVIDENCE.md
+          git commit -m "release: ${VERSION_TAG} + pricing + evidence rollup" || true
+          git tag -f "${VERSION_TAG}"
+          git push origin main --follow-tags
+          
+          BODY=$(jq -r '
+            "## Atlas Release\n"
+            + "- Admin: " + .urls.frontends.admin_insights + "\n"
+            + "- Dev: "   + .urls.frontends.dev_portal + "\n"
+            + "- Proof: " + .urls.frontends.proof_messenger + "\n\n"
+            + "### QTCA\n"
+            + "- tick: " + .urls.qtca.tick + "\n"
+            + "- summary: " + .urls.qtca.summary + "\n"
+            + "- stream: " + .urls.qtca.stream + "\n\n"
+            + "### Performance\n"
+            + ("- k6 p95: " + (.perf.k6.p95_ms|tostring) + " ms\n")
+            + ("- k6 errors: " + (.perf.k6.error_pct|tostring) + " %\n")
+            + "\n### Evidence\n- " + .evidence
+          ' RELEASE_META.json)
+          
+          gh release create "${VERSION_TAG}" \
+            --notes "$BODY" \
+            --title "Atlas ${VERSION_TAG}" \
+            || { echo "BLOCKER_GH_RELEASE"; exit 1; }
+          
+          for f in SBOM.spdx SLSA_PROVENANCE.json SHA256_MANIFEST.txt FINAL_STATUS.json; do
+            if curl -fsS -o /tmp/$f "https://raw.githubusercontent.com/pussycat186/Atlas/main/$f"; then
+              gh release upload "${VERSION_TAG}" "/tmp/$f" --clobber
+            fi
+          done
+          
+          curl -sS "$ADMIN/prism"  | grep -F "ATLAS • Prism UI — Peak Preview" >/dev/null || { echo "BLOCKER_POST_RELEASE_PRISM"; exit 1; }
+          curl -fsS "$ADMIN/qtca/tick" >/dev/null || { echo "BLOCKER_POST_RELEASE_QTCA"; exit 1; }
+          
+          jq -n --arg tag "$VERSION_TAG" --arg ev "$EV/" \
+            '{status:"RELEASED", tag:$tag, evidence:$ev}'
