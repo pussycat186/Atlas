@@ -9,7 +9,12 @@ export default function PrismPage() {
   const [lux, setLux] = useState(sku === 'pro');
 
   return (
-    <div className={`min-h-screen transition-colors ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <>
+      {/* SSR-visible marker (must be literal text, not computed) */}
+      <div data-prism-marker className="hidden">
+        ATLAS • Prism UI — Peak Preview
+      </div>
+      <div className={`min-h-screen transition-colors ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
       <div className="relative z-10">
         <div className={`border-b ${theme === 'dark' ? 'border-gray-800 bg-gray-900/80' : 'border-gray-200 bg-white/80'} backdrop-blur-sm`}>
           <div className="container mx-auto px-4 py-3">
@@ -104,6 +109,7 @@ export default function PrismPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
