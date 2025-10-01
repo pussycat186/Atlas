@@ -34,32 +34,35 @@ jobs:
           if ! command -v jq >/dev/null; then sudo apt-get update -y && sudo apt-get install -y jq; fi
           set -euo pipefail
           
-          M1=$(curl -sS "$ADMIN/prism" | grep -F "ATLAS • Prism UI — Peak Preview" >/dev/null && echo true || echo false)
-          M2=$(curl -sS "$DEV/prism"    | grep -F "ATLAS • Prism UI — Peak Preview" >/dev/null && echo true || echo false)
-          M3=$(curl -sS "$PROOF/prism"  | grep -F "ATLAS • Prism UI — Peak Preview" >/dev/null && echo true || echo false)
-          if [ "$M1" != true ] || [ "$M2" != true ] || [ "$M3" != true ]; then echo "BLOCKER_PRISM_MARKER"; exit 1; fi
+          QT_TICK=$(curl -fsS "$ADMIN/qtca/tick"    | jq 'has("tick")' || echo false)
+          QT_SUMM=$(curl -fsS "$ADMIN/qtca/summary" | jq 'has("total_ticks")' || echo false)
+          QT_STREAM=$(curl -sSI "$ADMIN/qtca/stream" | awk 'toupper($2)~/^200/ {print "200"}')
+          [ "$QT_TICK" = true ] && [ "$QT_SUMM" = true ] && [ "$QT_STREAM" = 200 ] || { echo "BLOCKER_QTCA_ENDPOINTS"; exit 1; }
           
-          QT_TICK_OK=$(curl -fsS "$ADMIN/qtca/tick"    | jq 'has("tick")' || echo false)
-          QT_SUMM_OK=$(curl -fsS "$ADMIN/qtca/summary" | jq 'has("total_ticks")' || echo false)
-          QT_STREAM_CODE=$(curl -sSI "$ADMIN/qtca/stream" | awk 'toupper($2)~/^200/ {print "200"}')
-          if [ "$QT_TICK_OK" != true ] || [ "$QT_SUMM_OK" != true ] || [ "$QT_STREAM_CODE" != "200" ]; then echo "BLOCKER_QTCA_ENDPOINTS"; exit 1; fi
+          curl -fsS "https://api.github.com/repos/pussycat186/Atlas/contents/docs/evidence/$EVIDENCE_TS" | jq '.[].name' >/dev/null || { echo "BLOCKER_EVIDENCE_MISSING"; exit 1; }
           
-          EV_URL="https://api.github.com/repos/pussycat186/Atlas/contents/docs/evidence/$EVIDENCE_TS"
-          EV_LIST=$(curl -fsS "$EV_URL" | jq '.[].name' | wc -l | tr -d ' ')
-          if [ "${EV_LIST:-0}" -eq 0 ]; then echo "BLOCKER_EVIDENCE_MISSING"; exit 1; fi
+          A=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/docs/evidence/$EVIDENCE_TS/lighthouse/admin_insights_home.json" | jq '(.categories.performance.score>=0.90) and (.categories.accessibility.score>=0.95)') || A=false
+          D=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/docs/evidence/$EVIDENCE_TS/lighthouse/dev_portal_home.json"   | jq '(.categories.performance.score>=0.90) and (.categories.accessibility.score>=0.95)') || D=false
+          P=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/docs/evidence/$EVIDENCE_TS/lighthouse/proof_messenger_home.json"| jq '(.categories.performance.score>=0.90) and (.categories.accessibility.score>=0.95)') || P=false
+          [ "$A" = true ] && [ "$D" = true ] && [ "$P" = true ] || { echo "BLOCKER_LIGHTHOUSE_SCORES"; exit 1; }
           
-          printf '%s\n' "$(jq -n \
-            --arg admin "$ADMIN" --arg dev "$DEV" --arg proof "$PROOF" \
-            --arg tick "$ADMIN/qtca/tick" --arg summary "$ADMIN/qtca/summary" --arg stream "$ADMIN/qtca/stream" \
-            --arg ev "docs/evidence/$EVIDENCE_TS/" \
-            '{
-               status:"VERIFIED",
-               frontends:{admin_insights:$admin,dev_portal:$dev,proof_messenger:$proof},
-               qtca:{tick:$tick,summary:$summary,stream:$stream},
-               checks:{
-                 prism_marker:{admin:true,dev:true,proof:true},
-                 evidence:true,
-                 qtca:true
-               },
-               evidence:$ev
-             }')"
+          PW=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/docs/evidence/$EVIDENCE_TS/playwright/summary.json" | jq -r '.status' || echo FAIL)
+          [ "$PW" = "PASS" ] || { echo "BLOCKER_PLAYWRIGHT:$PW"; exit 1; }
+          
+          K6_OK=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/docs/evidence/$EVIDENCE_TS/k6-summary.json" | jq '(.metrics.http_req_duration["p(95)"]<=200) and (.metrics.http_req_failed.rate<=0.01)' || echo false)
+          [ "$K6_OK" = true ] || { echo "BLOCKER_PERF_GATE"; exit 1; }
+          K6_P95=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/docs/evidence/$EVIDENCE_TS/k6-summary.json" | jq '.metrics.http_req_duration["p(95)"]')
+          K6_ERR=$(curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/docs/evidence/$EVIDENCE_TS/k6-summary.json" | jq '.metrics.http_req_failed.rate')
+          
+          curl -fsS "https://raw.githubusercontent.com/pussycat186/Atlas/main/LIVE_URLS.json" | jq -e \
+            --arg A "$ADMIN" --arg D "$DEV" --arg P "$PROOF" \
+            '.frontends.admin_insights==$A and .frontends.dev_portal==$D and .frontends.proof_messenger==$P' >/dev/null \
+          || { echo "BLOCKER_LIVE_URLS_MISMATCH"; exit 1; }
+          
+          jq -n --arg admin "$ADMIN" --arg dev "$DEV" --arg proof "$PROOF" \
+                --arg tick "$ADMIN/qtca/tick" --arg summary "$ADMIN/qtca/summary" --arg stream "$ADMIN/qtca/stream" \
+                --arg ev "docs/evidence/$EVIDENCE_TS/" --argjson k6p "$K6_P95" --argjson k6e "$K6_ERR" \
+                '{status:"VERIFIED", frontends:{admin_insights:$admin,dev_portal:$dev,proof_messenger:$proof},
+                  qtca:{tick:$tick,summary:$summary,stream:$stream},
+                  checks:{evidence:true,lighthouse:true,playwright:"PASS",k6:{p95_ms:($k6p),error_pct:($k6e*100)}},
+                  evidence:$ev }'

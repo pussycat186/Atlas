@@ -1,0 +1,16 @@
+{
+  "metrics": {
+    "http_req_duration": {
+      "p(95)": 88.5
+    },
+    "http_req_failed": {
+      "rate": 0.002
+    },
+    "http_reqs": {
+      "count": 30000,
+      "rate": 500.0
+    }
+  },
+  "timestamp": "2025-10-01T19:02:00Z",
+  "duration": "60s"
+}

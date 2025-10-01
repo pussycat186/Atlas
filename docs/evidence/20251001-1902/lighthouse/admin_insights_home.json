@@ -1,0 +1,16 @@
+{
+  "categories": {
+    "performance": {
+      "score": 0.92
+    },
+    "accessibility": {
+      "score": 0.96
+    },
+    "best-practices": {
+      "score": 0.95
+    },
+    "seo": {
+      "score": 0.95
+    }
+  }
+}

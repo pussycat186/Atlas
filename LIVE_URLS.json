@@ -1,13 +1,15 @@
 {
-  "status": "CI_GREEN_DEPLOYED_BASIC&PRO",
-  "tag": "quality-gates-20250926-1454",
+  "timestamp": "2025-10-01T19:02:00Z",
+  "commit": "a486a37",
   "frontends": {
-    "proof_messenger": "https://atlas-proof-messenger.vercel.app",
     "admin_insights": "https://atlas-admin-insights.vercel.app",
-    "dev_portal": "https://atlas-dev-portal.vercel.app"
+    "dev_portal": "https://atlas-dev-portal.vercel.app",
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app"
   },
-  "backends": {
-    "gateway": "https://atlas-gateway.sonthenguyen186.workers.dev",
-    "witnesses": ["https://atlas-witness-1.sonthenguyen186.workers.dev", "https://atlas-witness-2.sonthenguyen186.workers.dev"]
-  }
+  "qtca": {
+    "tick": "https://atlas-admin-insights.vercel.app/qtca/tick",
+    "summary": "https://atlas-admin-insights.vercel.app/qtca/summary",
+    "stream": "https://atlas-admin-insights.vercel.app/qtca/stream"
+  },
+  "status": "LIVE"
 }
