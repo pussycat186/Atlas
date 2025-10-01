@@ -15,20 +15,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
       
       - name: Install pnpm
-        run: npm install -g pnpm@9.0.0
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
       
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       
       - name: Build tokens
-        env:
-          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-        run: |
-          pnpm -w run tokens:pull
-          pnpm -w run tokens:build
+        run: pnpm -w run tokens:build
       
       - name: Build packages
         run: pnpm -w build

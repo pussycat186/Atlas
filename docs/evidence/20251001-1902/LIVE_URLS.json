@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-10-01T19:02:00Z",
+  "commit": "05fc02f",
+  "frontends": {
+    "admin_insights": "https://atlas-admin-insights.vercel.app",
+    "dev_portal": "https://atlas-dev-portal.vercel.app",
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app"
+  },
+  "qtca": {
+    "tick": "https://atlas-admin-insights.vercel.app/qtca/tick",
+    "summary": "https://atlas-admin-insights.vercel.app/qtca/summary",
+    "stream": "https://atlas-admin-insights.vercel.app/qtca/stream"
+  },
+  "prism_endpoints": {
+    "admin": "https://atlas-admin-insights.vercel.app/prism",
+    "dev": "https://atlas-dev-portal.vercel.app/prism",
+    "proof": "https://atlas-proof-messenger.vercel.app/prism"
+  },
+  "bundle_sizes": {
+    "admin_prism_kb": 88.5,
+    "dev_prism_kb": 88.5,
+    "proof_prism_kb": 88.6
+  },
+  "status": "LIVE"
+}
