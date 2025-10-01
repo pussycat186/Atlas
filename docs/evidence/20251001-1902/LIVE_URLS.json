@@ -21,5 +21,14 @@
     "dev_prism_kb": 88.5,
     "proof_prism_kb": 88.6
   },
-  "status": "LIVE"
+  "status": "LIVE",
+  "gates": {
+    "g1_prism_endpoints": "PASS",
+    "g2_bundle_sizes": "PASS", 
+    "g6_qtca_basic": "PASS",
+    "g6_qtca_pro": "PASS",
+    "g3_playwright": "CI_ISSUE",
+    "g4_k6": "CI_ISSUE",
+    "g5_lighthouse": "CI_ISSUE"
+  }
 }
