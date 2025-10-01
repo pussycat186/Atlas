@@ -8,10 +8,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: process.env.BASE_URL || 'https://atlas-proof-messenger.vercel.app',
+    baseURL: 'https://atlas-admin-insights.vercel.app',
     trace: 'on-first-retry',
   },
-
   projects: [
     {
       name: 'chromium',
