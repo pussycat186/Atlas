@@ -45,7 +45,7 @@ jobs:
           const urls = [
             __ENV.ADMIN_URL + '/prism',
             __ENV.DEV_URL + '/prism', 
-            __ENV.PROOF_URL + '/prism'
+            __ENV.PROOF_URL + '/prism/'
           ];
           
           export default function() {
