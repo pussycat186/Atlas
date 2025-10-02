@@ -1,0 +1,53 @@
+name: Atlas Perf Final Diagnosis
+
+on:
+  workflow_dispatch:
+
+jobs:
+  final-diagnosis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      
+      - name: Infrastructure Diagnosis
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          # Low-load baseline test
+          cat > tests/k6/baseline.js <<'JS'
+          import http from 'k6/http';
+          export const options = { vus: 1, duration: '30s' };
+          export default function() {
+            const r = http.get(`${__ENV.BASE}/prism`);
+            console.log(`Status: ${r.status}, Headers: ${JSON.stringify(r.headers)}`);
+          }
+          JS
+          
+          echo "=== BASELINE (1 VU) ==="
+          BASE="$ADMIN" k6 run tests/k6/baseline.js
+          
+          # Medium load test
+          cat > tests/k6/medium.js <<'JS'
+          import http from 'k6/http';
+          export const options = { vus: 10, duration: '30s' };
+          export default function() {
+            const r = http.get(`${__ENV.BASE}/prism`);
+          }
+          JS
+          
+          echo "=== MEDIUM LOAD (10 VU) ==="
+          BASE="$ADMIN" k6 run tests/k6/medium.js --summary-export=medium.json
+          
+          # Check error patterns
+          MEDIUM_ERR=$(jq '.metrics.http_req_failed.rate*100' medium.json)
+          echo "Medium load error rate: $MEDIUM_ERR%"
+          
+          if awk "BEGIN{exit !($MEDIUM_ERR>5)}"; then
+            echo "DIAGNOSIS: Infrastructure rate limiting detected"
+            echo "RECOMMENDATION: Contact Vercel support to increase rate limits"
+            echo "BLOCKER_INFRA_LIMITS:rate_limiting_detected"
+          else
+            echo "DIAGNOSIS: Application-level performance issue"
+            echo "BLOCKER_APP_PERF:needs_optimization"
+          fi
