@@ -1,0 +1,4 @@
+name = "atlas-rate-limit-proxy"
+main = "worker.js"
+workers_dev = true
+compatibility_date = "2025-10-01"
