@@ -1,0 +1,27 @@
+name: atlas-worker-autodeploy
+on: { workflow_dispatch: {} }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Deploy with Wrangler (workers.dev)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config wrangler.toml
+      - name: Extract workers.dev URL from logs
+        id: url
+        run: |
+          URL=$(grep -Eo 'https?://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' -m1 "$GITHUB_STEP_SUMMARY" || true)
+          if [ -z "$URL" ]; then
+            URL=$(git log -1 --pretty=%B | grep -Eo 'https?://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' -m1 || true)
+          fi
+          echo "url=$URL" >> $GITHUB_OUTPUT
+      - name: Fail if URL missing
+        run: test -n "${{ steps.url.outputs.url }}" || { echo "BLOCKER_WORKER_URL_NOT_FOUND"; exit 1; }
+      - name: Print URL artifact
+        run: echo "{\"worker_url\":\"${{ steps.url.outputs.url }}\"}"
