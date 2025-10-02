@@ -7,22 +7,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
-      - name: Deploy with Wrangler (workers.dev)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config wrangler.toml
-          packageManager: npm
-      - name: Extract workers.dev URL from logs
-        id: url
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          URL=$(grep -Eo 'https?://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' -m1 "$GITHUB_STEP_SUMMARY" || true)
-          if [ -z "$URL" ]; then
-            URL=$(git log -1 --pretty=%B | grep -Eo 'https?://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' -m1 || true)
-          fi
-          echo "url=$URL" >> $GITHUB_OUTPUT
+          wrangler deploy --config wrangler.toml 2>&1 | tee deploy.log
+          URL=$(grep -Eo 'https?://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' deploy.log | head -1)
+          echo "WORKER_URL=$URL" >> $GITHUB_ENV
+          echo "Worker deployed to: $URL"
       - name: Fail if URL missing
-        run: test -n "${{ steps.url.outputs.url }}" || { echo "BLOCKER_WORKER_URL_NOT_FOUND"; exit 1; }
+        run: test -n "$WORKER_URL" || { echo "BLOCKER_WORKER_URL_NOT_FOUND"; exit 1; }
       - name: Print URL artifact
-        run: echo "{\"worker_url\":\"${{ steps.url.outputs.url }}\"}"
+        run: echo "{\"worker_url\":\"$WORKER_URL\"}"
