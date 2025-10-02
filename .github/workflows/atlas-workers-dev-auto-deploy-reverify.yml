@@ -1,0 +1,150 @@
+name: Atlas Workers Dev Auto Deploy Reverify
+
+on:
+  workflow_dispatch:
+
+jobs:
+  auto-deploy-reverify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: grafana/setup-k6-action@v1
+      
+      - name: Setup
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl ripgrep
+          
+      - name: Preflight
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && { echo "BLOCKER_MISSING_SECRET:CLOUDFLARE_API_TOKEN"; exit 1; }
+          [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && { echo "BLOCKER_MISSING_SECRET:CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          
+      - name: Ensure Worker Assets
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Create worker.js if missing
+          if ! test -f worker.js; then
+            cat > worker.js <<'JS'
+          export default {
+            async fetch(request, env, ctx) {
+              const url = new URL(request.url);
+              
+              // Only cache GET requests to specific paths
+              if (request.method !== 'GET') {
+                return this.forwardToOrigin(request);
+              }
+              
+              const path = url.pathname;
+              if (!path.startsWith('/prism') && !path.startsWith('/qtca/tick') && !path.startsWith('/qtca/summary')) {
+                return this.forwardToOrigin(request);
+              }
+              
+              // Skip SSE stream
+              if (path.includes('/qtca/stream')) {
+                return this.forwardToOrigin(request);
+              }
+              
+              // Try cache first
+              const cache = caches.default;
+              const cacheKey = new Request(url.toString(), request);
+              let response = await cache.match(cacheKey);
+              
+              if (response) {
+                response = new Response(response.body, response);
+                response.headers.set('CF-Cache-Status', 'HIT');
+                return response;
+              }
+              
+              // Forward to origin
+              response = await this.forwardToOrigin(request);
+              
+              // Cache successful responses
+              if (response.status === 200) {
+                const responseClone = response.clone();
+                responseClone.headers.set('Cache-Control', 'public, max-age=600, stale-while-revalidate=60');
+                responseClone.headers.set('CF-Cache-Status', 'MISS');
+                ctx.waitUntil(cache.put(cacheKey, responseClone));
+              }
+              
+              return response;
+            },
+            
+            async forwardToOrigin(request) {
+              const url = new URL(request.url);
+              url.hostname = 'atlas-admin-insights.vercel.app';
+              
+              return fetch(new Request(url.toString(), {
+                method: request.method,
+                headers: request.headers,
+                body: request.body
+              }));
+            }
+          };
+          JS
+          fi
+          
+          # Create wrangler.toml if missing
+          if ! test -f wrangler.toml && ! test -f wrangler.json && ! test -f wrangler.jsonc; then
+            cat > wrangler.toml <<EOF
+          name = "atlas-rate-limit-proxy"
+          main = "worker.js"
+          account_id = "$CLOUDFLARE_ACCOUNT_ID"
+          workers_dev = true
+          compatibility_date = "2025-10-01"
+          EOF
+          fi
+          
+      - name: Deploy to Workers Dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx --yes wrangler@latest deploy --config wrangler.toml 2>&1 | tee deploy.log || { echo "BLOCKER_WORKER_DEPLOY"; exit 1; }
+          
+          # Extract workers.dev URL from deploy output
+          WORKER_URL=$(rg -o 'https?://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' -N deploy.log | head -n1)
+          [ -z "$WORKER_URL" ] && { echo "BLOCKER_WORKER_URL_NOT_FOUND"; exit 1; }
+          
+          echo "Worker deployed to: $WORKER_URL"
+          echo "WORKER_URL=$WORKER_URL" >> $GITHUB_ENV
+          
+          # Quick header probe
+          curl -sI "$WORKER_URL/prism" >/dev/null || true
+          
+      - name: Run Reverify Workflow
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="pussycat186/Atlas"
+          WORKFLOW="atlas-post-dns-waf-reverify.yml"
+          
+          gh workflow run "$WORKFLOW" -R "$REPO" -f admin_public="$WORKER_URL" || { echo "BLOCKER_WORKFLOW_DISPATCH"; exit 1; }
+          
+          # Wait for run to appear
+          sleep 10
+          
+          RUN_ID=$(gh run list -R "$REPO" -w "$WORKFLOW" --json databaseId,createdAt -L 1 | jq -r '.[0].databaseId') || { echo "BLOCKER_RUN_NOT_FOUND"; exit 1; }
+          
+          echo "Watching run: $RUN_ID"
+          gh run watch "$RUN_ID" -R "$REPO" --exit-status || true
+          
+          LOG=$(gh run view "$RUN_ID" -R "$REPO" --log)
+          
+          # OUTPUT RULES
+          # 1) If JSON success present, print it verbatim
+          JSON=$(printf "%s" "$LOG" | rg -o '\{"status":"PERF_OK"[^\n]*' -N | tail -n1)
+          if [ -n "$JSON" ]; then echo "$JSON"; exit 0; fi
+          
+          # 2) Else emit the last BLOCKER_* from logs
+          BLK=$(printf "%s" "$LOG" | rg -o 'BLOCKER_[A-Z0-9_:\.-]+' -N | tail -n1)
+          if [ -n "$BLK" ]; then echo "$BLK"; exit 1; fi
+          
+          # 3) Else unknown failure
+          echo "BLOCKER_FATAL:UNKNOWN"; exit 1
