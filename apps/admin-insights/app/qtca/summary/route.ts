@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 
 export async function GET() {
-  return Response.json({
+  const response = Response.json({
     timestamp: new Date().toISOString(),
     total_ticks: 42,
     active_connections: 3,
@@ -9,4 +9,7 @@ export async function GET() {
     lite_features: ["tick", "summary"],
     status: "operational"
   });
+  
+  response.headers.set('CDN-Cache-Control', 'max-age=300, stale-while-revalidate=60');
+  return response;
 }

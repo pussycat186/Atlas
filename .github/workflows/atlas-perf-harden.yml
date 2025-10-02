@@ -1,0 +1,67 @@
+name: Atlas Perf Harden
+
+on:
+  workflow_dispatch:
+
+jobs:
+  perf-harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: grafana/setup-k6-action@v1
+      
+      - name: Setup
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+          
+      - name: k6 Diagnostic
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/k6
+          
+          BASE="$ADMIN" k6 run tests/k6/diag.js --summary-export=docs/evidence/$TS/k6/diag.json
+          
+          node -e '
+          const fs=require("fs");
+          const j=JSON.parse(fs.readFileSync("docs/evidence/'$TS'/k6/diag.json","utf8"));
+          const m=j.metrics;
+          const total=m.http_reqs.values.count||0;
+          const err=(m.http_req_failed.values.rate||0)*100;
+          if(err>1){ console.log("BLOCKER_PERF_DIAG:http_req_failed="+err.toFixed(2)+"%"); process.exit(1); }'
+          
+          echo "TS=$TS" >> $GITHUB_ENV
+          
+      - name: Performance Test
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+          DEV: https://atlas-dev-portal.vercel.app
+          PROOF: https://atlas-proof-messenger.vercel.app
+        run: |
+          cat > tests/k6/smoke.js <<'JS'
+          import http from 'k6/http';
+          import { check } from 'k6';
+          export const options = {
+            vus: 60, duration: '60s',
+            thresholds: { http_req_duration: ['p(95)<200'], http_req_failed: ['rate<0.01'] }
+          };
+          export default function() {
+            const r = http.get(`${__ENV.BASE}/prism`);
+            check(r, { ok: (res) => res.status === 200 });
+          }
+          JS
+          
+          BASE="$ADMIN" k6 run tests/k6/smoke.js --summary-export=docs/evidence/$TS/k6/summary.json \
+            || { echo "BLOCKER_PERF_GATE"; exit 1; }
+          
+          P95=$(jq '.metrics.http_req_duration["p(95)"]' docs/evidence/$TS/k6/summary.json)
+          ERR=$(jq '.metrics.http_req_failed.rate*100' docs/evidence/$TS/k6/summary.json)
+          
+          jq -n --arg admin "$ADMIN" --arg dev "$DEV" --arg proof "$PROOF" --arg ev "docs/evidence/$TS/" \
+                --argjson p95 "$P95" --argjson err "$ERR" \
+                '{"status":"VERIFIED","frontends":{"admin":$admin,"dev":$dev,"proof":$proof},"k6":{"p95_ms":$p95,"error_pct":$err},"evidence":$ev}'

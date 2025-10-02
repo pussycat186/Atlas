@@ -1,6 +1,6 @@
-'use client';
-
 import PrismPage from './_prism/PrismPage';
+
+export const revalidate = 600;
 
 export default function Page() {
   return (
