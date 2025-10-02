@@ -1,0 +1,71 @@
+name: Atlas Perf Fix Retest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  perf-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: grafana/setup-k6-action@v1
+      
+      - name: Setup
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl
+          
+      - name: Verify Cache Headers
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          # Wait for deployment to propagate
+          sleep 30
+          
+          # Check prism cache
+          PRISM_CACHE=$(curl -sI "$ADMIN/prism" | grep -i 'x-vercel-cache' || echo "MISS")
+          echo "Prism cache: $PRISM_CACHE"
+          
+          # Check qtca tick headers
+          TICK_HEADERS=$(curl -sI "$ADMIN/qtca/tick" | grep -i 'cache-control' || echo "NO_CACHE")
+          echo "Tick headers: $TICK_HEADERS"
+          
+          if [[ "$TICK_HEADERS" == "NO_CACHE" ]]; then
+            echo "BLOCKER_CACHE_MISS"
+            exit 1
+          fi
+          
+      - name: k6 Performance Test
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/k6
+          
+          cat > tests/k6/smoke.js <<'JS'
+          import http from 'k6/http';
+          import { check } from 'k6';
+          export const options = {
+            vus: 60, duration: '60s',
+            thresholds: { http_req_duration: ['p(95)<200'], http_req_failed: ['rate<0.01'] }
+          };
+          export default function() {
+            const r = http.get(`${__ENV.BASE}/prism`);
+            check(r, { ok: (res) => res.status === 200 });
+          }
+          JS
+          
+          BASE="$ADMIN" k6 run tests/k6/smoke.js --summary-export=docs/evidence/$TS/k6/summary.json \
+            || { echo "BLOCKER_PERF_GATE"; exit 1; }
+          
+          P95=$(jq '.metrics.http_req_duration["p(95)"]' docs/evidence/$TS/k6/summary.json)
+          ERR=$(jq '.metrics.http_req_failed.rate*100' docs/evidence/$TS/k6/summary.json)
+          
+          # Check thresholds
+          awk "BEGIN{ if ($P95>200 || $ERR>1) { print \"BLOCKER_PERF_GATE:p95=\"$P95\" error=\"$ERR; exit 1 } }"
+          
+          jq -n --argjson p95 "$P95" --argjson err "$ERR" --arg ev "docs/evidence/$TS/k6/" \
+            '{"status":"PERF_OK","k6":{"p95_ms":$p95,"error_pct":$err},"evidence":$ev}'
