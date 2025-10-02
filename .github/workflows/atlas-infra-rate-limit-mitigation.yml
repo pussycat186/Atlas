@@ -1,0 +1,185 @@
+name: Atlas Infra Rate Limit Mitigation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rate-limit-mitigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      
+      - name: Setup
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl
+          
+      - name: Verify Current Limits
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/k6
+          
+          cat > tests/k6/status-diag.js <<'JS'
+          import http from 'k6/http';
+          import { Counter } from 'k6/metrics';
+          export const options = { vus: 60, duration: '60s' };
+          const statusCodes = new Counter('status_codes');
+          const paths = ['/prism', '/qtca/tick', '/qtca/summary'];
+          export default function() {
+            const path = paths[Math.floor(Math.random() * paths.length)];
+            const r = http.get(`${__ENV.BASE}${path}`);
+            statusCodes.add(1, { status: r.status, path: path });
+          }
+          JS
+          
+          BASE="$ADMIN" k6 run tests/k6/status-diag.js --summary-export=docs/evidence/$TS/k6/status-diag.json
+          
+          # Check 429 rate
+          RATE_429=$(jq '.metrics.status_codes.values | to_entries[] | select(.key | contains("status:429")) | .value' docs/evidence/$TS/k6/status-diag.json 2>/dev/null || echo "0")
+          TOTAL_REQS=$(jq '.metrics.http_reqs.values.count' docs/evidence/$TS/k6/status-diag.json)
+          RATE_429_PCT=$(awk "BEGIN{printf \"%.2f\", ($RATE_429/$TOTAL_REQS)*100}")
+          
+          echo "429 rate: $RATE_429_PCT%"
+          echo "TS=$TS" >> $GITHUB_ENV
+          echo "RATE_429_PCT=$RATE_429_PCT" >> $GITHUB_ENV
+          
+          if awk "BEGIN{exit !($RATE_429_PCT>5)}"; then
+            echo "429s detected, proceeding with mitigation"
+          else
+            echo "No significant 429 rate limiting detected"
+          fi
+          
+      - name: Cache Headers Verification
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          echo "=== Checking cache headers ==="
+          
+          # Check /prism
+          PRISM_CACHE=$(curl -sI "$ADMIN/prism" | grep -i 'x-vercel-cache\|cdn-cache-control\|vercel-cdn-cache-control' || echo "NO_CACHE_HEADERS")
+          echo "Prism cache headers: $PRISM_CACHE"
+          
+          # Check /qtca/tick
+          TICK_CACHE=$(curl -sI "$ADMIN/qtca/tick" | grep -i 'x-vercel-cache\|cdn-cache-control\|vercel-cdn-cache-control' || echo "NO_CACHE_HEADERS")
+          echo "Tick cache headers: $TICK_CACHE"
+          
+          # Check /qtca/summary
+          SUMMARY_CACHE=$(curl -sI "$ADMIN/qtca/summary" | grep -i 'x-vercel-cache\|cdn-cache-control\|vercel-cdn-cache-control' || echo "NO_CACHE_HEADERS")
+          echo "Summary cache headers: $SUMMARY_CACHE"
+          
+          # Test cache hit on repeated request
+          sleep 2
+          PRISM_CACHE_HIT=$(curl -sI "$ADMIN/prism" | grep -i 'x-vercel-cache' | grep -i 'hit' || echo "CACHE_MISS")
+          echo "Prism cache hit test: $PRISM_CACHE_HIT"
+          
+          if [[ "$PRISM_CACHE_HIT" == "CACHE_MISS" ]]; then
+            echo "Cache not hitting effectively"
+          fi
+          
+      - name: WAF Permission Check
+        run: |
+          # Since we don't have Vercel dashboard access in CI
+          echo "BLOCKER_MISSING_PERMISSION:WAF - Dashboard access required for WAF rule modification"
+          echo "Manual action needed: Increase rate limits in Vercel dashboard for /prism and /qtca/* endpoints"
+          
+      - name: Cloudflare Worker Proxy (Alternative)
+        run: |
+          cat > cloudflare-worker.js <<'JS'
+          export default {
+            async fetch(request, env, ctx) {
+              const url = new URL(request.url);
+              
+              // Only handle GET requests to specific paths
+              if (request.method !== 'GET') {
+                return fetch(request);
+              }
+              
+              const path = url.pathname;
+              if (!path.startsWith('/prism') && !path.startsWith('/qtca/tick') && !path.startsWith('/qtca/summary')) {
+                return fetch(request);
+              }
+              
+              // Skip SSE stream
+              if (path.includes('/qtca/stream')) {
+                return fetch(request);
+              }
+              
+              // Create cache key
+              const cacheKey = new Request(url.toString(), request);
+              const cache = caches.default;
+              
+              // Try cache first
+              let response = await cache.match(cacheKey);
+              if (response) {
+                return response;
+              }
+              
+              // Forward to Vercel
+              const vercelUrl = url.toString().replace(url.origin, 'https://atlas-admin-insights.vercel.app');
+              const vercelRequest = new Request(vercelUrl, {
+                method: request.method,
+                headers: request.headers,
+                body: request.body
+              });
+              
+              response = await fetch(vercelRequest);
+              
+              // Cache successful responses
+              if (response.status === 200) {
+                const responseClone = response.clone();
+                responseClone.headers.set('Cache-Control', 'public, max-age=600, stale-while-revalidate=60');
+                ctx.waitUntil(cache.put(cacheKey, responseClone));
+              }
+              
+              return response;
+            }
+          };
+          JS
+          
+          echo "Cloudflare Worker code generated (manual deployment required)"
+          echo "Instructions:"
+          echo "1. Deploy worker.js to Cloudflare Workers"
+          echo "2. Set custom domain or use workers.dev subdomain"
+          echo "3. Update DNS CNAME to point to worker domain"
+          
+      - name: Re-test Performance
+        env:
+          ADMIN: https://atlas-admin-insights.vercel.app
+        run: |
+          cat > tests/k6/final-test.js <<'JS'
+          import http from 'k6/http';
+          import { check } from 'k6';
+          export const options = {
+            vus: 60, duration: '60s',
+            thresholds: { http_req_duration: ['p(95)<200'], http_req_failed: ['rate<0.01'] }
+          };
+          export default function() {
+            const r = http.get(`${__ENV.BASE}/prism`);
+            check(r, { ok: (res) => res.status === 200 });
+          }
+          JS
+          
+          BASE="$ADMIN" k6 run tests/k6/final-test.js --summary-export=docs/evidence/$TS/k6/final-summary.json || {
+            echo "Performance test failed, checking error patterns"
+          }
+          
+          P95=$(jq '.metrics.http_req_duration["p(95)"]' docs/evidence/$TS/k6/final-summary.json 2>/dev/null || echo "999")
+          ERR=$(jq '.metrics.http_req_failed.rate*100' docs/evidence/$TS/k6/final-summary.json 2>/dev/null || echo "100")
+          
+          echo "Final results: p95=${P95}ms, error=${ERR}%"
+          
+          if awk "BEGIN{exit !($P95<200 && $ERR<1)}"; then
+            jq -n --argjson p95 "$P95" --argjson err "$ERR" --arg ev "docs/evidence/$TS/k6/" \
+              '{"status":"PERF_OK","k6":{"p95_ms":$p95,"error_pct":$err},"evidence":$ev}'
+          else
+            # Check if still 429s
+            if awk "BEGIN{exit !($RATE_429_PCT>5)}"; then
+              echo "BLOCKER_INFRA_LIMITS:VERCEL_RATE_LIMIT"
+            else
+              echo "BLOCKER_CACHE_MISS"
+            fi
+            exit 1
+          fi
