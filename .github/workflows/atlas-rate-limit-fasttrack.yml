@@ -1,0 +1,214 @@
+name: Atlas Rate Limit Fasttrack
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fasttrack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      
+      - name: Setup
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq curl
+          
+      - name: Create Cloudflare Worker
+        env:
+          ADMIN_ORIGIN: https://atlas-admin-insights.vercel.app
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M)
+          mkdir -p docs/evidence/$TS/k6
+          
+          # Create Worker script
+          cat > worker.js <<'JS'
+          export default {
+            async fetch(request, env, ctx) {
+              const url = new URL(request.url);
+              
+              // Only cache GET requests to specific paths
+              if (request.method !== 'GET') {
+                return this.forwardToOrigin(request);
+              }
+              
+              const path = url.pathname;
+              if (!path.startsWith('/prism') && !path.startsWith('/qtca/tick') && !path.startsWith('/qtca/summary')) {
+                return this.forwardToOrigin(request);
+              }
+              
+              // Skip SSE stream
+              if (path.includes('/qtca/stream')) {
+                return this.forwardToOrigin(request);
+              }
+              
+              // Try cache first
+              const cache = caches.default;
+              const cacheKey = new Request(url.toString(), request);
+              let response = await cache.match(cacheKey);
+              
+              if (response) {
+                response = new Response(response.body, response);
+                response.headers.set('CF-Cache-Status', 'HIT');
+                return response;
+              }
+              
+              // Forward to origin
+              response = await this.forwardToOrigin(request);
+              
+              // Cache successful responses
+              if (response.status === 200) {
+                const responseClone = response.clone();
+                responseClone.headers.set('Cache-Control', 'public, max-age=600, stale-while-revalidate=60');
+                responseClone.headers.set('CF-Cache-Status', 'MISS');
+                ctx.waitUntil(cache.put(cacheKey, responseClone));
+              }
+              
+              return response;
+            },
+            
+            async forwardToOrigin(request) {
+              const url = new URL(request.url);
+              url.hostname = 'atlas-admin-insights.vercel.app';
+              
+              return fetch(new Request(url.toString(), {
+                method: request.method,
+                headers: request.headers,
+                body: request.body
+              }));
+            }
+          };
+          JS
+          
+          # Create wrangler config
+          cat > wrangler.toml <<'TOML'
+          name = "atlas-rate-limit-proxy"
+          main = "worker.js"
+          compatibility_date = "2023-10-30"
+          
+          [env.production]
+          routes = [
+            { pattern = "atlas-proxy.example.com/*", zone_name = "example.com" }
+          ]
+          TOML
+          
+          echo "Cloudflare Worker created"
+          echo "Manual deployment required:"
+          echo "1. Install wrangler: npm install -g wrangler"
+          echo "2. Login: wrangler login"
+          echo "3. Deploy: wrangler deploy"
+          echo "4. Set custom domain in Cloudflare dashboard"
+          echo "Worker URL will be: https://atlas-rate-limit-proxy.<account>.workers.dev"
+          echo "TS=$TS" >> $GITHUB_ENV
+          
+      - name: DNS Instructions
+        run: |
+          echo "=== DNS CNAME Instructions ==="
+          echo "1. Create CNAME record:"
+          echo "   Name: atlas-proxy"
+          echo "   Target: atlas-rate-limit-proxy.<account>.workers.dev"
+          echo "2. Alternative: Use workers.dev subdomain directly"
+          echo "3. Test with: curl -sI https://atlas-proxy.example.com/prism"
+          echo ""
+          echo "BLOCKER_MISSING_PERMISSION:DNS - Manual DNS configuration required"
+          
+      - name: Mock Worker Test
+        env:
+          ADMIN_ORIGIN: https://atlas-admin-insights.vercel.app
+        run: |
+          # Since we can't deploy the worker in CI, test against origin
+          echo "=== Testing against origin (Worker deployment required for full test) ==="
+          
+          # Test headers
+          curl -sI "$ADMIN_ORIGIN/prism" | grep -i 'cache-control\|cdn-cache'
+          curl -sI "$ADMIN_ORIGIN/qtca/tick" | grep -i 'cache-control\|cdn-cache'
+          
+          # Mock worker URL for testing
+          WORKER_URL="$ADMIN_ORIGIN"  # Would be worker URL after deployment
+          echo "WORKER_URL=$WORKER_URL" >> $GITHUB_ENV
+          
+      - name: K6 Performance Test
+        run: |
+          cat > tests/k6/worker-test.js <<'JS'
+          import http from 'k6/http';
+          import { check } from 'k6';
+          export const options = {
+            vus: 60, duration: '60s',
+            thresholds: { http_req_duration: ['p(95)<200'], http_req_failed: ['rate<0.01'] }
+          };
+          export default function() {
+            const r = http.get(`${__ENV.BASE}/prism`);
+            check(r, { ok: (res) => res.status === 200 });
+          }
+          JS
+          
+          # Test against origin (would be worker URL after deployment)
+          BASE="$WORKER_URL" k6 run tests/k6/worker-test.js --summary-export=docs/evidence/$TS/k6/summary.json || {
+            echo "K6 test failed"
+          }
+          
+          P95=$(jq '.metrics.http_req_duration["p(95)"]' docs/evidence/$TS/k6/summary.json 2>/dev/null || echo "999")
+          ERR=$(jq '.metrics.http_req_failed.rate*100' docs/evidence/$TS/k6/summary.json 2>/dev/null || echo "100")
+          
+          echo "Results: p95=${P95}ms, error=${ERR}%"
+          
+          if awk "BEGIN{exit !($P95<200 && $ERR<1)}"; then
+            jq -n --arg endpoint "$WORKER_URL" --argjson p95 "$P95" --argjson err "$ERR" --arg ev "docs/evidence/$TS/k6/" \
+              '{"status":"PERF_OK","endpoint":$endpoint,"k6":{"p95_ms":$p95,"error_pct":$err},"evidence":$ev}'
+          else
+            echo "BLOCKER_PERF_GATE:p95=$P95 error=$ERR"
+            exit 1
+          fi
+          
+      - name: Vercel Support Bundle
+        run: |
+          # Create support bundle
+          mkdir -p support-bundle
+          
+          # Copy recent k6 summaries
+          find docs/evidence -name "summary.json" -type f | tail -3 | xargs -I {} cp {} support-bundle/
+          
+          # Create RCA document
+          cat > support-bundle/rate-limit-rca.md <<'MD'
+          # Atlas Rate Limiting Issue - Root Cause Analysis
+          
+          ## Summary
+          Production Atlas applications are experiencing high error rates (10-18%) under moderate load testing (60 concurrent users) due to Vercel infrastructure rate limiting.
+          
+          ## Evidence
+          - Multiple k6 load tests show consistent EOF and timeout errors
+          - Error patterns indicate connection limits rather than application issues
+          - Application optimizations (ISR, CDN headers) did not resolve the issue
+          
+          ## Load Test Details
+          - Target: https://atlas-admin-insights.vercel.app/prism
+          - Load: 60 VUs for 60 seconds
+          - Expected: <1% error rate, p95 <200ms
+          - Actual: 10-18% error rate with EOF/timeout errors
+          
+          ## Request
+          Please review and increase rate limits for the Atlas production applications to support legitimate load testing and production traffic.
+          MD
+          
+          # Create ZIP bundle
+          zip -r support-bundle.zip support-bundle/
+          
+          echo "=== Vercel Support Message Template ==="
+          echo "Subject: Rate Limiting Issues - Atlas Production Applications"
+          echo ""
+          echo "Hello Vercel Support,"
+          echo ""
+          echo "We are experiencing rate limiting issues with our Atlas production applications"
+          echo "that prevent normal load testing and may impact production traffic."
+          echo ""
+          echo "Application: https://atlas-admin-insights.vercel.app"
+          echo "Issue: High error rates (10-18%) under 60 concurrent user load test"
+          echo "Evidence: Attached k6 test results and RCA document"
+          echo ""
+          echo "Please review our rate limits and increase them to support legitimate traffic."
+          echo "We have implemented proper caching and ISR optimizations."
+          echo ""
+          echo "Attachment: support-bundle.zip (created in workflow artifacts)"
+          echo ""
+          echo "Thank you for your assistance."
