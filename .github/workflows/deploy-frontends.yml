@@ -41,6 +41,14 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
       
+      - name: Pull project settings
+        working-directory: ${{ github.workspace }}/${{ matrix.path }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_secret] }}
+        run: vercel pull --yes --token "${{ secrets.VERCEL_TOKEN }}"
+      
       - name: Build app
         working-directory: ${{ github.workspace }}/${{ matrix.path }}
         env:
