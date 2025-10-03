@@ -88,6 +88,8 @@ const withPWA = require('next-pwa')({
   ],
 });
 
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
@@ -99,6 +101,9 @@ const nextConfig = {
     '@atlas/core',
     '@atlas/db'
   ],
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '../../')
+  },
   async headers() {
     return [
       {
@@ -138,6 +143,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   webpack: (config) => {
+    config.resolve.symlinks = false;
     // Exclude crypto package from browser bundles
     config.resolve.alias = {
       ...config.resolve.alias,

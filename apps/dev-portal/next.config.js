@@ -1,3 +1,5 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
@@ -15,7 +17,11 @@ const nextConfig = {
     '@atlas/core',
     '@atlas/db'
   ],
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '../../')
+  },
   webpack: (config) => {
+    config.resolve.symlinks = false;
     config.resolve.alias = {
       ...config.resolve.alias,
       '@atlas/fabric-crypto': false,
