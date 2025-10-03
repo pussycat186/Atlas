@@ -1,0 +1,21 @@
+HTTP/2 200 
+accept-ranges: bytes
+access-control-allow-origin: *
+age: 0
+cache-control: public, s-maxage=60, stale-while-revalidate=30
+cdn-cache-control: public, s-maxage=120, stale-while-revalidate=60
+content-disposition: inline
+content-type: application/json
+date: Fri, 03 Oct 2025 08:03:09 GMT
+etag: "b43e23ba08d06f1b023d23bf08953b23"
+server: Vercel
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-matched-path: /qtca/summary
+x-vercel-cache: PRERENDER
+x-vercel-id: sin1::9trck-1759478588969-dd4c265f1f0c
+x-xss-protection: 1; mode=block
+content-length: 163
+

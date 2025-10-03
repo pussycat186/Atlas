@@ -10,3 +10,5 @@ export { Switch } from './Switch';
 export { VisuallyHidden } from './VisuallyHidden';
 export { ChatBubble } from './ChatBubble';
 export { Minimap } from './Minimap';
+export { Combobox } from './combobox';
+export { Dialog as AccessibleDialog } from './dialog';

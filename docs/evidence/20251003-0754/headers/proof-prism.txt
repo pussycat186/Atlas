@@ -1,0 +1,10 @@
+HTTP/2 308 
+cache-control: public, s-maxage=60, stale-while-revalidate=300
+content-type: text/plain
+date: Fri, 03 Oct 2025 08:00:55 GMT
+location: /prism/
+refresh: 0;url=/prism/
+server: Vercel
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+x-vercel-id: sin1::v2fkh-1759478455160-1ece0d958279
+

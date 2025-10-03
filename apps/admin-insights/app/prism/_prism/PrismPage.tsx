@@ -1,12 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { ConstellationView } from '@atlas/ui-system/src/constellation-view';
+import { SLOGauge } from '@atlas/ui-system/src/slo-gauge';
 
 export default function PrismPage() {
   const [sku, setSku] = useState<'basic' | 'pro'>('basic');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [lux, setLux] = useState(sku === 'pro');
+  const [nodes] = useState([
+    { id: '1', label: 'API Gateway', x: 100, y: 100, status: 'active' as const },
+    { id: '2', label: 'Database', x: 200, y: 150, status: 'active' as const },
+    { id: '3', label: 'Cache', x: 300, y: 100, status: 'warning' as const },
+    { id: '4', label: 'Worker', x: 150, y: 200, status: 'active' as const }
+  ]);
+  const [systemStatus] = useState([
+    { service: 'API Gateway', status: 'Healthy', uptime: '99.9%', latency: '45ms' },
+    { service: 'Database', status: 'Healthy', uptime: '99.8%', latency: '12ms' },
+    { service: 'Cache', status: 'Warning', uptime: '98.5%', latency: '8ms' },
+    { service: 'Worker Pool', status: 'Healthy', uptime: '99.7%', latency: '23ms' }
+  ]);
 
   return (
     <>
@@ -90,20 +103,53 @@ export default function PrismPage() {
               {sku === 'pro' ? 'Enterprise-grade quantum computing interface' : 'Essential quantum computing tools'}
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-                <h3 className="text-xl font-semibold mb-2">Admin Insights</h3>
-                <p className="text-gray-600 dark:text-gray-400">Monitor system performance and analytics</p>
+            {/* Constellation View */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">System Constellation</h2>
+              <ConstellationView nodes={nodes} data-testid="constellation-view" />
+            </div>
+            
+            {/* SLO Gauges */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">Service Level Objectives</h2>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <SLOGauge value={99.9} target={99.5} label="Uptime" data-testid="uptime-gauge" />
+                <SLOGauge value={95.2} target={95.0} label="Performance" data-testid="performance-gauge" />
+                <SLOGauge value={98.7} target={99.0} label="Availability" data-testid="availability-gauge" />
+                <SLOGauge value={99.1} target={98.0} label="Reliability" data-testid="reliability-gauge" />
               </div>
-              
-              <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-                <h3 className="text-xl font-semibold mb-2">Dev Portal</h3>
-                <p className="text-gray-600 dark:text-gray-400">Developer tools and documentation</p>
-              </div>
-              
-              <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-                <h3 className="text-xl font-semibold mb-2">Proof Messenger</h3>
-                <p className="text-gray-600 dark:text-gray-400">Secure quantum-verified messaging</p>
+            </div>
+            
+            {/* System Status Table */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+              <h2 className="text-xl font-semibold p-6 border-b dark:border-gray-700">System Status</h2>
+              <div className="overflow-x-auto" data-testid="system-status-table">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Service</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Uptime</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Latency</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {systemStatus.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{item.service}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            item.status === 'Healthy' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{item.uptime}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{item.latency}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

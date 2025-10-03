@@ -1,0 +1,37 @@
+name: Nightly k6 Performance
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 3 AM UTC daily
+  workflow_dispatch:
+
+jobs:
+  k6-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+      
+      - name: Run k6 performance test
+        run: |
+          k6 run tests/k6/nightly-test.js --out json=summary.json
+      
+      - name: Create evidence directory
+        run: |
+          mkdir -p docs/evidence/$(date -u +"%Y%m%d-%H%M")/k6/
+          cp summary.json docs/evidence/$(date -u +"%Y%m%d-%H%M")/k6/
+      
+      - name: Check thresholds
+        run: |
+          if grep -q '"thresholds":{"http_req_failed":{"ok":false}' summary.json; then
+            echo "BLOCKER_PERF_GATE: k6 thresholds failed"
+            exit 1
+          fi
+      
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-results
+          path: summary.json

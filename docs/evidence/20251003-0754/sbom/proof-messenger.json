@@ -1,0 +1,148 @@
+{
+  "version": "1.0.0",
+  "name": "atlas",
+  "problems": [
+    "extraneous: @eslint-community/eslint-utils@4.8.0 /Users/simon/Atlas-1/Atlas-1/node_modules/@eslint-community/eslint-utils",
+    "extraneous: @eslint-community/regexpp@4.12.1 /Users/simon/Atlas-1/Atlas-1/node_modules/@eslint-community/regexpp",
+    "extraneous: @next/eslint-plugin-next@14.2.32 /Users/simon/Atlas-1/Atlas-1/node_modules/@next/eslint-plugin-next",
+    "extraneous: @rushstack/eslint-patch@1.12.0 /Users/simon/Atlas-1/Atlas-1/node_modules/@rushstack/eslint-patch",
+    "extraneous: @types/eslint-scope@3.7.7 /Users/simon/Atlas-1/Atlas-1/node_modules/@types/eslint-scope",
+    "extraneous: @typescript-eslint/scope-manager@6.21.0 /Users/simon/Atlas-1/Atlas-1/node_modules/@typescript-eslint/scope-manager",
+    "extraneous: @typescript-eslint/visitor-keys@6.21.0 /Users/simon/Atlas-1/Atlas-1/node_modules/@typescript-eslint/visitor-keys",
+    "extraneous: eslint-config-next@14.2.32 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-config-next",
+    "extraneous: eslint-import-resolver-node@0.3.9 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-import-resolver-node",
+    "extraneous: eslint-module-utils@2.12.1 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-module-utils",
+    "extraneous: eslint-plugin-jsx-a11y@6.10.2 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-plugin-jsx-a11y",
+    "extraneous: eslint-plugin-react-hooks@5.0.0-canary-7118f5dd7-20230705 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-plugin-react-hooks",
+    "extraneous: eslint-plugin-react@7.37.5 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-plugin-react",
+    "extraneous: eslint-scope@7.2.2 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-scope"
+  ],
+  "dependencies": {
+    "@eslint-community/eslint-utils": {
+      "version": "4.8.0",
+      "resolved": "file:../.pnpm/@eslint-community+eslint-utils@4.8.0_eslint@8.57.1/node_modules/@eslint-community/eslint-utils",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: @eslint-community/eslint-utils@4.8.0 /Users/simon/Atlas-1/Atlas-1/node_modules/@eslint-community/eslint-utils"
+      ]
+    },
+    "@eslint-community/regexpp": {
+      "version": "4.12.1",
+      "resolved": "file:../.pnpm/@eslint-community+regexpp@4.12.1/node_modules/@eslint-community/regexpp",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: @eslint-community/regexpp@4.12.1 /Users/simon/Atlas-1/Atlas-1/node_modules/@eslint-community/regexpp"
+      ]
+    },
+    "@next/eslint-plugin-next": {
+      "version": "14.2.32",
+      "resolved": "file:../.pnpm/@next+eslint-plugin-next@14.2.32/node_modules/@next/eslint-plugin-next",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: @next/eslint-plugin-next@14.2.32 /Users/simon/Atlas-1/Atlas-1/node_modules/@next/eslint-plugin-next"
+      ]
+    },
+    "@rushstack/eslint-patch": {
+      "version": "1.12.0",
+      "resolved": "file:../.pnpm/@rushstack+eslint-patch@1.12.0/node_modules/@rushstack/eslint-patch",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: @rushstack/eslint-patch@1.12.0 /Users/simon/Atlas-1/Atlas-1/node_modules/@rushstack/eslint-patch"
+      ]
+    },
+    "@types/eslint-scope": {
+      "version": "3.7.7",
+      "resolved": "file:../.pnpm/@types+eslint-scope@3.7.7/node_modules/@types/eslint-scope",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: @types/eslint-scope@3.7.7 /Users/simon/Atlas-1/Atlas-1/node_modules/@types/eslint-scope"
+      ]
+    },
+    "@typescript-eslint/scope-manager": {
+      "version": "6.21.0",
+      "resolved": "file:../.pnpm/@typescript-eslint+scope-manager@6.21.0/node_modules/@typescript-eslint/scope-manager",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: @typescript-eslint/scope-manager@6.21.0 /Users/simon/Atlas-1/Atlas-1/node_modules/@typescript-eslint/scope-manager"
+      ]
+    },
+    "@typescript-eslint/visitor-keys": {
+      "version": "6.21.0",
+      "resolved": "file:../.pnpm/@typescript-eslint+visitor-keys@6.21.0/node_modules/@typescript-eslint/visitor-keys",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: @typescript-eslint/visitor-keys@6.21.0 /Users/simon/Atlas-1/Atlas-1/node_modules/@typescript-eslint/visitor-keys"
+      ]
+    },
+    "eslint-config-next": {
+      "version": "14.2.32",
+      "resolved": "file:.pnpm/eslint-config-next@14.2.32_eslint@8.57.1_typescript@5.9.2/node_modules/eslint-config-next",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: eslint-config-next@14.2.32 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-config-next"
+      ]
+    },
+    "eslint-import-resolver-node": {
+      "version": "0.3.9",
+      "resolved": "file:.pnpm/eslint-import-resolver-node@0.3.9/node_modules/eslint-import-resolver-node",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: eslint-import-resolver-node@0.3.9 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-import-resolver-node"
+      ]
+    },
+    "eslint-module-utils": {
+      "version": "2.12.1",
+      "resolved": "file:.pnpm/eslint-module-utils@2.12.1_@typescript-eslint+parser@6.21.0_eslint@8.57.1_typescript@5.9.2__e_axutzazeacd3j27dwhapahmsay/node_modules/eslint-module-utils",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: eslint-module-utils@2.12.1 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-module-utils"
+      ]
+    },
+    "eslint-plugin-jsx-a11y": {
+      "version": "6.10.2",
+      "resolved": "file:.pnpm/eslint-plugin-jsx-a11y@6.10.2_eslint@8.57.1/node_modules/eslint-plugin-jsx-a11y",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: eslint-plugin-jsx-a11y@6.10.2 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-plugin-jsx-a11y"
+      ]
+    },
+    "eslint-plugin-react-hooks": {
+      "version": "5.0.0-canary-7118f5dd7-20230705",
+      "resolved": "file:.pnpm/eslint-plugin-react-hooks@5.0.0-canary-7118f5dd7-20230705_eslint@8.57.1/node_modules/eslint-plugin-react-hooks",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: eslint-plugin-react-hooks@5.0.0-canary-7118f5dd7-20230705 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-plugin-react-hooks"
+      ]
+    },
+    "eslint-plugin-react": {
+      "version": "7.37.5",
+      "resolved": "file:.pnpm/eslint-plugin-react@7.37.5_eslint@8.57.1/node_modules/eslint-plugin-react",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: eslint-plugin-react@7.37.5 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-plugin-react"
+      ]
+    },
+    "eslint-scope": {
+      "version": "7.2.2",
+      "resolved": "file:.pnpm/eslint-scope@7.2.2/node_modules/eslint-scope",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: eslint-scope@7.2.2 /Users/simon/Atlas-1/Atlas-1/node_modules/eslint-scope"
+      ]
+    }
+  }
+}

@@ -1,0 +1,615 @@
+{
+  "config": {
+    "configFile": "/Users/simon/Atlas-1/Atlas-1/playwright.config.ts",
+    "rootDir": "/Users/simon/Atlas-1/Atlas-1",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 3
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/simon/Atlas-1/Atlas-1/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "actualWorkers": 3
+        },
+        "id": "admin",
+        "name": "admin",
+        "testDir": "/Users/simon/Atlas-1/Atlas-1",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/simon/Atlas-1/Atlas-1/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "actualWorkers": 3
+        },
+        "id": "dev",
+        "name": "dev",
+        "testDir": "/Users/simon/Atlas-1/Atlas-1",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/simon/Atlas-1/Atlas-1/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "actualWorkers": 3
+        },
+        "id": "proof",
+        "name": "proof",
+        "testDir": "/Users/simon/Atlas-1/Atlas-1",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.0",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "tests/playwright/proof-messenger-smoke.spec.ts",
+      "file": "tests/playwright/proof-messenger-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Proof Messenger Smoke Tests",
+          "file": "tests/playwright/proof-messenger-smoke.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should have prism marker and basic interactions",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "admin",
+                  "projectName": "admin",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5933,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-10-03T08:42:45.055Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-admin/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-admin/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    },
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6549,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-10-03T08:42:52.425Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-admin-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-admin-retry1/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-admin-retry1/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-admin-retry1/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    },
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5993,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2025-10-03T08:43:00.132Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-admin-retry2/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-admin-retry2/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                },
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "dev",
+                  "projectName": "dev",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 5935,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-10-03T08:42:45.056Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-dev/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-dev/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    },
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 6550,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-10-03T08:42:52.429Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-dev-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-dev-retry1/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-dev-retry1/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-dev-retry1/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    },
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 5990,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2025-10-03T08:43:00.145Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-dev-retry2/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-dev-retry2/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                },
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "proof",
+                  "projectName": "proof",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 5965,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-10-03T08:42:45.057Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-proof/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-proof/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    },
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 6529,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-10-03T08:42:52.429Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-proof-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-proof-retry1/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-proof-retry1/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-proof-retry1/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    },
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 5986,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52",
+                        "location": {
+                          "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                          "column": 52,
+                          "line": 8
+                        },
+                        "snippet": "   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                            "column": 52,
+                            "line": 8
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('prism-marker')\nExpected string: \u001b[32m\"ATLAS • Prism UI — Peak Preview\"\u001b[39m\nReceived: <element(s) not found>\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('prism-marker')\u001b[22m\n\n\n   6 |     \n   7 |     // Check prism marker\n>  8 |     await expect(page.getByTestId('prism-marker')).toContainText('ATLAS • Prism UI — Peak Preview');\n     |                                                    ^\n   9 |     \n  10 |     // Check basic elements exist\n  11 |     await expect(page.getByRole('heading', { name: 'Atlas Prism Preview' })).toBeVisible();\n    at /Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts:8:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2025-10-03T08:43:00.141Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-proof-retry2/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/simon/Atlas-1/Atlas-1/test-results/tests-playwright-proof-mes-4ac92-rker-and-basic-interactions-proof-retry2/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/simon/Atlas-1/Atlas-1/tests/playwright/proof-messenger-smoke.spec.ts",
+                        "column": 52,
+                        "line": 8
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "ff9a5c89ea1f8df8a3ea-57ac600b2e47f1033306",
+              "file": "tests/playwright/proof-messenger-smoke.spec.ts",
+              "line": 4,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-10-03T08:42:43.037Z",
+    "duration": 23613.28,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  }
+}

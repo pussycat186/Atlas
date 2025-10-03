@@ -1,0 +1,7 @@
+npm error Lifecycle script `test` failed with error:
+npm error workspace @atlas/ui-tokens@0.1.0
+npm error location /Users/simon/Atlas-1/Atlas-1/packages/ui-tokens
+npm error Missing script: "test"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run --workspace=@atlas/ui-tokens@0.1.0
