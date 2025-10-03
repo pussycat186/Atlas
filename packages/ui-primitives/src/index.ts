@@ -1,5 +1,4 @@
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
-export { Dialog, DialogContent, DialogTrigger } from './Dialog';
 export { Menu, MenuContent, MenuItem } from './Menu';
 export { ToastProvider, useToast } from './Toast';
 export { Tooltip, TooltipTrigger, TooltipContent } from './Tooltip';
@@ -11,4 +10,4 @@ export { VisuallyHidden } from './VisuallyHidden';
 export { ChatBubble } from './ChatBubble';
 export { Minimap } from './Minimap';
 export { Combobox } from './combobox';
-export { Dialog as AccessibleDialog } from './dialog';
+export { Dialog } from './dialog';
