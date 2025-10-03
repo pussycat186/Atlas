@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Combobox } from '@atlas/ui-primitives/src/combobox';
+import { Combobox } from '@atlas/ui-primitives';
 
 interface Command {
   id: string;

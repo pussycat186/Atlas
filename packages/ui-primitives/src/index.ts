@@ -10,4 +10,4 @@ export { VisuallyHidden } from './VisuallyHidden';
 export { ChatBubble } from './ChatBubble';
 export { Minimap } from './Minimap';
 export { Combobox } from './combobox';
-export { Dialog } from './dialog';
+export { Dialog } from './Dialog';
