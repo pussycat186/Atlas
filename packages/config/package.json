@@ -15,7 +15,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.node.json && tsc -p tsconfig.browser.json",
+    "build": "npx tsc -p tsconfig.node.json && npx tsc -p tsconfig.browser.json",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
