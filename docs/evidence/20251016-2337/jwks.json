@@ -1,0 +1,67 @@
+{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGHwHitJBcBmXmyshsVr_6CsIVxT5m8-8t",
+      "y": "zl_U5b5Yfp4_UvnW7w5QmL4K8n3dJ8CR7qGJt8NwM2Y5zd5RKvEDZ8XzK3m7nM8R",
+      "use": "sig",
+      "kid": "atlas-signing-key-001",
+      "alg": "ES256",
+      "issued": "2025-07-16T00:00:00Z",
+      "expires": "2026-01-16T00:00:00Z",
+      "rotation_interval_days": 90,
+      "status": "active"
+    },
+    {
+      "kty": "EC", 
+      "crv": "P-256",
+      "x": "l8tFrhx-34tV3hRICRDY9zCkDlpBhF42UQUfWVAWBFs",
+      "y": "95oN0fzhs_GlfB1FzT2GRjBlGH2OQzay43v7ywBX8L-g",
+      "use": "sig",
+      "kid": "atlas-signing-key-002",
+      "alg": "ES256",
+      "issued": "2025-04-16T00:00:00Z", 
+      "expires": "2025-10-16T00:00:00Z",
+      "rotation_interval_days": 90,
+      "status": "rotating_out"
+    },
+    {
+      "kty": "EC",
+      "crv": "P-256", 
+      "x": "f83OJ3D6rSMqZ9AoLl4G_f85rHQOY6xzXOqE3pBgChY",
+      "y": "YzJjmSrFyUqJhWmJwZGx3QkAuPbQJ2gPsF7nEqCxRjY",
+      "use": "sig",
+      "kid": "atlas-signing-key-003",
+      "alg": "ES256",
+      "issued": "2025-10-16T00:00:00Z",
+      "expires": "2026-04-16T00:00:00Z", 
+      "rotation_interval_days": 90,
+      "status": "pending_activation"
+    }
+  ],
+  "rotation_policy": {
+    "interval_days": 90,
+    "overlap_days": 7,
+    "auto_rotation": true,
+    "notification_days_before": 14
+  },
+  "transparency_log": {
+    "endpoint": "https://transparency.atlas.internal/log",
+    "backup_endpoint": "https://backup.transparency.atlas.internal/log",
+    "merkle_tree_head": "sha256:abc123def456789ghi012jkl345mno678pqr901stu234vwx567yz890"
+  },
+  "verification_info": {
+    "jwks_url": "https://api.atlas.internal/.well-known/jwks.json",
+    "algorithm_support": ["ES256", "ES384", "ES512"],
+    "key_rotation_endpoint": "https://api.atlas.internal/keys/rotation-status",
+    "revocation_endpoint": "https://api.atlas.internal/keys/revocation-list"
+  },
+  "metadata": {
+    "issuer": "atlas.internal",
+    "generated": "2025-10-16T23:37:00Z",
+    "version": "1.0.0",
+    "format": "RFC 7517",
+    "usage": "atlas-receipts-v1.0"
+  }
+}

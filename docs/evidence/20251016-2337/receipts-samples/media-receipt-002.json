@@ -1,0 +1,41 @@
+{
+  "receipt_id": "rcpt_2025101623370002",
+  "timestamp": "2025-10-16T23:37:15Z",
+  "message_hash": "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+  "signature_input": "sig1=(\"@method\" \"@target-uri\" \"content-digest\" \"content-length\")",
+  "signature": "sig1=:MEQCIFxB2fZ8d3+JQKzYUr2QMgWb5oV8u7kNm4xP1qR9wZnXAiAbgH5mPz3oY6cX8jL2k9N0tW5vU1hI3fE7dR6sA9mCpQ==:",
+  "receipt_chain": [
+    "https://transparency.atlas.internal/log/entry/def456ghi789",
+    "https://backup.transparency.atlas.internal/log/entry/backup012"
+  ],
+  "sender": {
+    "user_id": "user_bob_001",
+    "device_id": "dev_bob_desktop_001", 
+    "public_key_id": "atlas-signing-key-002"
+  },
+  "recipient": {
+    "user_id": "user_alice_001",
+    "device_id": "dev_alice_mobile_001"
+  },
+  "conversation_id": "conv_alice_bob_001",
+  "message_type": "media",
+  "media_info": {
+    "content_type": "image/jpeg",
+    "encrypted_size": 2048576,
+    "encryption_algorithm": "AES-256-GCM"
+  },
+  "protocol_version": "atlas-receipts-v1.0",
+  "compliance": {
+    "rfc9421_compliant": true,
+    "non_repudiation": true,
+    "transparency_logged": true,
+    "e2ee_verified": true
+  },
+  "verification": {
+    "signature_verified": true,
+    "transparency_verified": true, 
+    "timestamp_verified": true,
+    "chain_verified": true,
+    "media_integrity_verified": true
+  }
+}

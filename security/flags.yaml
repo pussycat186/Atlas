@@ -1,11 +1,61 @@
-# Atlas Security Flags Configuration
+# Atlas Security Flags Configuration - Perfect Mode
 # Single source of truth for all security controls across applications
-# All flags default to OFF for safe staged rollout
+# Staged rollout: canary 10% → 50% → 100% across apps
+# Default: OFF for safe deployment, ON for production hardening
 
 # Format: CONTROL_NAME: { enabled: boolean, canary_pct: number, apps: [list] }
 
 # ==============================================
-# S1-S3: BROWSER & TRANSPORT HARDENING
+# S1: FLAGS & CI HARDENING
+# ==============================================
+
+# OPA/Conftest policy enforcement
+SECURITY_OPA_ENFORCE:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Policy-as-code enforcement for releases"
+  risk_level: medium
+  rollback_time: "< 1 minute"
+
+# Branch protection enforcement
+SECURITY_BRANCH_PROTECTION:
+  enabled: true
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Required PR reviews and status checks"
+  risk_level: low
+  rollback_time: "< 1 minute"
+
+# Signed commits requirement
+SECURITY_SIGNED_COMMITS:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "GPG signature requirement for commits"
+  risk_level: low
+  rollback_time: "< 1 minute"
+
+# Secret scanning strict mode
+SECURITY_SECRET_SCANNING_STRICT:
+  enabled: true
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Enhanced secret pattern detection"
+  risk_level: low
+  rollback_time: "< 1 minute"
+
+# Organization SSO and 2FA enforcement
+SECURITY_ORG_SSO_2FA:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Mandatory SSO and 2FA for organization"
+  risk_level: high
+  rollback_time: "< 5 minutes"
+
+# ==============================================
+# S2: BROWSER & TRANSPORT HARDENING
 # ==============================================
 
 # Content Security Policy with nonce enforcement
@@ -63,59 +113,220 @@ SECURITY_CORS_LOCKDOWN:
   rollback_time: "< 5 minutes"
 
 # ==============================================
-# S3-S4: AUTHENTICATION & CRYPTOGRAPHY
+# S4: HEADERS & TRANSPORT SECURITY
 # ==============================================
+
+# Content Security Policy with nonce generation
+SECURITY_CSP_NONCE:
+  enabled: true
+  canary_pct: 15
+  apps: [dev_portal, messenger]  # Start with apps using inline scripts
+  description: "CSP with dynamic nonces for inline scripts"
+  risk_level: medium
+  rollback_time: "< 5 minutes"
+
+# Trusted Types enforcement
+SECURITY_TRUSTED_TYPES:
+  enabled: true
+  canary_pct: 10
+  apps: [dev_portal]  # Start with dev_portal (less dynamic content)
+  description: "Trusted Types API for XSS prevention"
+  risk_level: high
+  rollback_time: "< 10 minutes (DOM breakage risk)"
+
+# Cross-Origin Opener Policy (COOP)
+SECURITY_COOP_ENFORCE:
+  enabled: true
+  canary_pct: 20
+  apps: [admin_insights, dev_portal, messenger]  # Enable for all apps
+  description: "COOP same-origin for process isolation"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# Cross-Origin Embedder Policy (COEP)
+SECURITY_COEP_ENFORCE:
+  enabled: true
+  canary_pct: 15
+  apps: [admin_insights, dev_portal]  # Start without messenger (WebRTC)
+  description: "COEP require-corp for Spectre protection"
+  risk_level: medium
+  rollback_time: "< 5 minutes (resource loading issues)"
+
+# HSTS production enforcement
+SECURITY_HSTS_PROD_ENFORCE:
+  enabled: true
+  canary_pct: 25
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]  # All apps
+  description: "HSTS with 1 year max-age + preload"
+  risk_level: low
+  rollback_time: "< 1 minute"
 
 # OAuth 2.0 DPoP (Demonstrating Proof-of-Possession)
 SECURITY_DPOP_ENFORCE:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [dev_portal]  # Start with dev_portal only for S4 canary
   description: "DPoP tokens for replay protection"
   risk_level: high
   rollback_time: "< 5 minutes"
 
+# X-Frame-Options and frame-ancestors CSP
+SECURITY_FRAME_PROTECTION:
+  enabled: true
+  canary_pct: 30
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]  # All apps
+  description: "Clickjacking protection via frame policies"
+  risk_level: low
+  rollback_time: "< 1 minute"
+
+# Referrer Policy strict enforcement
+SECURITY_REFERRER_STRICT:
+  enabled: true
+  canary_pct: 25
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]  # All apps
+  description: "Referrer-Policy: strict-origin-when-cross-origin"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# Permissions Policy (Feature Policy successor)
+SECURITY_PERMISSIONS_POLICY:
+  enabled: true
+  canary_pct: 20
+  apps: [admin_insights, dev_portal, messenger]  # Start with core apps
+  description: "Permissions-Policy for feature access control"
+  risk_level: low
+  rollback_time: "< 3 minutes"
+
+# Transport security headers bundle
+SECURITY_TRANSPORT_HARDENING:
+  enabled: true
+  canary_pct: 30
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]  # All apps
+  description: "Complete transport security header suite"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# ==============================================
+# S5: SUPPLY CHAIN SECURITY
+# ==============================================
+
+# SLSA Level 3 provenance generation
+SECURITY_SLSA_PROVENANCE:
+  enabled: true
+  canary_pct: 20
+  apps: [admin_insights, dev_portal, messenger]  # All build artifacts
+  description: "SLSA L3 provenance for build integrity"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# Software Bill of Materials (SBOM) automation
+SECURITY_SBOM_GENERATION:
+  enabled: true
+  canary_pct: 25
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]  # All apps
+  description: "Automated SPDX/CycloneDX SBOM generation"
+  risk_level: low
+  rollback_time: "< 3 minutes"
+
+# Cosign container image signing
+SECURITY_COSIGN_SIGNING:
+  enabled: true
+  canary_pct: 15
+  apps: [admin_insights, dev_portal, messenger]  # Container-based apps
+  description: "Cosign signatures for container images"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# Dependency vulnerability scanning
+SECURITY_VULN_SCANNING:
+  enabled: true
+  canary_pct: 30
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]  # All apps
+  description: "Automated vulnerability scanning with Trivy/Grype"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# Supply chain attack prevention
+SECURITY_SUPPLY_CHAIN_PROTECTION:
+  enabled: true
+  canary_pct: 20
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]  # All apps
+  description: "Dependency pinning and integrity validation"
+  risk_level: medium
+  rollback_time: "< 10 minutes"
+
+# Attestation and verification pipeline
+SECURITY_ATTESTATION_PIPELINE:
+  enabled: true
+  canary_pct: 15
+  apps: [admin_insights, dev_portal, messenger]  # Core apps
+  description: "End-to-end attestation with in-toto"
+  risk_level: medium
+  rollback_time: "< 15 minutes"
+
+# Reproducible builds enforcement
+SECURITY_REPRODUCIBLE_BUILDS:
+  enabled: true
+  canary_pct: 10
+  apps: [admin_insights, dev_portal]  # Start with core apps
+  description: "Reproducible builds with deterministic outputs"
+  risk_level: high
+  rollback_time: "< 30 minutes (build system changes)"
+
+# License compliance scanning
+SECURITY_LICENSE_COMPLIANCE:
+  enabled: true
+  canary_pct: 25
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]  # All apps
+  description: "Automated license compliance with FOSSA/Licensee"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# ==============================================
+# S5: AUTHENTICATION & CRYPTOGRAPHY
+# ==============================================
+
 # Mutual TLS for internal service communication
 SECURITY_MTLS_INTERNAL:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [admin_insights]  # Start with admin_insights for mTLS
   description: "mTLS for service-to-service auth"
   risk_level: high
   rollback_time: "< 10 minutes"
 
 # CSRF token enforcement
 SECURITY_CSRF_ENFORCE:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [dev_portal, admin_insights, proof_messenger]  # Enable for all apps
   description: "CSRF protection for state-changing operations"
   risk_level: medium
   rollback_time: "< 2 minutes"
 
 # TLS 1.3 strict enforcement
 SECURITY_TLS13_STRICT:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [admin_insights, dev_portal, proof_messenger]  # Enable for all apps
   description: "TLS 1.3 only with modern ciphers"
   risk_level: medium
   rollback_time: "< 5 minutes"
 
 # Post-Quantum Cryptography hybrid mode
 SECURITY_PQC_HYBRID_ENCRYPT:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [dev_portal]  # Start with dev_portal for S4 canary
   description: "Hybrid classical + post-quantum encryption"
   risk_level: medium
   rollback_time: "< 10 minutes"
 
 # Field-level database encryption
 SECURITY_FIELD_ENCRYPTION:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [admin_insights, dev_portal]  # Enable for apps with PII
   description: "Application-layer PII field encryption"
   risk_level: high
   rollback_time: "< 30 minutes"
@@ -139,7 +350,159 @@ SECURITY_BACKUP_DR:
   rollback_time: "N/A (safe default)"
 
 # ==============================================
-# S6: EDGE & RUNTIME PROTECTION
+# S6: DEV/ADMIN EXPERIENCE & MONITORING
+# ==============================================
+
+# Enhanced admin dashboard with security monitoring
+SECURITY_ADMIN_DASHBOARD:
+  enabled: true
+  canary_pct: 10
+  apps: [admin_insights]
+  description: "Enhanced security monitoring and compliance dashboard"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# Developer security tooling and documentation portal
+SECURITY_DEV_TOOLING:
+  enabled: true
+  canary_pct: 15
+  apps: [dev_portal]
+  description: "Security tooling interface and developer documentation"
+  risk_level: low
+  rollback_time: "< 3 minutes"
+
+# Automated security reporting and alerting
+SECURITY_AUTOMATED_REPORTING:
+  enabled: true
+  canary_pct: 10
+  apps: [admin_insights, dev_portal]
+  description: "Automated security posture reporting and alerting"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# Real-time security metrics and compliance tracking
+SECURITY_METRICS_TRACKING:
+  enabled: true
+  canary_pct: 20
+  apps: [admin_insights, dev_portal]
+  description: "Real-time security metrics and compliance dashboards"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# Developer security education and training interface
+SECURITY_DEV_EDUCATION:
+  enabled: true
+  canary_pct: 15
+  apps: [dev_portal]
+  description: "Interactive security training and best practices"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# Security incident response automation
+SECURITY_INCIDENT_AUTOMATION:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights]
+  description: "Automated incident detection and response workflows"
+  risk_level: medium
+  rollback_time: "< 10 minutes"
+
+# Security audit trail and forensic tools
+SECURITY_AUDIT_FORENSICS:
+  enabled: true
+  canary_pct: 5
+  apps: [admin_insights]
+  description: "Comprehensive audit trail and forensic analysis tools"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# Performance impact monitoring for security controls
+SECURITY_PERF_MONITORING:
+  enabled: true
+  canary_pct: 25
+  apps: [admin_insights, dev_portal, messenger]
+  description: "Security control performance impact monitoring"
+  risk_level: low
+  rollback_time: "< 3 minutes"
+
+# ==============================================
+# S7: CANARY ROLLOUT & PRODUCTION DEPLOYMENT
+# ==============================================
+
+# Staged canary deployment infrastructure
+SECURITY_CANARY_DEPLOYMENT:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Progressive canary rollout with automated monitoring"
+  risk_level: medium
+  rollback_time: "< 2 minutes"
+
+# Production readiness validation gates
+SECURITY_PROD_VALIDATION:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Automated production readiness validation"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# Comprehensive monitoring and observability
+SECURITY_MONITORING_INTEGRATION:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Full-stack security monitoring integration"
+  risk_level: low
+  rollback_time: "< 3 minutes"
+
+# Automated rollback and recovery systems
+SECURITY_AUTO_ROLLBACK:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Intelligent automated rollback on security issues"
+  risk_level: high
+  rollback_time: "< 1 minute"
+
+# Final security verification and compliance
+SECURITY_FINAL_VERIFICATION:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Final security compliance verification"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# Production security baseline enforcement
+SECURITY_BASELINE_ENFORCEMENT:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Production security baseline compliance"
+  risk_level: medium
+  rollback_time: "< 5 minutes"
+
+# Live traffic security analysis
+SECURITY_LIVE_TRAFFIC_ANALYSIS:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Real-time security analysis of production traffic"
+  risk_level: medium
+  rollback_time: "< 3 minutes"
+
+# Production incident response automation
+SECURITY_PROD_INCIDENT_RESPONSE:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
+  description: "Automated production security incident response"
+  risk_level: high
+  rollback_time: "< 30 seconds"
+
+# ==============================================
+# S8: EDGE & RUNTIME PROTECTION
 # ==============================================
 
 # Advanced Web Application Firewall
@@ -179,7 +542,7 @@ SECURITY_SSRF_GUARD:
   rollback_time: "< 5 minutes"
 
 # ==============================================
-# S7: SUPPLY CHAIN SECURITY
+# S8: LEGACY SUPPLY CHAIN (DEPRECATED - SEE S5)
 # ==============================================
 
 # Software Bill of Materials + SLSA provenance
@@ -348,6 +711,81 @@ canary:
     error_rate_threshold: 0.05
     latency_threshold_ms: 500
     duration_threshold_minutes: 5
+
+# ==============================================
+# S7: CANARY ROLLOUT & PRODUCTION DEPLOYMENT
+# ==============================================
+
+# Progressive canary deployment infrastructure
+SECURITY_CANARY_DEPLOYMENT:
+  enabled: true
+  description: "Enable progressive canary deployment infrastructure"
+  environments: ["prod", "staging"]
+  rollback_time: "< 60 seconds"
+  risk_level: critical
+
+# Real-time canary deployment health monitoring  
+SECURITY_CANARY_MONITORING:
+  enabled: true
+  description: "Real-time canary deployment health monitoring"
+  refresh_interval: 15
+  alert_thresholds:
+    error_rate: 0.05
+    latency_p99: 2000
+  rollback_time: "< 30 seconds"
+  risk_level: high
+
+# Production readiness validation gates
+SECURITY_PROD_VALIDATION:
+  enabled: true
+  description: "Production readiness validation gates"
+  required_phases: ["S0", "S1", "S2", "S3", "S4", "S5", "S6"]
+  min_security_score: 90
+  rollback_time: "< 2 minutes"
+  risk_level: high
+
+# Automatic rollback on security violations
+SECURITY_AUTO_ROLLBACK:
+  enabled: true
+  description: "Automatic rollback on security violations"
+  triggers: ["high_error_rate", "security_breach", "performance_degradation"]
+  max_canary_duration: 3600
+  rollback_time: "< 60 seconds"
+  risk_level: critical
+
+# Multi-stage security validation gates
+SECURITY_DEPLOYMENT_GATES:
+  enabled: true
+  description: "Multi-stage security validation gates"
+  stages: ["validation", "canary-10", "canary-50", "production"]
+  rollback_time: "< 90 seconds"
+  risk_level: high
+
+# Comprehensive canary performance metrics
+SECURITY_CANARY_METRICS:
+  enabled: true
+  description: "Comprehensive canary performance metrics"
+  collect_interval: 30
+  retention_days: 90
+  rollback_time: "< 30 seconds"
+  risk_level: medium
+
+# Production readiness assessment
+SECURITY_PROD_READINESS:
+  enabled: true
+  description: "Production readiness assessment"
+  categories: ["security", "performance", "reliability", "compliance"]
+  rollback_time: "< 2 minutes"
+  risk_level: high
+
+# Intelligent rollback decision automation
+SECURITY_ROLLBACK_AUTOMATION:
+  enabled: true
+  description: "Intelligent rollback decision automation"
+  confidence_threshold: 0.8
+  rollback_timeout: 300
+  rollback_time: "< 45 seconds"
+  risk_level: critical
     
 # ==============================================
 # EVIDENCE COLLECTION REQUIREMENTS

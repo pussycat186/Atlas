@@ -1,0 +1,26 @@
+# Conftest configuration for Atlas policy enforcement
+# Used by GitHub Actions to validate security controls
+
+policy: .github/policy
+namespace: atlas
+
+# Enable all policy packages for comprehensive validation
+verify:
+  - data.atlas.security.headers.violation
+  - data.atlas.supply.chain.violation  
+  - data.atlas.auth.enforcement.violation
+  - data.atlas.runtime.security.violation
+  - data.atlas.quality.gates.violation
+
+# Output format for CI/CD integration
+output: json
+
+# Fail on any policy violations (zero tolerance)
+fail-on-warn: true
+
+# Configure trace for debugging (disable in production)
+trace: false
+
+# Include structured metadata for evidence collection
+combine: true
+no-color: false

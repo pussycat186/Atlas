@@ -1,0 +1,60 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "Atlas Chat & Receipts Platform",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "postCreateCommand": ".devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-playwright.playwright",
+        "ms-vscode.vscode-typescript-next",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vsliveshare.vsliveshare",
+        "tsandall.opa",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "typescript.preferences.preferTypeOnlyAutoImports": true,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        }
+      }
+    }
+  },
+  "forwardPorts": [3000, 3001, 3002, 3003],
+  "portsAttributes": {
+    "3000": {
+      "label": "dev-portal",
+      "onAutoForward": "notify"
+    },
+    "3001": {
+      "label": "admin-insights", 
+      "onAutoForward": "notify"
+    },
+    "3002": {
+      "label": "proof-messenger",
+      "onAutoForward": "notify"
+    },
+    "3003": {
+      "label": "messenger",
+      "onAutoForward": "notify"
+    }
+  },
+  "remoteUser": "node",
+  "containerEnv": {
+    "ATLAS_ENV": "codespace",
+    "NODE_ENV": "development",
+    "PNPM_HOME": "/usr/local/share/pnpm",
+    "PATH": "/usr/local/share/pnpm:${PATH}"
+  }
+}

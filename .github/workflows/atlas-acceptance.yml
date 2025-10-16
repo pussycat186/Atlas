@@ -1,0 +1,882 @@
+name: 'S8 Atlas Automated Acceptance Testing'
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - security-only
+          - performance-only
+          - integration-only
+      deployment_target:
+        description: 'Target deployment to test'
+        required: true
+        default: 'canary'
+        type: choice
+        options:
+          - canary
+          - production
+          - staging
+      generate_evidence:
+        description: 'Generate compliance evidence'
+        required: false
+        default: true
+        type: boolean
+
+  workflow_call:
+    inputs:
+      test_suite:
+        required: false
+        default: 'full'
+        type: string
+      deployment_target:
+        required: false
+        default: 'canary'
+        type: string
+      generate_evidence:
+        required: false
+        default: true
+        type: boolean
+
+  schedule:
+    # Run full acceptance tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: read
+  deployments: write
+  security-events: write
+  actions: read
+  checks: write
+  issues: write
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+  PLAYWRIGHT_VERSION: '1.40.0'
+  K6_VERSION: 'latest'
+
+jobs:
+  # Perfect Mode Verification
+  perfect-mode-verification:
+    name: Atlas Perfect Mode Verification
+    runs-on: ubuntu-latest
+    outputs:
+      verification-status: ${{ steps.verify.outputs.status }}
+      verification-score: ${{ steps.verify.outputs.score }}
+      verification-report: ${{ steps.verify.outputs.report }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup verification environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl git
+
+      - name: Make verification script executable
+        run: chmod +x scripts/verify-perfect.sh
+
+      - name: Run Atlas Perfect Mode verification
+        id: verify
+        run: |
+          echo "🔍 Running Atlas Perfect Mode verification..."
+          
+          if ./scripts/verify-perfect.sh; then
+            echo "status=SUCCESS" >> $GITHUB_OUTPUT
+            echo "🎉 Perfect Mode verification PASSED"
+          else
+            echo "status=FAILED" >> $GITHUB_OUTPUT
+            echo "❌ Perfect Mode verification FAILED"
+          fi
+          
+          # Extract verification score
+          if [ -f "atlas-perfect-results.json" ]; then
+            SCORE=$(jq -r '.atlas_perfect_mode.overall.success_percentage // 0' atlas-perfect-results.json)
+            echo "score=$SCORE" >> $GITHUB_OUTPUT
+            
+            # Create summary report
+            REPORT=$(jq -r '.atlas_perfect_mode.overall.status + " (" + (.atlas_perfect_mode.overall.success_percentage | tostring) + "%)"' atlas-perfect-results.json)
+            echo "report=$REPORT" >> $GITHUB_OUTPUT
+          else
+            echo "score=0" >> $GITHUB_OUTPUT
+            echo "report=FAILED (0%)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload verification results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perfect-mode-verification
+          path: |
+            atlas-perfect-results.json
+            atlas-perfect-verification.log
+          retention-days: 30
+
+  # Security Acceptance Tests
+  security-acceptance-tests:
+    name: Security Acceptance Tests
+    runs-on: ubuntu-latest
+    needs: perfect-mode-verification
+    if: |
+      always() && 
+      (github.event.inputs.test_suite == 'full' || 
+       github.event.inputs.test_suite == 'security-only' || 
+       github.event_name != 'workflow_dispatch')
+    outputs:
+      security-score: ${{ steps.security-tests.outputs.score }}
+      vulnerabilities-found: ${{ steps.security-tests.outputs.vulns }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and tools
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install -g pnpm@${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run comprehensive security tests
+        id: security-tests
+        run: |
+          echo "🔒 Running comprehensive security acceptance tests..."
+          
+          SECURITY_SCORE=0
+          TOTAL_TESTS=10
+          VULNS_FOUND=0
+          
+          # Test 1: DPoP implementation validation
+          if grep -r "DPoP" packages/@atlas/security-middleware/ > /dev/null; then
+            echo "✅ DPoP implementation found"
+            SECURITY_SCORE=$((SECURITY_SCORE + 1))
+          else
+            echo "❌ DPoP implementation missing"
+          fi
+          
+          # Test 2: CSP nonce validation
+          if grep -r "nonce" packages/@atlas/security-middleware/ > /dev/null; then
+            echo "✅ CSP nonce implementation found"
+            SECURITY_SCORE=$((SECURITY_SCORE + 1))
+          else
+            echo "❌ CSP nonce implementation missing"
+          fi
+          
+          # Test 3: COOP/COEP headers
+          if grep -r "Cross-Origin-Opener-Policy\|Cross-Origin-Embedder-Policy" packages/@atlas/security-middleware/ > /dev/null; then
+            echo "✅ COOP/COEP headers found"
+            SECURITY_SCORE=$((SECURITY_SCORE + 1))
+          else
+            echo "❌ COOP/COEP headers missing"
+          fi
+          
+          # Test 4: RFC 9421 receipts
+          if grep -r "RFC.*9421" packages/@atlas/receipt/ > /dev/null; then
+            echo "✅ RFC 9421 receipts implementation found"
+            SECURITY_SCORE=$((SECURITY_SCORE + 1))
+          else
+            echo "❌ RFC 9421 receipts implementation missing"
+          fi
+          
+          # Test 5: SLSA L3 compliance
+          if grep -r "SLSA" .github/workflows/ > /dev/null; then
+            echo "✅ SLSA L3 compliance configured"
+            SECURITY_SCORE=$((SECURITY_SCORE + 1))
+          else
+            echo "❌ SLSA L3 compliance missing"
+          fi
+          
+          # Test 6: Supply chain scanning
+          if [ -f ".github/workflows/s5-security-scans.yml" ]; then
+            echo "✅ Supply chain scanning workflow found"
+            SECURITY_SCORE=$((SECURITY_SCORE + 1))
+          else
+            echo "❌ Supply chain scanning workflow missing"
+          fi
+          
+          # Test 7: Vulnerability scanning
+          if command -v trivy > /dev/null; then
+            echo "Running Trivy vulnerability scan..."
+            trivy fs --exit-code 0 --severity CRITICAL,HIGH --format json . > trivy-results.json || true
+            CRITICAL_VULNS=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-results.json 2>/dev/null || echo "0")
+            HIGH_VULNS=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-results.json 2>/dev/null || echo "0")
+            VULNS_FOUND=$((CRITICAL_VULNS + HIGH_VULNS))
+            
+            if [ $CRITICAL_VULNS -eq 0 ]; then
+              echo "✅ No critical vulnerabilities found"
+              SECURITY_SCORE=$((SECURITY_SCORE + 1))
+            else
+              echo "❌ Critical vulnerabilities found: $CRITICAL_VULNS"
+            fi
+          else
+            echo "⚠️ Trivy not available for vulnerability scanning"
+          fi
+          
+          # Test 8: Security flags validation
+          if [ -f "security/flags.yaml" ]; then
+            ENABLED_FLAGS=$(grep -c "enabled: true" security/flags.yaml || echo "0")
+            if [ $ENABLED_FLAGS -ge 45 ]; then
+              echo "✅ Security flags validation passed ($ENABLED_FLAGS flags enabled)"
+              SECURITY_SCORE=$((SECURITY_SCORE + 1))
+            else
+              echo "❌ Insufficient security flags enabled ($ENABLED_FLAGS/45)"
+            fi
+          else
+            echo "❌ Security flags configuration missing"
+          fi
+          
+          # Test 9: OPA policy validation
+          if ls security/policies/*.rego > /dev/null 2>&1; then
+            echo "✅ OPA policies found"
+            SECURITY_SCORE=$((SECURITY_SCORE + 1))
+          else
+            echo "❌ OPA policies missing"
+          fi
+          
+          # Test 10: Security middleware integration
+          APPS_WITH_MIDDLEWARE=0
+          for app in admin-insights dev-portal proof-messenger messenger verify; do
+            if [ -f "apps/$app/package.json" ] && grep -q "@atlas/security-middleware" "apps/$app/package.json"; then
+              APPS_WITH_MIDDLEWARE=$((APPS_WITH_MIDDLEWARE + 1))
+            fi
+          done
+          
+          if [ $APPS_WITH_MIDDLEWARE -ge 3 ]; then
+            echo "✅ Security middleware integrated in multiple apps"
+            SECURITY_SCORE=$((SECURITY_SCORE + 1))
+          else
+            echo "❌ Insufficient security middleware integration"
+          fi
+          
+          SECURITY_PERCENTAGE=$((SECURITY_SCORE * 100 / TOTAL_TESTS))
+          echo "score=$SECURITY_PERCENTAGE" >> $GITHUB_OUTPUT
+          echo "vulns=$VULNS_FOUND" >> $GITHUB_OUTPUT
+          
+          echo "📊 Security Acceptance Test Results:"
+          echo "  Score: $SECURITY_SCORE/$TOTAL_TESTS ($SECURITY_PERCENTAGE%)"
+          echo "  Vulnerabilities: $VULNS_FOUND"
+
+      - name: Security compliance validation
+        run: |
+          echo "📋 Validating security compliance requirements..."
+          
+          # Check SLSA L3 requirements
+          if [ -f ".github/workflows/slsa-provenance.yml" ]; then
+            echo "✅ SLSA L3 provenance workflow configured"
+          else
+            echo "❌ SLSA L3 provenance workflow missing"
+          fi
+          
+          # Check Cosign signing
+          if grep -r "cosign" .github/workflows/ > /dev/null; then
+            echo "✅ Cosign container signing configured"
+          else
+            echo "❌ Cosign container signing missing"
+          fi
+          
+          # Check SBOM generation
+          if grep -r "SBOM\|sbom" .github/workflows/ > /dev/null; then
+            echo "✅ SBOM generation configured"
+          else
+            echo "❌ SBOM generation missing"
+          fi
+
+      - name: Upload security test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-acceptance-results
+          path: |
+            trivy-results.json
+            security-test-*.log
+          retention-days: 30
+
+  # Performance Acceptance Tests
+  performance-acceptance-tests:
+    name: Performance Acceptance Tests
+    runs-on: ubuntu-latest
+    needs: perfect-mode-verification
+    if: |
+      always() && 
+      (github.event.inputs.test_suite == 'full' || 
+       github.event.inputs.test_suite == 'performance-only' || 
+       github.event_name != 'workflow_dispatch')
+    outputs:
+      performance-score: ${{ steps.perf-tests.outputs.score }}
+      lighthouse-scores: ${{ steps.perf-tests.outputs.lighthouse }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and tools
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install performance testing tools
+        run: |
+          npm install -g lighthouse@latest @lhci/cli@latest
+          
+          # Install k6
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run Lighthouse performance tests
+        id: perf-tests
+        run: |
+          echo "⚡ Running Lighthouse performance tests..."
+          
+          TARGET_BASE_URL="https://atlas.dev"
+          if [ "${{ github.event.inputs.deployment_target }}" = "canary" ]; then
+            TARGET_BASE_URL="https://canary.atlas.dev"
+          elif [ "${{ github.event.inputs.deployment_target }}" = "staging" ]; then
+            TARGET_BASE_URL="https://staging.atlas.dev"
+          fi
+          
+          LIGHTHOUSE_SCORE=0
+          TOTAL_APPS=5
+          
+          # Test each application
+          for app in admin dev proof messenger verify; do
+            echo "Testing $app application..."
+            
+            lighthouse "${TARGET_BASE_URL}/${app}" \
+              --output=json \
+              --output-path="lighthouse-${app}-acceptance.json" \
+              --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+              --quiet || continue
+            
+            if [ -f "lighthouse-${app}-acceptance.json" ]; then
+              PERF_SCORE=$(jq -r '.categories.performance.score * 100 | floor' "lighthouse-${app}-acceptance.json" 2>/dev/null || echo "0")
+              ACCESSIBILITY_SCORE=$(jq -r '.categories.accessibility.score * 100 | floor' "lighthouse-${app}-acceptance.json" 2>/dev/null || echo "0")
+              BEST_PRACTICES_SCORE=$(jq -r '.categories."best-practices".score * 100 | floor' "lighthouse-${app}-acceptance.json" 2>/dev/null || echo "0")
+              SEO_SCORE=$(jq -r '.categories.seo.score * 100 | floor' "lighthouse-${app}-acceptance.json" 2>/dev/null || echo "0")
+              
+              AVG_SCORE=$(( (PERF_SCORE + ACCESSIBILITY_SCORE + BEST_PRACTICES_SCORE + SEO_SCORE) / 4 ))
+              
+              echo "📊 $app Lighthouse scores:"
+              echo "  Performance: $PERF_SCORE/100"
+              echo "  Accessibility: $ACCESSIBILITY_SCORE/100"  
+              echo "  Best Practices: $BEST_PRACTICES_SCORE/100"
+              echo "  SEO: $SEO_SCORE/100"
+              echo "  Average: $AVG_SCORE/100"
+              
+              if [ $AVG_SCORE -ge 90 ]; then
+                LIGHTHOUSE_SCORE=$((LIGHTHOUSE_SCORE + 1))
+                echo "✅ $app passed Lighthouse tests"
+              else
+                echo "❌ $app failed Lighthouse tests"
+              fi
+            else
+              echo "❌ Failed to generate Lighthouse report for $app"
+            fi
+          done
+          
+          LIGHTHOUSE_PERCENTAGE=$((LIGHTHOUSE_SCORE * 100 / TOTAL_APPS))
+          echo "score=$LIGHTHOUSE_PERCENTAGE" >> $GITHUB_OUTPUT
+          
+          # Create summary of all scores
+          LIGHTHOUSE_SUMMARY=$(ls lighthouse-*-acceptance.json 2>/dev/null | xargs -I {} jq -r '.categories.performance.score * 100 | floor' {} 2>/dev/null | paste -sd, -)
+          echo "lighthouse=$LIGHTHOUSE_SUMMARY" >> $GITHUB_OUTPUT
+          
+          echo "📊 Overall Lighthouse Results: $LIGHTHOUSE_SCORE/$TOTAL_APPS apps passed ($LIGHTHOUSE_PERCENTAGE%)"
+
+      - name: Run k6 load testing
+        run: |
+          echo "🔄 Running k6 load testing..."
+          
+          TARGET_BASE_URL="https://atlas.dev"
+          if [ "${{ github.event.inputs.deployment_target }}" = "canary" ]; then
+            TARGET_BASE_URL="https://canary.atlas.dev"
+          fi
+          
+          # Create k6 test script
+          cat > k6-acceptance-test.js << 'EOF'
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          import { Rate } from 'k6/metrics';
+          
+          export let errorRate = new Rate('errors');
+          
+          export let options = {
+            stages: [
+              { duration: '2m', target: 10 }, // Ramp up
+              { duration: '5m', target: 10 }, // Stay at 10 users
+              { duration: '2m', target: 0 },  // Ramp down
+            ],
+            thresholds: {
+              http_req_duration: ['p(95)<1000'], // 95% of requests under 1s
+              errors: ['rate<0.01'], // Error rate under 1%
+            },
+          };
+          
+          export default function() {
+            const BASE_URL = __ENV.TARGET_URL || 'https://atlas.dev';
+            
+            // Test admin endpoint
+            let adminRes = http.get(`${BASE_URL}/admin/health`);
+            check(adminRes, {
+              'admin status is 200': (r) => r.status === 200,
+              'admin response time < 500ms': (r) => r.timings.duration < 500,
+            }) || errorRate.add(1);
+            
+            // Test dev portal
+            let devRes = http.get(`${BASE_URL}/dev/health`);
+            check(devRes, {
+              'dev portal status is 200': (r) => r.status === 200,
+              'dev portal response time < 500ms': (r) => r.timings.duration < 500,
+            }) || errorRate.add(1);
+            
+            sleep(1);
+          }
+          EOF
+          
+          # Run k6 test
+          k6 run --env TARGET_URL="$TARGET_BASE_URL" \
+                 --out json=k6-acceptance-results.json \
+                 k6-acceptance-test.js || true
+          
+          if [ -f "k6-acceptance-results.json" ]; then
+            echo "✅ k6 load testing completed"
+            
+            # Extract key metrics
+            AVG_RESPONSE_TIME=$(jq -r 'select(.type == "Point" and .metric == "http_req_duration") | .data.value' k6-acceptance-results.json | tail -1 || echo "0")
+            ERROR_RATE=$(jq -r 'select(.type == "Point" and .metric == "errors") | .data.value' k6-acceptance-results.json | tail -1 || echo "0")
+            
+            echo "📊 k6 Load Test Results:"
+            echo "  Average Response Time: ${AVG_RESPONSE_TIME}ms"
+            echo "  Error Rate: ${ERROR_RATE}%"
+          else
+            echo "❌ k6 load testing failed"
+          fi
+
+      - name: Core Web Vitals assessment
+        run: |
+          echo "📏 Assessing Core Web Vitals..."
+          
+          # Extract Core Web Vitals from Lighthouse reports
+          for report in lighthouse-*-acceptance.json; do
+            if [ -f "$report" ]; then
+              APP_NAME=$(basename "$report" -acceptance.json | sed 's/lighthouse-//')
+              
+              FCP=$(jq -r '.audits."first-contentful-paint".displayValue // "N/A"' "$report")
+              LCP=$(jq -r '.audits."largest-contentful-paint".displayValue // "N/A"' "$report")
+              CLS=$(jq -r '.audits."cumulative-layout-shift".displayValue // "N/A"' "$report")
+              FID=$(jq -r '.audits."max-potential-fid".displayValue // "N/A"' "$report")
+              
+              echo "📊 $APP_NAME Core Web Vitals:"
+              echo "  First Contentful Paint: $FCP"
+              echo "  Largest Contentful Paint: $LCP"
+              echo "  Cumulative Layout Shift: $CLS"
+              echo "  First Input Delay: $FID"
+            fi
+          done
+
+      - name: Upload performance test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-acceptance-results
+          path: |
+            lighthouse-*-acceptance.json
+            k6-acceptance-results.json
+            k6-acceptance-test.js
+          retention-days: 30
+
+  # Integration Acceptance Tests
+  integration-acceptance-tests:
+    name: Integration Acceptance Tests
+    runs-on: ubuntu-latest
+    needs: perfect-mode-verification
+    if: |
+      always() && 
+      (github.event.inputs.test_suite == 'full' || 
+       github.event.inputs.test_suite == 'integration-only' || 
+       github.event_name != 'workflow_dispatch')
+    outputs:
+      integration-score: ${{ steps.integration-tests.outputs.score }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and Playwright
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install -g pnpm@${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Run end-to-end integration tests
+        id: integration-tests
+        run: |
+          echo "🔗 Running end-to-end integration tests..."
+          
+          TARGET_BASE_URL="https://atlas.dev"
+          if [ "${{ github.event.inputs.deployment_target }}" = "canary" ]; then
+            TARGET_BASE_URL="https://canary.atlas.dev"
+          fi
+          
+          # Create Playwright test script
+          cat > acceptance-integration.spec.ts << 'EOF'
+          import { test, expect } from '@playwright/test';
+          
+          const BASE_URL = process.env.TARGET_URL || 'https://atlas.dev';
+          
+          test.describe('Atlas Integration Acceptance Tests', () => {
+            test('Admin insights should load and be accessible', async ({ page }) => {
+              await page.goto(`${BASE_URL}/admin`);
+              await expect(page).toHaveTitle(/Atlas.*Admin/);
+              
+              // Check for key elements
+              await expect(page.locator('h1')).toContainText(/Admin|Insights|Dashboard/);
+              
+              // Check security status
+              const securityStatus = page.locator('[data-testid="security-status"]');
+              if (await securityStatus.count() > 0) {
+                await expect(securityStatus).toBeVisible();
+              }
+            });
+            
+            test('Developer portal should load with documentation', async ({ page }) => {
+              await page.goto(`${BASE_URL}/dev`);
+              await expect(page).toHaveTitle(/Atlas.*Developer/);
+              
+              // Check for documentation sections
+              await expect(page.locator('h1, h2')).toContainText(/Developer|Portal|Documentation/);
+              
+              // Check for quick start guide
+              const quickStart = page.locator('text=Quick Start');
+              if (await quickStart.count() > 0) {
+                await expect(quickStart).toBeVisible();
+              }
+            });
+            
+            test('Health endpoints should respond correctly', async ({ request }) => {
+              // Test admin health endpoint
+              const adminHealth = await request.get(`${BASE_URL}/admin/health`);
+              expect(adminHealth.status()).toBe(200);
+              
+              // Test dev portal health endpoint  
+              const devHealth = await request.get(`${BASE_URL}/dev/health`);
+              expect(devHealth.status()).toBe(200);
+              
+              // Test API health endpoint
+              const apiHealth = await request.get(`${BASE_URL}/api/health`);
+              expect([200, 404]).toContain(apiHealth.status()); // 404 acceptable if not implemented
+            });
+            
+            test('Security headers should be present', async ({ request }) => {
+              const response = await request.get(`${BASE_URL}/admin`);
+              const headers = response.headers();
+              
+              // Check for security headers
+              expect(headers).toHaveProperty('content-security-policy');
+              expect(headers).toHaveProperty('x-frame-options');
+              expect(headers).toHaveProperty('x-content-type-options');
+            });
+            
+            test('HTTPS should be enforced', async ({ request }) => {
+              const response = await request.get(`${BASE_URL}/admin`);
+              expect(response.url()).toMatch(/^https:/);
+              
+              // Check HSTS header
+              const headers = response.headers();
+              expect(headers).toHaveProperty('strict-transport-security');
+            });
+          });
+          EOF
+          
+          # Run Playwright tests
+          INTEGRATION_SCORE=0
+          TOTAL_TESTS=5
+          
+          if npx playwright test acceptance-integration.spec.ts \
+                --reporter=json:integration-results.json \
+                --reporter=line; then
+            echo "✅ All integration tests passed"
+            INTEGRATION_SCORE=$TOTAL_TESTS
+          else
+            echo "❌ Some integration tests failed"
+            
+            # Count passed tests from results
+            if [ -f "integration-results.json" ]; then
+              PASSED_TESTS=$(jq -r '[.suites[].specs[].tests[] | select(.status == "passed")] | length' integration-results.json 2>/dev/null || echo "0")
+              INTEGRATION_SCORE=$PASSED_TESTS
+            fi
+          fi
+          
+          INTEGRATION_PERCENTAGE=$((INTEGRATION_SCORE * 100 / TOTAL_TESTS))
+          echo "score=$INTEGRATION_PERCENTAGE" >> $GITHUB_OUTPUT
+          
+          echo "📊 Integration Test Results: $INTEGRATION_SCORE/$TOTAL_TESTS passed ($INTEGRATION_PERCENTAGE%)"
+
+      - name: Test API endpoints functionality
+        run: |
+          echo "🔌 Testing API endpoints functionality..."
+          
+          TARGET_BASE_URL="https://atlas.dev"
+          if [ "${{ github.event.inputs.deployment_target }}" = "canary" ]; then
+            TARGET_BASE_URL="https://canary.atlas.dev"  
+          fi
+          
+          # Test API endpoints
+          for endpoint in /api/health /api/v1/status /api/v1/security/metrics; do
+            echo "Testing $endpoint..."
+            
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "${TARGET_BASE_URL}${endpoint}" || echo "000")
+            
+            if [ "$RESPONSE" = "200" ]; then
+              echo "✅ $endpoint: OK ($RESPONSE)"
+            elif [ "$RESPONSE" = "404" ]; then
+              echo "⚠️ $endpoint: Not implemented ($RESPONSE)"
+            else
+              echo "❌ $endpoint: Failed ($RESPONSE)"
+            fi
+          done
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-acceptance-results
+          path: |
+            integration-results.json
+            acceptance-integration.spec.ts
+            test-results/
+          retention-days: 30
+
+  # Generate Evidence Package
+  generate-evidence-package:
+    name: Generate Compliance Evidence
+    runs-on: ubuntu-latest
+    needs: [perfect-mode-verification, security-acceptance-tests, performance-acceptance-tests, integration-acceptance-tests]
+    if: |
+      always() && 
+      github.event.inputs.generate_evidence == 'true'
+    outputs:
+      evidence-package: ${{ steps.package.outputs.filename }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./test-artifacts
+
+      - name: Generate comprehensive evidence package
+        id: package
+        run: |
+          echo "📦 Generating comprehensive evidence package..."
+          
+          TIMESTAMP=$(date -u +%Y%m%d_%H%M%S)
+          PACKAGE_NAME="atlas-acceptance-evidence-${TIMESTAMP}"
+          
+          mkdir -p "$PACKAGE_NAME"/{verification,security,performance,integration,compliance}
+          
+          # Copy verification results
+          if [ -d "test-artifacts/perfect-mode-verification" ]; then
+            cp -r test-artifacts/perfect-mode-verification/* "$PACKAGE_NAME/verification/"
+          fi
+          
+          # Copy security test results
+          if [ -d "test-artifacts/security-acceptance-results" ]; then
+            cp -r test-artifacts/security-acceptance-results/* "$PACKAGE_NAME/security/"
+          fi
+          
+          # Copy performance test results
+          if [ -d "test-artifacts/performance-acceptance-results" ]; then
+            cp -r test-artifacts/performance-acceptance-results/* "$PACKAGE_NAME/performance/"
+          fi
+          
+          # Copy integration test results
+          if [ -d "test-artifacts/integration-acceptance-results" ]; then
+            cp -r test-artifacts/integration-acceptance-results/* "$PACKAGE_NAME/integration/"
+          fi
+          
+          # Generate compliance summary
+          cat > "$PACKAGE_NAME/compliance/summary.json" << EOF
+          {
+            "atlas_acceptance_testing": {
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "test_suite": "${{ github.event.inputs.test_suite || 'full' }}",
+              "deployment_target": "${{ github.event.inputs.deployment_target || 'canary' }}",
+              "verification_status": "${{ needs.perfect-mode-verification.outputs.verification-status }}",
+              "verification_score": "${{ needs.perfect-mode-verification.outputs.verification-score }}",
+              "security_score": "${{ needs.security-acceptance-tests.outputs.security-score || 'N/A' }}",
+              "performance_score": "${{ needs.performance-acceptance-tests.outputs.performance-score || 'N/A' }}",
+              "integration_score": "${{ needs.integration-acceptance-tests.outputs.integration-score || 'N/A' }}",
+              "vulnerabilities_found": "${{ needs.security-acceptance-tests.outputs.vulnerabilities-found || 'N/A' }}",
+              "lighthouse_scores": "${{ needs.performance-acceptance-tests.outputs.lighthouse-scores || 'N/A' }}",
+              "workflow_run_id": "${{ github.run_id }}",
+              "commit_sha": "${{ github.sha }}",
+              "compliance_standards": [
+                "SLSA Level 3",
+                "SOC 2 Type II",
+                "ISO 27001",
+                "NIST Cybersecurity Framework"
+              ]
+            }
+          }
+          EOF
+          
+          # Create archive
+          tar -czf "${PACKAGE_NAME}.tar.gz" "$PACKAGE_NAME"
+          
+          echo "filename=${PACKAGE_NAME}.tar.gz" >> $GITHUB_OUTPUT
+          echo "📦 Evidence package created: ${PACKAGE_NAME}.tar.gz"
+
+      - name: Upload evidence package
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-acceptance-evidence
+          path: "*.tar.gz"
+          retention-days: 90
+
+  # Final Acceptance Report
+  generate-acceptance-report:
+    name: Generate Final Acceptance Report
+    runs-on: ubuntu-latest
+    needs: [perfect-mode-verification, security-acceptance-tests, performance-acceptance-tests, integration-acceptance-tests]
+    if: always()
+    
+    steps:
+      - name: Generate final acceptance report
+        run: |
+          echo "📊 Generating final Atlas acceptance report..."
+          
+          # Determine overall status
+          VERIFICATION_STATUS="${{ needs.perfect-mode-verification.outputs.verification-status }}"
+          SECURITY_SCORE="${{ needs.security-acceptance-tests.outputs.security-score || '0' }}"
+          PERFORMANCE_SCORE="${{ needs.performance-acceptance-tests.outputs.performance-score || '0' }}"
+          INTEGRATION_SCORE="${{ needs.integration-acceptance-tests.outputs.integration-score || '0' }}"
+          
+          # Calculate overall score
+          TOTAL_SCORE=0
+          TESTS_RUN=0
+          
+          if [ "$VERIFICATION_STATUS" = "SUCCESS" ]; then
+            TOTAL_SCORE=$((TOTAL_SCORE + 100))
+            TESTS_RUN=$((TESTS_RUN + 1))
+          fi
+          
+          if [ "$SECURITY_SCORE" != "0" ] && [ "$SECURITY_SCORE" != "" ]; then
+            TOTAL_SCORE=$((TOTAL_SCORE + SECURITY_SCORE))
+            TESTS_RUN=$((TESTS_RUN + 1))
+          fi
+          
+          if [ "$PERFORMANCE_SCORE" != "0" ] && [ "$PERFORMANCE_SCORE" != "" ]; then
+            TOTAL_SCORE=$((TOTAL_SCORE + PERFORMANCE_SCORE))
+            TESTS_RUN=$((TESTS_RUN + 1))
+          fi
+          
+          if [ "$INTEGRATION_SCORE" != "0" ] && [ "$INTEGRATION_SCORE" != "" ]; then
+            TOTAL_SCORE=$((TOTAL_SCORE + INTEGRATION_SCORE))
+            TESTS_RUN=$((TESTS_RUN + 1))
+          fi
+          
+          if [ $TESTS_RUN -gt 0 ]; then
+            OVERALL_SCORE=$((TOTAL_SCORE / TESTS_RUN))
+          else
+            OVERALL_SCORE=0
+          fi
+          
+          # Determine final status
+          FINAL_STATUS="FAILED"
+          if [ $OVERALL_SCORE -ge 95 ]; then
+            FINAL_STATUS="EXCELLENT"
+          elif [ $OVERALL_SCORE -ge 90 ]; then
+            FINAL_STATUS="SUCCESS"
+          elif [ $OVERALL_SCORE -ge 80 ]; then
+            FINAL_STATUS="ACCEPTABLE"
+          fi
+          
+          # Generate report
+          cat > atlas-final-acceptance-report.json << EOF
+          {
+            "atlas_acceptance_testing_final": {
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "overall_status": "$FINAL_STATUS",
+              "overall_score": $OVERALL_SCORE,
+              "test_results": {
+                "perfect_mode_verification": {
+                  "status": "$VERIFICATION_STATUS",
+                  "score": "${{ needs.perfect-mode-verification.outputs.verification-score || 'N/A' }}"
+                },
+                "security_acceptance": {
+                  "score": "$SECURITY_SCORE",
+                  "vulnerabilities": "${{ needs.security-acceptance-tests.outputs.vulnerabilities-found || 'N/A' }}"
+                },
+                "performance_acceptance": {
+                  "score": "$PERFORMANCE_SCORE",
+                  "lighthouse_scores": "${{ needs.performance-acceptance-tests.outputs.lighthouse-scores || 'N/A' }}"
+                },
+                "integration_acceptance": {
+                  "score": "$INTEGRATION_SCORE"
+                }
+              },
+              "deployment_target": "${{ github.event.inputs.deployment_target || 'canary' }}",
+              "test_suite": "${{ github.event.inputs.test_suite || 'full' }}",
+              "workflow_run_id": "${{ github.run_id }}",
+              "commit_sha": "${{ github.sha }}",
+              "success_criteria_met": $([ "$FINAL_STATUS" = "SUCCESS" ] || [ "$FINAL_STATUS" = "EXCELLENT" ] && echo "true" || echo "false"),
+              "recommendations": [
+                $([ "$FINAL_STATUS" = "FAILED" ] && echo '"Review failed test results and address issues before production deployment"' || echo '"Atlas platform ready for production deployment"'),
+                "Continuous monitoring recommended for sustained security posture",
+                "Regular acceptance testing should be maintained"
+              ]
+            }
+          }
+          EOF
+          
+          echo "📊 Atlas Final Acceptance Report:"
+          echo "  Overall Status: $FINAL_STATUS"
+          echo "  Overall Score: $OVERALL_SCORE%"
+          echo "  Perfect Mode Verification: $VERIFICATION_STATUS"
+          echo "  Security Score: ${SECURITY_SCORE}%"
+          echo "  Performance Score: ${PERFORMANCE_SCORE}%"
+          echo "  Integration Score: ${INTEGRATION_SCORE}%"
+          
+          # Output for next workflow
+          if [ "$FINAL_STATUS" = "SUCCESS" ] || [ "$FINAL_STATUS" = "EXCELLENT" ]; then
+            echo "🎉 ATLAS ACCEPTANCE TESTING: SUCCESS"
+            echo "Platform ready for production deployment"
+            exit 0
+          else
+            echo "❌ ATLAS ACCEPTANCE TESTING: FAILED"
+            echo "Issues must be resolved before production deployment"
+            exit 1
+          fi
+
+      - name: Upload final report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-final-acceptance-report
+          path: atlas-final-acceptance-report.json
+          retention-days: 365

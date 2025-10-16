@@ -1,0 +1,589 @@
+.dev-security-tooling {
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 100vh;
+
+  .tooling-header {
+    text-align: center;
+    margin-bottom: 32px;
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: #6c757d;
+      margin-bottom: 0;
+    }
+  }
+
+  .tooling-tabs {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+
+    .tab-content {
+      padding: 32px;
+    }
+  }
+
+  // Security Tools Tab
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 24px;
+
+    .tool-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      transition: all 0.2s ease;
+      border-left: 4px solid transparent;
+
+      &:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+        border-left-color: #3f51b5;
+      }
+
+      mat-card-header {
+        mat-card-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 1.2rem;
+          color: #2c3e50;
+
+          mat-icon {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        mat-card-subtitle {
+          color: #6c757d;
+          margin-top: 4px;
+        }
+      }
+
+      .tool-description {
+        margin-bottom: 16px;
+        color: #495057;
+        line-height: 1.5;
+      }
+
+      .tool-status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+
+        .last-run {
+          font-size: 0.85rem;
+          color: #6c757d;
+        }
+      }
+
+      .scanner-engines {
+        margin: 12px 0;
+
+        mat-chip-set {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+
+          mat-chip {
+            font-size: 0.75rem;
+            min-height: 24px;
+          }
+        }
+      }
+
+      .license-stats, .cosign-info, .perf-summary {
+        margin: 12px 0;
+
+        .stat-item, .info-item, .perf-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 0;
+
+          .stat-value {
+            font-weight: 600;
+
+            &.approved { color: #28a745; }
+            &.flagged { color: #dc3545; }
+            &.good { color: #28a745; }
+            &.acceptable { color: #ffc107; }
+          }
+        }
+
+        .info-item {
+          justify-content: flex-start;
+          gap: 8px;
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+
+      mat-card-actions {
+        padding-top: 16px;
+        gap: 8px;
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+    }
+  }
+
+  // Security Guides Tab
+  .guides-section {
+    max-width: 900px;
+    margin: 0 auto;
+
+    mat-expansion-panel {
+      margin-bottom: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+      mat-expansion-panel-header {
+        mat-panel-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: 500;
+
+          mat-icon {
+            color: #3f51b5;
+          }
+        }
+
+        mat-panel-description {
+          color: #6c757d;
+        }
+      }
+
+      mat-list {
+        mat-list-item {
+          border-bottom: 1px solid #f8f9fa;
+          padding: 16px;
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          mat-icon[matListItemIcon] {
+            color: #6c757d;
+          }
+
+          div[matListItemTitle] {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 4px;
+          }
+
+          div[matListItemLine] {
+            color: #6c757d;
+            font-size: 0.9rem;
+          }
+
+          div[matListItemMeta] {
+            mat-chip-set {
+              display: flex;
+              gap: 4px;
+
+              mat-chip {
+                font-size: 0.7rem;
+                min-height: 20px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Security Alerts Tab
+  .alerts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h3 {
+      margin: 0;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+
+  .vulnerability-alerts {
+    .alert-card {
+      margin-bottom: 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      border-left: 4px solid;
+
+      &.severity-critical { border-left-color: #dc3545; }
+      &.severity-high { border-left-color: #fd7e14; }
+      &.severity-medium { border-left-color: #ffc107; }
+      &.severity-low { border-left-color: #20c997; }
+
+      mat-card-header {
+        mat-card-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #2c3e50;
+
+          mat-icon {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        mat-card-subtitle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 8px;
+
+          mat-chip {
+            font-size: 0.7rem;
+            min-height: 20px;
+          }
+
+          span {
+            color: #6c757d;
+            font-size: 0.9rem;
+          }
+        }
+      }
+
+      .alert-details {
+        .detail-row {
+          display: flex;
+          margin-bottom: 8px;
+
+          strong {
+            min-width: 120px;
+            color: #495057;
+          }
+
+          span {
+            color: #6c757d;
+
+            &.fix-version {
+              color: #28a745;
+              font-weight: 500;
+            }
+          }
+        }
+      }
+
+      mat-card-actions {
+        gap: 8px;
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+    }
+
+    .no-alerts {
+      text-align: center;
+      padding: 48px;
+
+      .no-alerts-message {
+        mat-icon {
+          font-size: 48px;
+          width: 48px;
+          height: 48px;
+          margin-bottom: 16px;
+        }
+
+        h3 {
+          margin: 16px 0 8px;
+          color: #2c3e50;
+        }
+
+        p {
+          color: #6c757d;
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  // Security Training Tab
+  .training-section {
+    .training-overview {
+      margin-bottom: 32px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+      .training-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 24px;
+        margin-top: 16px;
+
+        .stat-card {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px;
+          background: #f8f9fa;
+          border-radius: 8px;
+
+          mat-icon {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+          }
+
+          .stat-info {
+            .stat-number {
+              font-size: 1.5rem;
+              font-weight: 700;
+              color: #2c3e50;
+              line-height: 1;
+            }
+
+            .stat-label {
+              font-size: 0.8rem;
+              color: #6c757d;
+              margin-top: 2px;
+            }
+          }
+        }
+      }
+
+      mat-card-actions {
+        gap: 8px;
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+    }
+
+    .training-modules {
+      h3 {
+        margin-bottom: 24px;
+        color: #2c3e50;
+        font-weight: 500;
+      }
+
+      .modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+
+        .module-card {
+          border-radius: 12px;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+          transition: all 0.2s ease;
+
+          &:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+          }
+
+          mat-card-header {
+            mat-card-title {
+              color: #2c3e50;
+              font-size: 1.1rem;
+            }
+
+            mat-card-subtitle {
+              color: #6c757d;
+              margin-top: 4px;
+            }
+          }
+
+          mat-card-content p {
+            color: #495057;
+            line-height: 1.5;
+            margin: 0;
+          }
+
+          mat-card-actions {
+            button {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .tooling-header h1 {
+      font-size: 2rem;
+    }
+
+    .tab-content {
+      padding: 16px;
+    }
+
+    .tools-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .training-stats {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .modules-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .alerts-header {
+      flex-direction: column;
+      gap: 16px;
+      align-items: stretch;
+
+      h3 {
+        text-align: center;
+      }
+    }
+  }
+
+  // Animation keyframes
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .tool-card, .alert-card, .module-card {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  // Severity-based styling
+  .severity-critical {
+    .alert-details strong {
+      color: #dc3545;
+    }
+  }
+
+  .severity-high {
+    .alert-details strong {
+      color: #fd7e14;
+    }
+  }
+
+  .severity-medium {
+    .alert-details strong {
+      color: #ffc107;
+    }
+  }
+
+  .severity-low {
+    .alert-details strong {
+      color: #20c997;
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .dev-security-tooling {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #ffffff;
+
+    .tooling-header h1 {
+      color: #64b5f6;
+    }
+
+    .tooling-tabs {
+      background: #2a2a2a;
+    }
+
+    .tool-card, .alert-card, .module-card, .training-overview {
+      background: #2a2a2a;
+      color: #ffffff;
+
+      mat-card-title {
+        color: #e0e0e0;
+      }
+
+      mat-card-subtitle {
+        color: #b0b0b0;
+      }
+    }
+
+    .guides-section mat-expansion-panel {
+      background: #2a2a2a;
+
+      mat-panel-description {
+        color: #b0b0b0;
+      }
+    }
+
+    .training-stats .stat-card {
+      background: #3a3a3a;
+    }
+  }
+}

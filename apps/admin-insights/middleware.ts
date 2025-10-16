@@ -5,45 +5,69 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createSecurityMiddleware } from '../../middleware/security-headers';
 
-// Import security configuration (fallback if not available)
-let atlasSecurityConfig;
-try {
-  atlasSecurityConfig = require('../../../libs/atlas-security.js');
-} catch (error) {
-  console.warn('Atlas security config not available, using safe defaults');
-}
+// Admin Insights specific security configuration for S4
+const adminInsightsSecurityConfig = {
+  // Admin dashboard needs strictest policies
+  coopPolicy: 'same-origin' as const,
+  coepPolicy: 'require-corp' as const,
+  trustedTypes: true,
+  hstsMaxAge: 63072000, // 2 years for admin
+  hstsPreload: true,
+  permissionsPolicy: {
+    'geolocation': ['none'],
+    'camera': ['none'], 
+    'microphone': ['none'],
+    'usb': ['none'],
+    'bluetooth': ['none'],
+    'payment': ['none'],
+    'gyroscope': ['none'],
+    'accelerometer': ['none'],
+    'magnetometer': ['none'],
+    'ambient-light-sensor': ['none'],
+    'autoplay': ['none'],
+    'encrypted-media': ['none'],
+    'fullscreen': ['self'],
+    'picture-in-picture': ['none']
+  }
+};
+
+// Create S4 security middleware for admin-insights
+const s4SecurityMiddleware = createSecurityMiddleware('admin-insights', adminInsightsSecurityConfig);
 
 /**
- * Security middleware for all requests
- * Generates CSP nonces and applies security headers based on flags
+ * S4 Security middleware for admin-insights
+ * Implements transport security hardening with CSP nonces, COOP/COEP, HSTS, etc.
  */
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  // Apply S4 security headers via the security middleware
+  const response = s4SecurityMiddleware(request);
   
-  // Set app context for security config
-  process.env.ATLAS_APP_NAME = 'admin_insights';
+  // Admin-specific security enhancements
+  response.headers.set('X-Admin-Dashboard', 'true');
+  response.headers.set('X-Require-Auth', 'admin');
+  response.headers.set('X-Security-Level', 'S4-ADMIN');
   
-  // Generate security headers
-  const securityHeaders = getSecurityHeaders();
+  // Prevent caching of admin pages (sensitive data)
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache'); 
+  response.headers.set('Expires', '0');
+  response.headers.set('Surrogate-Control', 'no-store');
   
-  // Apply headers to response
-  securityHeaders.forEach(({ key, value }) => {
-    response.headers.set(key, value);
-  });
+  // Additional admin security headers
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');
+  response.headers.set('Clear-Site-Data', '"cache", "cookies", "storage", "executionContexts"');
   
-  // Add CSP nonce to request for use in components
-  const cspNonce = extractCSPNonce(securityHeaders);
-  if (cspNonce) {
-    response.headers.set('X-CSP-Nonce', cspNonce);
-  }
-  
-  // Log security status in development
+  // Log S4 security status in development
   if (process.env.NODE_ENV === 'development') {
-    console.log(`🛡️  Admin Insights security headers applied:`, {
-      headerCount: securityHeaders.length,
-      cspNonce: cspNonce ? `${cspNonce.substring(0, 8)}...` : 'none',
-      flagsEnabled: getEnabledSecurityFlags()
+    const nonce = response.headers.get('X-Request-Nonce');
+    console.log(`🛡️  S4 Admin Security Applied:`, {
+      app: 'admin-insights',
+      nonce: nonce ? `${nonce.substring(0, 8)}...` : 'none',
+      coop: response.headers.get('Cross-Origin-Opener-Policy'),
+      coep: response.headers.get('Cross-Origin-Embedder-Policy'),
+      hsts: response.headers.get('Strict-Transport-Security') ? 'enabled' : 'disabled'
     });
   }
   

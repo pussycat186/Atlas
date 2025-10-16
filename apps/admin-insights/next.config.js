@@ -25,8 +25,12 @@ const nextConfig = {
     '@atlas/ui-tokens',
     '@atlas/config',
     '@atlas/core',
-    '@atlas/db'
+    '@atlas/db',
+    '@atlas/mls-core',
+    '@atlas/receipt',
+    '@atlas/design-system'
   ],
+  outputFileTracingRoot: path.resolve(__dirname, '../..'),
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../../')
   },

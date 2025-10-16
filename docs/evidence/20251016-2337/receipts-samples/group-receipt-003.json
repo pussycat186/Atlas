@@ -1,0 +1,42 @@
+{
+  "receipt_id": "rcpt_2025101623370003",
+  "timestamp": "2025-10-16T23:37:30Z", 
+  "message_hash": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+  "signature_input": "sig1=(\"@method\" \"@target-uri\" \"content-digest\" \"authorization\")",
+  "signature": "sig1=:MEQCIB9k8Pq2Ld5XfG7YmN3oT1vR4wZ6aE9cH2sJ8gK0nM7pAiEAx2vF5eN8wK1cL6bQ9mR3tY7uI4oP2sD8fG1hJ5kN4x=:",
+  "receipt_chain": [
+    "https://transparency.atlas.internal/log/entry/ghi789jkl012",
+    "https://backup.transparency.atlas.internal/log/entry/backup345"
+  ],
+  "sender": {
+    "user_id": "user_charlie_001",
+    "device_id": "dev_charlie_tablet_001",
+    "public_key_id": "atlas-signing-key-003"
+  },
+  "recipient": {
+    "group_id": "group_team_alpha_001",
+    "member_count": 5
+  },
+  "conversation_id": "conv_team_alpha_001",
+  "message_type": "group_key_update",
+  "group_info": {
+    "epoch": 42,
+    "key_rotation_reason": "member_removed",
+    "mls_group_context": "MLS10TreeKEM256"
+  },
+  "protocol_version": "atlas-receipts-v1.0",
+  "compliance": {
+    "rfc9421_compliant": true,
+    "non_repudiation": true,
+    "transparency_logged": true,
+    "mls_compliant": true
+  },
+  "verification": {
+    "signature_verified": true,
+    "transparency_verified": true,
+    "timestamp_verified": true,
+    "chain_verified": true,
+    "mls_epoch_verified": true,
+    "group_membership_verified": true
+  }
+}

@@ -111,11 +111,13 @@ const nextConfig = {
     '@atlas/ui-tokens',
     '@atlas/config',
     '@atlas/core',
-    '@atlas/db'
+    '@atlas/db',
+    '@atlas/mls-core',
+    '@atlas/receipt',
+    '@atlas/design-system'
   ],
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../../')
-  },
   async headers() {
     // Use Atlas security configuration if available
     if (atlasSecurityConfig && atlasSecurityConfig.getSecurityHeaders) {

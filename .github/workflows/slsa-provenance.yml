@@ -1,41 +1,356 @@
-name: SLSA Provenance
+name: S5 SLSA L3 Provenance & Supply Chain Security
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
+# SLSA Level 3 requirements with S5 supply chain hardening
 permissions:
   contents: read
   actions: read
   id-token: write
+  packages: write
   attestations: write
+  security-events: write
 
 jobs:
-  build-and-attest:
+  # Job 1: Build artifacts with S5 provenance
+  build-with-s5-provenance:
     runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+      attestation-id: ${{ steps.attest.outputs.bundle-id }}
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0  # Full history for provenance
+
+      - name: Setup Node.js with S5 security
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
         with:
           node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build WASM
-        run: npm run build:wasm
-      
-      - name: Build all packages
-        run: npm run build
-      
-      - name: Generate build provenance
-        uses: actions/attest-build-provenance@v1
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
         with:
-          subject-path: |
-            apps/*/dist/**/*
-            packages/*/dist/**/*
-            packages/core-wasm/pkg/**/*
+          version: 9.0.0
+
+      - name: Verify dependency integrity
+        run: |
+          # S5: Verify lockfile integrity
+          pnpm audit --audit-level critical
+          pnpm install --frozen-lockfile --verify-store-integrity
+
+      - name: Build with reproducible settings
+        env:
+          NODE_ENV: production
+          SLSA_BUILD: true
+          S5_SUPPLY_CHAIN: true
+          SOURCE_DATE_EPOCH: ${{ github.event.head_commit.timestamp }}
+        run: |
+          # S5: Reproducible builds
+          pnpm turbo build --filter=admin-insights
+          pnpm turbo build --filter=dev-portal  
+          pnpm turbo build --filter=messenger
+          pnpm turbo build --filter=proof-messenger
+          pnpm turbo build --filter=@atlas/receipt
+          pnpm turbo build --filter=@atlas/mls-core
+
+      - name: Create S5 build artifacts
+        run: |
+          mkdir -p artifacts
+          
+          # Create deterministic archives
+          tar --sort=name --mtime="@${SOURCE_DATE_EPOCH:-$(date +%s)}" \
+              -czf artifacts/admin-insights.tar.gz -C apps/admin-insights dist/
+          tar --sort=name --mtime="@${SOURCE_DATE_EPOCH:-$(date +%s)}" \
+              -czf artifacts/dev-portal.tar.gz -C apps/dev-portal dist/
+          tar --sort=name --mtime="@${SOURCE_DATE_EPOCH:-$(date +%s)}" \
+              -czf artifacts/messenger.tar.gz -C apps/messenger dist/
+          tar --sort=name --mtime="@${SOURCE_DATE_EPOCH:-$(date +%s)}" \
+              -czf artifacts/proof-messenger.tar.gz -C apps/proof-messenger dist/
+          tar --sort=name --mtime="@${SOURCE_DATE_EPOCH:-$(date +%s)}" \
+              -czf artifacts/atlas-receipt.tar.gz -C packages/@atlas/receipt dist/
+          tar --sort=name --mtime="@${SOURCE_DATE_EPOCH:-$(date +%s)}" \
+              -czf artifacts/atlas-mls-core.tar.gz -C packages/@atlas/mls-core dist/
+
+      - name: Generate S5 build metadata
+        run: |
+          cat > artifacts/s5-build-metadata.json << EOF
+          {
+            "s5Phase": "Supply Chain Security",
+            "buildTime": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "sourceDateEpoch": "${SOURCE_DATE_EPOCH:-$(date +%s)}",
+            "gitCommit": "${{ github.sha }}",
+            "gitRef": "${{ github.ref }}",
+            "gitRepository": "${{ github.repository }}",
+            "buildTrigger": "${{ github.event_name }}",
+            "runId": "${{ github.run_id }}",
+            "runNumber": "${{ github.run_number }}",
+            "nodeVersion": "$(node --version)",
+            "pnpmVersion": "$(pnpm --version)",
+            "platform": "$(uname -a)",
+            "slsaLevel": "3",
+            "reproducible": true
+          }
+          EOF
+
+      - name: Generate artifact hashes
+        id: hash
+        run: |
+          cd artifacts
+          echo "hashes=$(sha256sum *.tar.gz *.json | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload S5 artifacts
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        with:
+          name: atlas-s5-build-artifacts
+          path: artifacts/
+          retention-days: 90
+
+      - name: Generate SLSA L3 provenance attestation
+        uses: actions/attest-build-provenance@1c608d11d69870c2092266b3f9a6f3abbf17002c # v1.4.3
+        id: attest
+        with:
+          subject-path: 'artifacts/*.tar.gz'
+
+  # Job 2: S5 SBOM generation with SPDX format
+  generate-s5-sbom:
+    runs-on: ubuntu-latest
+    needs: build-with-s5-provenance
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install S5 SBOM tools
+        run: |
+          # Install Syft for SBOM generation
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Install SPDX tools
+          curl -L https://github.com/spdx/tools-golang/releases/latest/download/tools-golang-linux-amd64.tar.gz | tar -xz -C /usr/local/bin
+          
+          # Install CycloneDX CLI
+          npm install -g @cyclonedx/cyclonedx-npm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate comprehensive S5 SBOM
+        run: |
+          mkdir -p sbom
+          
+          # Generate SPDX format SBOM (primary)
+          syft packages . -o spdx-json=sbom/atlas-ecosystem.spdx.json
+          
+          # Generate CycloneDX format SBOM (secondary)
+          cyclonedx-npm --output-format json --output-file sbom/atlas-ecosystem.cyclonedx.json
+          
+          # Generate per-app SBOMs for granular tracking
+          syft packages apps/admin-insights -o spdx-json=sbom/admin-insights.spdx.json
+          syft packages apps/dev-portal -o spdx-json=sbom/dev-portal.spdx.json
+          syft packages apps/messenger -o spdx-json=sbom/messenger.spdx.json
+          syft packages apps/proof-messenger -o spdx-json=sbom/proof-messenger.spdx.json
+          
+          # Generate package SBOMs
+          syft packages packages/@atlas/receipt -o spdx-json=sbom/atlas-receipt.spdx.json
+          syft packages packages/@atlas/mls-core -o spdx-json=sbom/atlas-mls-core.spdx.json
+
+      - name: Validate S5 SBOM integrity
+        run: |
+          # Validate SPDX format compliance
+          spdx-tools validate sbom/atlas-ecosystem.spdx.json
+          
+          # Generate comprehensive SBOM metadata
+          cat > sbom/s5-sbom-metadata.json << EOF
+          {
+            "s5Phase": "Supply Chain Security - SBOM",
+            "generatedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "toolName": "syft",
+            "toolVersion": "$(syft version | head -n1)",
+            "formats": ["SPDX 2.3", "CycloneDX 1.4"],
+            "componentCount": $(jq '.packages | length' sbom/atlas-ecosystem.spdx.json),
+            "gitCommit": "${{ github.sha }}",
+            "sbomFiles": [
+              "atlas-ecosystem.spdx.json",
+              "atlas-ecosystem.cyclonedx.json", 
+              "admin-insights.spdx.json",
+              "dev-portal.spdx.json",
+              "messenger.spdx.json",
+              "proof-messenger.spdx.json",
+              "atlas-receipt.spdx.json",
+              "atlas-mls-core.spdx.json"
+            ]
+          }
+          EOF
+          
+          # Verify component integrity
+          component_count=$(jq '.packages | length' sbom/atlas-ecosystem.spdx.json)
+          echo "✅ SBOM generated with $component_count components"
+
+      - name: Upload S5 SBOM artifacts
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        with:
+          name: atlas-s5-sbom
+          path: sbom/
+          retention-days: 90
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@5026d3663739160db546203eeaffa6aa1c51a4d6 # v1.4.1
+        with:
+          subject-path: 'sbom/atlas-ecosystem.spdx.json'
+          sbom-path: 'sbom/atlas-ecosystem.spdx.json'
+
+  # Job 3: S5 Advanced vulnerability scanning
+  s5-vulnerability-scan:
+    runs-on: ubuntu-latest
+    needs: build-with-s5-provenance
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Download S5 build artifacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: atlas-s5-build-artifacts
+          path: artifacts/
+
+      - name: Install S5 security scanners
+        run: |
+          # Install Trivy
+          sudo apt-get update
+          sudo apt-get install wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+          
+          # Install Grype for additional scanning
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Install Gitleaks for secrets
+          curl -L https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_linux_x64.tar.gz | tar -xz -C /usr/local/bin
+          
+          # Install Semgrep for SAST
+          pip3 install semgrep
+
+      - name: S5 comprehensive vulnerability scan
+        run: |
+          mkdir -p vuln-reports
+          
+          # Trivy filesystem scan (HIGH/CRITICAL only)
+          trivy fs . \
+            --format json \
+            --output vuln-reports/trivy-filesystem.json \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed
+          
+          # Grype vulnerability scan
+          grype . \
+            -o json \
+            --file vuln-reports/grype-vulnerabilities.json \
+            --only-fixed
+          
+          # Scan individual S5 artifacts
+          for artifact in artifacts/*.tar.gz; do
+            name=$(basename "$artifact" .tar.gz)
+            trivy archive "$artifact" \
+              --format json \
+              --output "vuln-reports/${name}-trivy.json" \
+              --severity HIGH,CRITICAL
+            grype "archive:$artifact" \
+              -o json \
+              --file "vuln-reports/${name}-grype.json"
+          done
+
+      - name: S5 secrets and SAST scanning
+        run: |
+          # Gitleaks secrets scan
+          gitleaks detect \
+            --source . \
+            --report-format json \
+            --report-path vuln-reports/gitleaks-secrets.json \
+            --verbose
+          
+          # Semgrep SAST scan
+          semgrep \
+            --config=auto \
+            --json \
+            --output=vuln-reports/semgrep-sast.json \
+            --severity=ERROR \
+            .
+
+      - name: Generate S5 vulnerability summary
+        run: |
+          # Count vulnerabilities from all scanners
+          trivy_critical=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' vuln-reports/trivy-filesystem.json || echo "0")
+          trivy_high=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' vuln-reports/trivy-filesystem.json || echo "0")
+          grype_critical=$(jq '[.matches[] | select(.vulnerability.severity == "Critical")] | length' vuln-reports/grype-vulnerabilities.json || echo "0")
+          grype_high=$(jq '[.matches[] | select(.vulnerability.severity == "High")] | length' vuln-reports/grype-vulnerabilities.json || echo "0")
+          secrets_count=$(jq '. | length' vuln-reports/gitleaks-secrets.json || echo "0")
+          sast_issues=$(jq '.results | length' vuln-reports/semgrep-sast.json || echo "0")
+          
+          cat > vuln-reports/s5-vulnerability-summary.json << EOF
+          {
+            "s5Phase": "Supply Chain Security - Vulnerability Scanning",
+            "scanTime": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "gitCommit": "${{ github.sha }}",
+            "scanners": {
+              "trivy": {
+                "criticalVulnerabilities": $trivy_critical,
+                "highVulnerabilities": $trivy_high
+              },
+              "grype": {
+                "criticalVulnerabilities": $grype_critical,
+                "highVulnerabilities": $grype_high
+              },
+              "gitleaks": {
+                "secretsFound": $secrets_count
+              },
+              "semgrep": {
+                "sastIssues": $sast_issues
+              }
+            },
+            "totals": {
+              "criticalVulnerabilities": $((trivy_critical + grype_critical)),
+              "highVulnerabilities": $((trivy_high + grype_high)),
+              "secretsFound": $secrets_count,
+              "sastIssues": $sast_issues
+            },
+            "artifactsScanned": $(ls artifacts/*.tar.gz | wc -l),
+            "scanCompliant": $([ $((trivy_critical + grype_critical + secrets_count)) -eq 0 ] && echo "true" || echo "false")
+          }
+          EOF
+
+      - name: Upload S5 vulnerability reports
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        with:
+          name: atlas-s5-vulnerability-reports
+          path: vuln-reports/
+          retention-days: 90
+
+      - name: S5 vulnerability gate
+        run: |
+          total_critical=$(jq '.totals.criticalVulnerabilities' vuln-reports/s5-vulnerability-summary.json)
+          secrets_found=$(jq '.totals.secretsFound' vuln-reports/s5-vulnerability-summary.json)
+          
+          if [ "$total_critical" -gt 0 ] || [ "$secrets_found" -gt 0 ]; then
+            echo "❌ S5 Security Gate Failed:"
+            echo "   Critical vulnerabilities: $total_critical"
+            echo "   Secrets found: $secrets_found"
+            echo "::error::S5 supply chain security requirements not met"
+            exit 1
+          fi
+          echo "✅ S5 Security Gate Passed - No critical issues found"

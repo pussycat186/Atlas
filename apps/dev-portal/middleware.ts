@@ -1,28 +1,88 @@
 /**
  * Atlas Security Middleware
  * Next.js middleware for security header injection based on flags
- * Supports CSP nonces, Trusted Types, and canary rollout
+ * Supports CSP nonces, Trusted Types, canary rollout, and S3 Auth Hardening
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createSecurityMiddleware, DPoPManager } from '../../middleware/security-headers';
 
-// Import security configuration (fallback if not available)
-let atlasSecurityConfig;
-try {
-  atlasSecurityConfig = require('../../../libs/atlas-security.js');
-} catch (error) {
-  console.warn('Atlas security config not available, using safe defaults');
-}
+// Dev Portal specific security configuration for S4
+const devPortalSecurityConfig = {
+  // Developer portal with moderate restrictions  
+  coopPolicy: 'same-origin-allow-popups' as const, // Allow OAuth popups
+  coepPolicy: 'credentialless' as const, // Less strict for dev resources
+  trustedTypes: true, // Enable for XSS protection
+  hstsMaxAge: 31536000, // 1 year
+  hstsPreload: true,
+  permissionsPolicy: {
+    'geolocation': ['none'],
+    'camera': ['self'], // Allow for WebRTC demos
+    'microphone': ['self'], // Allow for WebRTC demos  
+    'usb': ['none'],
+    'bluetooth': ['none'],
+    'payment': ['self'], // Allow for payment API demos
+    'gyroscope': ['none'],
+    'accelerometer': ['none'],
+    'magnetometer': ['none'],
+    'ambient-light-sensor': ['none'],
+    'autoplay': ['self'],
+    'encrypted-media': ['self'],
+    'fullscreen': ['self'],
+    'picture-in-picture': ['self']
+  }
+};
+
+// Create S4 security middleware for dev-portal
+const s4SecurityMiddleware = createSecurityMiddleware('dev-portal', devPortalSecurityConfig);
 
 /**
- * Security middleware for all requests
- * Generates CSP nonces and applies security headers based on flags
+ * S4 Security middleware for dev-portal
+ * Handles DPoP enforcement and transport security hardening
  */
-export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+export async function middleware(request: NextRequest) {
+  // 1. Check DPoP enforcement for protected routes
+  if (isDPoPProtectedRoute(request.nextUrl.pathname)) {
+    const dpopHeader = request.headers.get('DPoP');
+    const authHeader = request.headers.get('Authorization');
+    
+    if (!dpopHeader) {
+      return new NextResponse('DPoP proof required', { 
+        status: 400,
+        headers: {
+          'WWW-Authenticate': 'DPoP',
+          'X-Error': 'missing-dpop-proof'
+        }
+      });
+    }
+
+    // Validate DPoP proof
+    const accessToken = authHeader?.replace('DPoP ', '');
+    const isValidDPoP = DPoPManager.validateDPoPProof(
+      dpopHeader,
+      request.method,
+      request.nextUrl.href,
+      accessToken
+    );
+
+    if (!isValidDPoP) {
+      return new NextResponse('Invalid DPoP proof', { 
+        status: 401,
+        headers: {
+          'WWW-Authenticate': 'DPoP error="invalid_dpop_proof"',
+          'X-Error': 'invalid-dpop-proof'
+        }
+      });
+    }
+  }
+
+  // 2. Apply S4 security headers
+  const response = s4SecurityMiddleware(request);
   
-  // Detect app name from hostname or path
-  const appName = detectAppName(request);
+  // Dev portal specific headers
+  response.headers.set('X-Developer-Portal', 'true');
+  response.headers.set('X-API-Version', 'v1');
+  response.headers.set('X-Security-Level', 'S4-DEVPORTAL');
   
   // Set app context for security config
   process.env.ATLAS_APP_NAME = appName;
@@ -157,7 +217,36 @@ function getEnabledSecurityFlags(): string[] {
     } catch {
       return false;
     }
-  });
+  // Log S4 security status in development
+  if (process.env.NODE_ENV === 'development') {
+    const nonce = response.headers.get('X-Request-Nonce');
+    console.log(`🛡️  S4 Dev Portal Security Applied:`, {
+      app: 'dev-portal',
+      dpopRequired: isDPoPProtectedRoute(request.nextUrl.pathname),
+      nonce: nonce ? `${nonce.substring(0, 8)}...` : 'none',
+      coop: response.headers.get('Cross-Origin-Opener-Policy'),
+      coep: response.headers.get('Cross-Origin-Embedder-Policy'),
+      trustedTypes: response.headers.get('Content-Security-Policy')?.includes('require-trusted-types')
+    });
+  }
+
+  return response;
+}
+
+/**
+ * Check if route requires DPoP protection
+ */
+function isDPoPProtectedRoute(pathname: string): boolean {
+  const protectedRoutes = [
+    '/api/auth/',
+    '/api/admin/',
+    '/api/keys/',
+    '/api/secrets/',
+    '/dashboard/admin',
+    '/settings/security'
+  ];
+  
+  return protectedRoutes.some(route => pathname.startsWith(route));
 }
 
 /**

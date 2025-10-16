@@ -1,0 +1,373 @@
+name: S5 Supply Chain Security Scans
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * *' # Daily at 6 AM UTC
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  # CodeQL Analysis
+  codeql:
+    name: CodeQL Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'typescript']
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-extended,security-and-quality
+
+      - name: Setup Node.js
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        with:
+          version: '9'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Applications
+        run: pnpm build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
+        with:
+          category: "/language:${{matrix.language}}"
+
+  # Semgrep SAST Scanning
+  semgrep:
+    name: Semgrep SAST Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@e1864448b2b4a4b6a7b62e44a5cd2de7fcea7bee # v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/javascript
+            p/typescript
+            p/react
+            p/nextjs
+            p/docker
+            p/nginx
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+  # Gitleaks Secret Scanning
+  gitleaks:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@4a2fcc024b72c8e85e0ae795d1e9b0bd30e08e00 # v2.3.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # Trivy Container and Filesystem Scanning
+  trivy:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Run Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@7c2007bcb556501da015201bcba5aa14069b74e2 # v0.20.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '1'
+
+      - name: Upload Trivy Filesystem Results
+        uses: github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+
+      - name: Setup Node.js for Build
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        with:
+          version: '9'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Docker Images for Scanning
+        run: |
+          echo "Building Docker images for Trivy container scanning..."
+          
+          # Build service containers
+          for service in chat-delivery identity key-directory media risk-guard; do
+            if [ -d "services/$service" ]; then
+              echo "Building $service..."
+              docker build -t atlas-$service:latest -f services/$service/Dockerfile . || echo "Failed to build $service"
+            fi
+          done
+
+      - name: Run Trivy Container Scans
+        run: |
+          echo "Scanning Docker containers with Trivy..."
+          
+          for image in $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "atlas-"); do
+            echo "Scanning $image..."
+            trivy image --format sarif --output ${image##*/}-results.sarif --severity CRITICAL,HIGH,MEDIUM $image || echo "Scan failed for $image"
+          done
+
+      - name: Upload Container Scan Results
+        uses: github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
+        if: always()
+        with:
+          sarif_file: '*-results.sarif'
+
+  # Dependency Vulnerability Scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        with:
+          version: '9'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm audit
+        run: |
+          echo "Running pnpm dependency audit..."
+          pnpm audit --audit-level moderate --json > pnpm-audit.json || true
+          
+          # Check for critical/high vulnerabilities
+          if pnpm audit --audit-level high; then
+            echo "✅ No high/critical vulnerabilities found"
+          else
+            echo "❌ High/critical vulnerabilities detected"
+            cat pnpm-audit.json
+            exit 1
+          fi
+
+      - name: Run Snyk Security Scan
+        uses: snyk/actions/node@b98d498629f1c368650479d2cfbb4fef2db7a4cf # master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --all-projects
+
+      - name: Upload Dependency Scan Results
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        if: always()
+        with:
+          name: dependency-scan-results
+          path: |
+            pnpm-audit.json
+            snyk-results.json
+          retention-days: 30
+
+  # License Compliance Scanning  
+  license-scan:
+    name: License Compliance Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        with:
+          version: '9'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install License Checker
+        run: pnpm add -g license-checker
+
+      - name: Generate License Report
+        run: |
+          echo "Generating license compliance report..."
+          
+          # Generate detailed license report
+          license-checker --json --out license-report.json
+          license-checker --csv --out license-report.csv
+          
+          # Check for non-compatible licenses
+          FORBIDDEN_LICENSES="GPL-2.0,GPL-3.0,AGPL-1.0,AGPL-3.0,LGPL-2.0,LGPL-2.1,LGPL-3.0"
+          
+          if license-checker --failOn "$FORBIDDEN_LICENSES" --json; then
+            echo "✅ No forbidden licenses detected"
+          else
+            echo "❌ Forbidden licenses found"
+            license-checker --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense" --json || true
+            exit 1
+          fi
+
+      - name: Upload License Report
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        if: always()
+        with:
+          name: license-compliance-report
+          path: |
+            license-report.json
+            license-report.csv
+          retention-days: 90
+
+  # Security Policy Validation
+  policy-validation:
+    name: Security Policy Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Install OPA/Conftest
+        run: |
+          wget -q https://github.com/open-policy-agent/conftest/releases/download/v0.46.0/conftest_0.46.0_Linux_x86_64.tar.gz
+          tar xzf conftest_0.46.0_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin
+          conftest --version
+
+      - name: Validate Security Policies
+        run: |
+          echo "Validating OPA security policies..."
+          
+          # Validate policy syntax
+          for policy in .github/policy/*.rego; do
+            echo "Validating $policy..."
+            conftest verify --policy "$policy" || exit 1
+          done
+          
+          # Test security flags configuration
+          conftest test --policy .github/policy/ security/flags.yaml || exit 1
+          
+          echo "✅ All security policies validated successfully"
+
+  # Aggregate Results
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [codeql, semgrep, gitleaks, trivy, dependency-scan, license-scan, policy-validation]
+    if: always()
+    steps:
+      - name: Security Scan Results
+        run: |
+          echo "## 🔒 S5 Supply Chain Security Results"
+          echo ""
+          echo "| Scanner | Status |"
+          echo "|---------|--------|"
+          echo "| CodeQL | ${{ needs.codeql.result == 'success' && '✅ PASS' || '❌ FAIL' }} |"
+          echo "| Semgrep | ${{ needs.semgrep.result == 'success' && '✅ PASS' || '❌ FAIL' }} |"
+          echo "| Gitleaks | ${{ needs.gitleaks.result == 'success' && '✅ PASS' || '❌ FAIL' }} |"
+          echo "| Trivy | ${{ needs.trivy.result == 'success' && '✅ PASS' || '❌ FAIL' }} |"
+          echo "| Dependencies | ${{ needs.dependency-scan.result == 'success' && '✅ PASS' || '❌ FAIL' }} |"
+          echo "| Licenses | ${{ needs.license-scan.result == 'success' && '✅ PASS' || '❌ FAIL' }} |"
+          echo "| Policies | ${{ needs.policy-validation.result == 'success' && '✅ PASS' || '❌ FAIL' }} |"
+          
+          # Fail if any critical scanner failed
+          if [[ "${{ needs.codeql.result }}" != "success" ]] || \
+             [[ "${{ needs.semgrep.result }}" != "success" ]] || \
+             [[ "${{ needs.gitleaks.result }}" != "success" ]] || \
+             [[ "${{ needs.trivy.result }}" != "success" ]]; then
+            echo ""
+            echo "❌ Critical security scans failed - blocking deployment"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All security scans passed - ready for deployment"
