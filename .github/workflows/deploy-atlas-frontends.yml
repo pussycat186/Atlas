@@ -1,0 +1,187 @@
+name: Deploy Atlas Frontends
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['apps/**', 'packages/**']
+
+env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  NODE_OPTIONS: '--max-old-space-size=8192'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: apps/admin-insights
+            project_id_secret: VERCEL_PROJECT_ID_ADMIN_INSIGHTS
+            url: https://atlas-admin-insights.vercel.app
+            name: admin-insights
+          - app: apps/dev-portal
+            project_id_secret: VERCEL_PROJECT_ID_DEV_PORTAL
+            url: https://atlas-dev-portal.vercel.app
+            name: dev-portal
+          - app: apps/proof-messenger
+            project_id_secret: VERCEL_PROJECT_ID_PROOF_MESSENGER
+            url: https://atlas-proof-messenger.vercel.app
+            name: proof-messenger
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+      
+      - name: Create evidence directory
+        run: |
+          timestamp=$(date -u +"%Y%m%d-%H%M")
+          echo "EVIDENCE_DIR=docs/evidence/$timestamp" >> $GITHUB_ENV
+          mkdir -p "docs/evidence/$timestamp"
+      
+      - name: Install dependencies
+        run: |
+          echo "Installing workspace dependencies..."
+          pnpm -w install --frozen-lockfile 2>&1 | tee "$EVIDENCE_DIR/deploy-install-${{ matrix.name }}.log"
+      
+      - name: Build workspace packages
+        run: |
+          echo "Building workspace packages..."
+          pnpm -w build 2>&1 | tee "$EVIDENCE_DIR/deploy-build-${{ matrix.name }}.log"
+      
+      - name: Check app exists
+        working-directory: ${{ matrix.app }}
+        run: |
+          if [ ! -f "package.json" ]; then
+            echo "App ${{ matrix.app }} not found!"
+            exit 1
+          fi
+          echo "Found app: $(jq -r .name package.json)"
+      
+      - name: Vercel Pull
+        working-directory: ${{ matrix.app }}
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+        run: |
+          echo "Pulling Vercel project configuration..."
+          
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "Error: VERCEL_PROJECT_ID not set for ${{ matrix.name }}"
+            echo "Missing secret: ${{ matrix.project_id_secret }}"
+            exit 1
+          fi
+          
+          npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN" 2>&1 | tee "../$EVIDENCE_DIR/vercel-pull-${{ matrix.name }}.log"
+      
+      - name: Vercel Build
+        working-directory: ${{ matrix.app }}
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+        run: |
+          echo "Building with Vercel..."
+          npx vercel build --prod --token="$VERCEL_TOKEN" 2>&1 | tee "../$EVIDENCE_DIR/vercel-build-${{ matrix.name }}.log"
+      
+      - name: Vercel Deploy
+        working-directory: ${{ matrix.app }}
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+        run: |
+          echo "Deploying to production..."
+          
+          # Deploy and capture the URL
+          deploy_output=$(npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1 | tee "../$EVIDENCE_DIR/vercel-deploy-${{ matrix.name }}.log")
+          
+          # Extract URL from output
+          deployed_url=$(echo "$deploy_output" | grep -E "https://.*vercel\.app" | tail -1 | tr -d ' ')
+          
+          if [ -n "$deployed_url" ]; then
+            echo "DEPLOYED_URL=$deployed_url" >> $GITHUB_ENV
+            echo "Deployed to: $deployed_url"
+          else
+            echo "DEPLOYED_URL=${{ matrix.url }}" >> $GITHUB_ENV
+            echo "Using expected URL: ${{ matrix.url }}"
+          fi
+      
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+          
+          # Test if the deployment is accessible
+          url="${DEPLOYED_URL:-${{ matrix.url }}}"
+          echo "Testing deployment at: $url"
+          
+          for i in {1..10}; do
+            if curl -sSf "$url" > /dev/null; then
+              echo "Deployment is ready!"
+              break
+            fi
+            echo "Attempt $i/10: Deployment not ready yet, waiting..."
+            sleep 10
+          done
+      
+      - name: Verify Prism marker
+        run: |
+          url="${DEPLOYED_URL:-${{ matrix.url }}}"
+          prism_url="$url/prism"
+          
+          echo "Checking prism marker at: $prism_url"
+          
+          # Test prism endpoint
+          response=$(curl -sL "$prism_url" || echo "FETCH_FAILED")
+          
+          if echo "$response" | grep -F "ATLAS • Prism UI — Peak Preview"; then
+            echo "✅ Prism marker found at $prism_url"
+            echo "PRISM_CHECK=PASS" >> $GITHUB_ENV
+          else
+            echo "❌ Prism marker missing at $prism_url"
+            echo "Response preview: $(echo "$response" | head -c 500)"
+            echo "PRISM_CHECK=FAIL" >> $GITHUB_ENV
+          fi
+          
+          # Save response for debugging
+          echo "$response" > "$EVIDENCE_DIR/prism-response-${{ matrix.name }}.html"
+      
+      - name: Generate deployment summary
+        run: |
+          cat > "$EVIDENCE_DIR/deploy-summary-${{ matrix.name }}.json" << EOF
+          {
+            "timestamp": "$(date -u -Iseconds)",
+            "app": "${{ matrix.name }}",
+            "expected_url": "${{ matrix.url }}",
+            "deployed_url": "${DEPLOYED_URL:-${{ matrix.url }}}",
+            "prism_check": "${PRISM_CHECK:-UNKNOWN}",
+            "artifacts": [
+              "deploy-install-${{ matrix.name }}.log",
+              "deploy-build-${{ matrix.name }}.log",
+              "vercel-pull-${{ matrix.name }}.log",
+              "vercel-build-${{ matrix.name }}.log",
+              "vercel-deploy-${{ matrix.name }}.log",
+              "prism-response-${{ matrix.name }}.html"
+            ]
+          }
+          EOF
+          
+          echo "Deployment Summary for ${{ matrix.name }}:"
+          cat "$EVIDENCE_DIR/deploy-summary-${{ matrix.name }}.json" | jq .
+      
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-deploy-${{ matrix.name }}-${{ github.run_number }}
+          path: docs/evidence/
+          retention-days: 30

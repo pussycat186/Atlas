@@ -1,0 +1,26 @@
+﻿
+apps\admin-insights\app\prism\page.tsx:8:    <span 
+className="sr-only">ATLAS • Prism UI — Peak Preview</span>
+apps\admin-insights\app\prism\_prism\PrismPage.tsx:28:        
+ATLAS • Prism UI — Peak Preview
+apps\admin-insights\app\prism\_prism\PrismPage.tsx:38:        
+          <span className="font-bold">ATLAS • Prism UI — Peak 
+Preview</span>
+apps\dev-portal\app\prism\page.tsx:8:    <span 
+className="sr-only">ATLAS • Prism UI — Peak Preview</span>
+apps\dev-portal\app\prism\_prism\PrismPage.tsx:26:        
+ATLAS • Prism UI — Peak Preview
+apps\dev-portal\app\prism\_prism\PrismPage.tsx:36:            
+      <span className="font-bold">ATLAS • Prism UI — Peak 
+Preview</span>
+apps\proof-messenger\app\prism\page.tsx:8:      <span 
+className="sr-only">ATLAS • Prism UI — Peak Preview</span>
+apps\proof-messenger\app\prism\page.tsx:9:      <span 
+className="sr-only">ATLAS • Prism UI — Peak Preview</span>
+apps\proof-messenger\app\prism\_prism\PrismPage.tsx:27:       
+ ATLAS • Prism UI — Peak Preview
+apps\proof-messenger\app\prism\_prism\PrismPage.tsx:37:       
+           <span className="font-bold">ATLAS • Prism UI — 
+Peak Preview</span>
+
+

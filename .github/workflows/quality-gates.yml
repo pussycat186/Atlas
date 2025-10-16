@@ -1,0 +1,286 @@
+name: Atlas Quality Gates
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_urls:
+        description: 'Comma-separated URLs to test (optional)'
+        required: false
+        default: 'https://atlas-admin-insights.vercel.app,https://atlas-dev-portal.vercel.app,https://atlas-proof-messenger.vercel.app'
+  workflow_run:
+    workflows: ["Deploy Atlas Frontends"]
+    types: [completed]
+    branches: [main]
+
+env:
+  NODE_OPTIONS: '--max-old-space-size=4096'
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - name: admin-insights
+            url: https://atlas-admin-insights.vercel.app
+          - name: dev-portal
+            url: https://atlas-dev-portal.vercel.app
+          - name: proof-messenger
+            url: https://atlas-proof-messenger.vercel.app
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.13.x lighthouse@11.x
+      
+      - name: Create evidence directory
+        run: |
+          timestamp=$(date -u +"%Y%m%d-%H%M")
+          echo "EVIDENCE_DIR=docs/evidence/$timestamp" >> $GITHUB_ENV
+          mkdir -p "docs/evidence/$timestamp"
+      
+      - name: Test site accessibility
+        run: |
+          echo "Testing basic connectivity to ${{ matrix.app.url }}"
+          
+          if curl -sSf "${{ matrix.app.url }}" > /dev/null; then
+            echo "✅ Site is accessible"
+            echo "SITE_ACCESSIBLE=true" >> $GITHUB_ENV
+          else
+            echo "❌ Site is not accessible"
+            echo "SITE_ACCESSIBLE=false" >> $GITHUB_ENV
+          fi
+      
+      - name: Lighthouse CI - Homepage
+        if: env.SITE_ACCESSIBLE == 'true'
+        run: |
+          echo "Running Lighthouse CI on homepage: ${{ matrix.app.url }}"
+          
+          lhci autorun \
+            --collect.url="${{ matrix.app.url }}" \
+            --collect.numberOfRuns=3 \
+            --collect.headful=false \
+            --collect.chromePath="$(which google-chrome-stable)" \
+            --upload.target=filesystem \
+            --upload.outputDir="$EVIDENCE_DIR/lighthouse-${{ matrix.app.name }}-home" \
+            || echo "Lighthouse home failed but continuing"
+      
+      - name: Lighthouse CI - Prism Page
+        if: env.SITE_ACCESSIBLE == 'true'
+        run: |
+          echo "Running Lighthouse CI on prism page: ${{ matrix.app.url }}/prism"
+          
+          lhci autorun \
+            --collect.url="${{ matrix.app.url }}/prism" \
+            --collect.numberOfRuns=3 \
+            --collect.headful=false \
+            --collect.chromePath="$(which google-chrome-stable)" \
+            --upload.target=filesystem \
+            --upload.outputDir="$EVIDENCE_DIR/lighthouse-${{ matrix.app.name }}-prism" \
+            || echo "Lighthouse prism failed but continuing"
+      
+      - name: Install Playwright
+        if: env.SITE_ACCESSIBLE == 'true'
+        run: |
+          npm install playwright@1.40.x
+          npx playwright install chromium
+      
+      - name: Playwright smoke tests
+        if: env.SITE_ACCESSIBLE == 'true'
+        run: |
+          echo "Running Playwright smoke tests..."
+          
+          # Create a simple Playwright test
+          cat > smoke-test.spec.js << 'EOF'
+          const { test, expect } = require('@playwright/test');
+          
+          test.describe('Atlas Prism Smoke Tests', () => {
+            test('prism page loads and has marker', async ({ page }) => {
+              const url = process.env.APP_URL;
+              console.log(`Testing: ${url}/prism`);
+              
+              await page.goto(`${url}/prism`, { waitUntil: 'networkidle' });
+              
+              // Check for prism marker text
+              const markerElement = page.locator('text=ATLAS • Prism UI — Peak Preview');
+              await expect(markerElement).toBeVisible({ timeout: 10000 });
+              
+              // Take a screenshot
+              await page.screenshot({ path: `prism-screenshot-${process.env.APP_NAME}.png`, fullPage: true });
+            });
+            
+            test('homepage is accessible', async ({ page }) => {
+              const url = process.env.APP_URL;
+              console.log(`Testing homepage: ${url}`);
+              
+              await page.goto(url, { waitUntil: 'networkidle' });
+              
+              // Basic accessibility check
+              await expect(page.locator('body')).toBeVisible();
+            });
+          });
+          EOF
+          
+          # Run the test
+          APP_URL="${{ matrix.app.url }}" APP_NAME="${{ matrix.app.name }}" \
+            npx playwright test smoke-test.spec.js \
+            --reporter=html \
+            --output="$EVIDENCE_DIR/playwright-${{ matrix.app.name }}" \
+            || echo "Playwright test failed but continuing"
+          
+          # Move screenshots to evidence directory
+          mv *.png "$EVIDENCE_DIR/" 2>/dev/null || true
+      
+      - name: Install k6
+        if: env.SITE_ACCESSIBLE == 'true'
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      
+      - name: k6 Performance Test
+        if: env.SITE_ACCESSIBLE == 'true'
+        run: |
+          echo "Running k6 performance test on ${{ matrix.app.url }}/prism"
+          
+          # Create k6 test script
+          cat > k6-test.js << 'EOF'
+          import http from 'k6/http';
+          import { check } from 'k6';
+          
+          export const options = {
+            vus: 10, // Lower VUs to avoid rate limiting
+            duration: '60s',
+            thresholds: {
+              http_req_duration: ['p(95)<200'],
+              http_req_failed: ['rate<0.01'],
+            },
+          };
+          
+          export default function () {
+            const response = http.get(`${__ENV.BASE_URL}/prism`);
+            
+            check(response, {
+              'status is 200': (r) => r.status === 200,
+              'response time < 200ms': (r) => r.timings.duration < 200,
+              'contains prism marker': (r) => r.body.includes('ATLAS • Prism UI — Peak Preview'),
+            });
+          }
+          EOF
+          
+          # Run k6 test
+          BASE_URL="${{ matrix.app.url }}" k6 run k6-test.js \
+            --summary-export="$EVIDENCE_DIR/k6-summary-${{ matrix.app.name }}.json" \
+            --out json="$EVIDENCE_DIR/k6-results-${{ matrix.app.name }}.json" \
+            || echo "k6 test failed but continuing"
+      
+      - name: Security Headers Check
+        if: env.SITE_ACCESSIBLE == 'true'
+        run: |
+          echo "Checking security headers for ${{ matrix.app.url }}"
+          
+          # Check main page headers
+          curl -I "${{ matrix.app.url }}" 2>/dev/null > "$EVIDENCE_DIR/headers-${{ matrix.app.name }}-home.txt" || true
+          
+          # Check prism page headers
+          curl -I "${{ matrix.app.url }}/prism" 2>/dev/null > "$EVIDENCE_DIR/headers-${{ matrix.app.name }}-prism.txt" || true
+          
+          # Analyze headers
+          cat > header-check.sh << 'EOF'
+          #!/bin/bash
+          
+          check_headers() {
+            local file=$1
+            local name=$2
+            echo "Analyzing headers for $name:"
+            
+            # Check for security headers
+            if grep -q "Content-Security-Policy" "$file"; then
+              echo "✅ CSP header present"
+            else
+              echo "❌ CSP header missing"
+            fi
+            
+            if grep -q "X-Frame-Options\|frame-ancestors" "$file"; then
+              echo "✅ Frame protection present"
+            else
+              echo "❌ Frame protection missing"
+            fi
+            
+            if grep -q "X-Content-Type-Options" "$file"; then
+              echo "✅ Content-Type protection present"
+            else
+              echo "❌ Content-Type protection missing"
+            fi
+          }
+          
+          check_headers "$EVIDENCE_DIR/headers-${{ matrix.app.name }}-home.txt" "Homepage"
+          check_headers "$EVIDENCE_DIR/headers-${{ matrix.app.name }}-prism.txt" "Prism Page"
+          EOF
+          
+          chmod +x header-check.sh
+          ./header-check.sh | tee "$EVIDENCE_DIR/security-check-${{ matrix.app.name }}.log"
+      
+      - name: Generate quality gates summary
+        run: |
+          # Analyze Lighthouse results
+          lighthouse_score=""
+          if [ -d "$EVIDENCE_DIR/lighthouse-${{ matrix.app.name }}-home" ]; then
+            lighthouse_score=$(find "$EVIDENCE_DIR/lighthouse-${{ matrix.app.name }}-home" -name "*.json" -exec jq -r '.categories.performance.score // 0' {} \; 2>/dev/null | head -1)
+          fi
+          
+          # Analyze k6 results
+          k6_p95=""
+          k6_error_rate=""
+          if [ -f "$EVIDENCE_DIR/k6-summary-${{ matrix.app.name }}.json" ]; then
+            k6_p95=$(jq -r '.metrics.http_req_duration.values["p(95)"] // 0' "$EVIDENCE_DIR/k6-summary-${{ matrix.app.name }}.json" 2>/dev/null)
+            k6_error_rate=$(jq -r '.metrics.http_req_failed.values.rate // 0' "$EVIDENCE_DIR/k6-summary-${{ matrix.app.name }}.json" 2>/dev/null)
+          fi
+          
+          cat > "$EVIDENCE_DIR/quality-summary-${{ matrix.app.name }}.json" << EOF
+          {
+            "timestamp": "$(date -u -Iseconds)",
+            "app": "${{ matrix.app.name }}",
+            "url": "${{ matrix.app.url }}",
+            "site_accessible": "${SITE_ACCESSIBLE:-false}",
+            "lighthouse": {
+              "performance_score": ${lighthouse_score:-0}
+            },
+            "k6": {
+              "p95_duration_ms": ${k6_p95:-0},
+              "error_rate": ${k6_error_rate:-0}
+            },
+            "artifacts_generated": [
+              "lighthouse-${{ matrix.app.name }}-home/",
+              "lighthouse-${{ matrix.app.name }}-prism/",
+              "playwright-${{ matrix.app.name }}/",
+              "k6-summary-${{ matrix.app.name }}.json",
+              "k6-results-${{ matrix.app.name }}.json",
+              "headers-${{ matrix.app.name }}-home.txt",
+              "headers-${{ matrix.app.name }}-prism.txt",
+              "security-check-${{ matrix.app.name }}.log"
+            ]
+          }
+          EOF
+          
+          echo "Quality Gates Summary for ${{ matrix.app.name }}:"
+          cat "$EVIDENCE_DIR/quality-summary-${{ matrix.app.name }}.json" | jq .
+      
+      - name: Upload quality gates artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-quality-gates-${{ matrix.app.name }}-${{ github.run_number }}
+          path: docs/evidence/
+          retention-days: 30

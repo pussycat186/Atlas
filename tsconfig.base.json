@@ -9,11 +9,16 @@
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "allowJs": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
     "declaration": true,
     "declarationMap": true,
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo"
-  }
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": ["node_modules", ".next", "dist", "build", "coverage"]
 }

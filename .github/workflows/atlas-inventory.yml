@@ -1,0 +1,103 @@
+name: Atlas Repository Inventory
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['package.json', 'pnpm-workspace.yaml', '**/tsconfig*.json']
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+      
+      - name: Generate repository inventory
+        run: |
+          # Create evidence directory
+          timestamp=$(date -u +"%Y%m%d-%H%M")
+          evidence_dir="docs/evidence/$timestamp"
+          mkdir -p "$evidence_dir"
+          
+          # Scan workspace packages
+          pnpm -w list -r --depth -1 --json > "$evidence_dir/workspace.json" 2>&1 || echo "Workspace scan failed"
+          
+          # Find all TypeScript configs
+          find . -name "tsconfig*.json" -not -path "./node_modules/*" | jq -R -s 'split("\n")[:-1]' > "$evidence_dir/tsconfigs.json"
+          
+          # Search for Prism markers
+          grep -r "ATLAS • Prism UI — Peak Preview" apps/ --include="*.tsx" --include="*.ts" --include="*.js" > "$evidence_dir/prism-markers.txt" 2>/dev/null || echo "No prism markers found" > "$evidence_dir/prism-markers.txt"
+          
+          # Generate scan report
+          cat > "$evidence_dir/SCAN.md" << 'EOF'
+          # Atlas Repository Inventory
+          
+          **Generated:** $(date -u)  
+          **Runner:** ${{ runner.os }} - GitHub Actions
+          
+          ## Apps Structure
+          ```bash
+          $(find apps/ -name "package.json" -exec dirname {} \; 2>/dev/null | sort)
+          ```
+          
+          ## Packages Structure  
+          ```bash
+          $(find packages/ -name "package.json" -exec dirname {} \; 2>/dev/null | sort)
+          ```
+          
+          ## Services Structure
+          ```bash
+          $(find services/ -name "package.json" -exec dirname {} \; 2>/dev/null | sort)
+          ```
+          
+          ## TypeScript Configurations
+          ```bash
+          $(find . -name "tsconfig*.json" -not -path "./node_modules/*" | head -20)
+          ```
+          
+          ## Prism Marker Status
+          ```
+          $(cat "$evidence_dir/prism-markers.txt")
+          ```
+          
+          ## Next.js Apps Detection
+          ```bash
+          $(find apps/ -name "next.config.*" -exec dirname {} \; 2>/dev/null | sort)
+          ```
+          EOF
+          
+          # Generate comprehensive JSON inventory
+          cat > "$evidence_dir/repo-inventory.json" << 'EOF'
+          {
+            "timestamp": "'$timestamp'",
+            "runner": "${{ runner.os }}",
+            "apps": $(find apps/ -name "package.json" -exec sh -c 'echo "{\"path\":\"$(dirname {})\",\"name\":\"$(jq -r .name {})\"}"' \; 2>/dev/null | jq -s .),
+            "packages": $(find packages/ -name "package.json" -exec sh -c 'echo "{\"path\":\"$(dirname {})\",\"name\":\"$(jq -r .name {})\"}"' \; 2>/dev/null | jq -s .),
+            "services": $(find services/ -name "package.json" -exec sh -c 'echo "{\"path\":\"$(dirname {})\",\"name\":\"$(jq -r .name {})\"}"' \; 2>/dev/null | jq -s .),
+            "tsconfigs": $(find . -name "tsconfig*.json" -not -path "./node_modules/*" | jq -R -s 'split("\n")[:-1]'),
+            "nextjs_apps": $(find apps/ -name "next.config.*" -exec dirname {} \; 2>/dev/null | jq -R -s 'split("\n")[:-1]')
+          }
+          EOF
+          
+          echo "Evidence generated in $evidence_dir"
+          ls -la "$evidence_dir"
+      
+      - name: Upload inventory artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-inventory-${{ github.run_number }}
+          path: docs/evidence/
+          retention-days: 30

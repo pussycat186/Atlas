@@ -1,0 +1,74 @@
+﻿[
+    {
+        "FullName":  "D:\\Atlas\\apps\\admin-insights\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\apps\\dev-portal\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\apps\\proof-messenger\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\docs\\evidence\\20251016-0947\\tsconfigs.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\config\\tsconfig.base.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\config\\tsconfig.browser.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\config\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\config\\tsconfig.node.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\core\\tests\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\core\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\db\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\design-system\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\fabric-client\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\fabric-crypto\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\fabric-protocol\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\ui\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\ui-primitives\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\ui-system\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\packages\\ui-tokens\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\services\\drive\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\services\\gateway\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\services\\witness-node\\tsconfig.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\tsconfig.base.json"
+    },
+    {
+        "FullName":  "D:\\Atlas\\tsconfig.json"
+    }
+]

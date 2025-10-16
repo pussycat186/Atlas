@@ -1,0 +1,117 @@
+name: Atlas Bootstrap CI
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'turbo.json', 'tsconfig*.json']
+
+env:
+  NODE_OPTIONS: '--max-old-space-size=8192'
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+      
+      - name: Create evidence directory
+        run: |
+          timestamp=$(date -u +"%Y%m%d-%H%M")
+          echo "EVIDENCE_DIR=docs/evidence/$timestamp" >> $GITHUB_ENV
+          mkdir -p "docs/evidence/$timestamp"
+      
+      - name: Install dependencies (frozen lockfile)
+        run: |
+          set -e
+          echo "Installing with frozen lockfile..."
+          pnpm -w install --frozen-lockfile 2>&1 | tee "$EVIDENCE_DIR/install.log"
+          
+          # If lockfile issues, regenerate and commit
+          if [ $? -ne 0 ]; then
+            echo "Lockfile desync detected, regenerating..."
+            pnpm -w install 2>&1 | tee -a "$EVIDENCE_DIR/install.log"
+            pnpm -w dedupe 2>&1 | tee -a "$EVIDENCE_DIR/install.log"
+            
+            # Check if lockfile changed
+            if ! git diff --quiet pnpm-lock.yaml; then
+              echo "lockfile_regenerated=true" >> $GITHUB_ENV
+              echo "Lockfile was regenerated and needs to be committed"
+            fi
+          fi
+      
+      - name: Type checking
+        run: |
+          set -e
+          echo "Running TypeScript type checking..."
+          
+          # Try the main typecheck command first
+          if pnpm -w run type-check 2>&1 | tee "$EVIDENCE_DIR/typecheck.log"; then
+            echo "typecheck_passed=true" >> $GITHUB_ENV
+          else
+            echo "typecheck_passed=false" >> $GITHUB_ENV
+            echo "Type checking failed, see logs for details"
+          fi
+      
+      - name: Build packages and apps
+        run: |
+          set -e
+          echo "Building all packages and applications..."
+          
+          if pnpm -w run build 2>&1 | tee "$EVIDENCE_DIR/build.log"; then
+            echo "build_passed=true" >> $GITHUB_ENV
+          else
+            echo "build_passed=false" >> $GITHUB_ENV
+            echo "Build failed, see logs for details"
+          fi
+      
+      - name: Generate bootstrap summary
+        run: |
+          cat > "$EVIDENCE_DIR/bootstrap-summary.json" << EOF
+          {
+            "timestamp": "$(date -u -Iseconds)",
+            "runner": "${{ runner.os }}-${{ runner.arch }}",
+            "node_version": "$(node -v)",
+            "pnpm_version": "$(pnpm -v)",
+            "lockfile_regenerated": "${lockfile_regenerated:-false}",
+            "typecheck_passed": "${typecheck_passed:-false}",
+            "build_passed": "${build_passed:-false}",
+            "evidence_artifacts": [
+              "install.log",
+              "typecheck.log", 
+              "build.log",
+              "bootstrap-summary.json"
+            ]
+          }
+          EOF
+          
+          echo "Bootstrap Summary:"
+          cat "$EVIDENCE_DIR/bootstrap-summary.json" | jq .
+      
+      - name: Upload bootstrap artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-bootstrap-${{ github.run_number }}
+          path: docs/evidence/
+          retention-days: 30
+      
+      - name: Upload regenerated lockfile (if changed)
+        if: env.lockfile_regenerated == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-lockfile-${{ github.run_number }}
+          path: pnpm-lock.yaml
+          retention-days: 7
