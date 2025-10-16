@@ -25,13 +25,13 @@ jobs:
         include:
           - app: admin-insights
             path: apps/admin-insights
-            project_secret: VERCEL_PROJECT_ID_ADMIN
+            project_secret: VERCEL_PROJECT_ID_ADMIN_INSIGHTS
           - app: dev-portal
             path: apps/dev-portal
-            project_secret: VERCEL_PROJECT_ID_DEV
+            project_secret: VERCEL_PROJECT_ID_DEV_PORTAL
           - app: proof-messenger
             path: apps/proof-messenger
-            project_secret: VERCEL_PROJECT_ID_PROOF
+            project_secret: VERCEL_PROJECT_ID_PROOF_MESSENGER
     steps:
       - uses: actions/checkout@v4
       
