@@ -1,0 +1,387 @@
+# Atlas Security Flags Configuration
+# Single source of truth for all security controls across applications
+# All flags default to OFF for safe staged rollout
+
+# Format: CONTROL_NAME: { enabled: boolean, canary_pct: number, apps: [list] }
+
+# ==============================================
+# S1-S3: BROWSER & TRANSPORT HARDENING
+# ==============================================
+
+# Content Security Policy with nonce enforcement
+SECURITY_CSP_STRICT:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Strict CSP with nonce-based script execution"
+  risk_level: medium
+  rollback_time: "< 2 minutes"
+
+# Trusted Types API for DOM XSS prevention
+SECURITY_TRUSTED_TYPES:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Trusted Types enforcement for DOM operations"
+  risk_level: medium
+  rollback_time: "< 2 minutes"
+
+# Subresource Integrity for external resources
+SECURITY_SRI_REQUIRED:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Mandatory SRI hashes for external resources"
+  risk_level: low
+  rollback_time: "< 1 minute"
+
+# Cross-Origin Isolation (COOP + COEP)
+SECURITY_COOP_COEP:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Cross-origin isolation for process security"
+  risk_level: high
+  rollback_time: "< 2 minutes"
+
+# HTTP Strict Transport Security with preload
+SECURITY_HSTS_PRELOAD:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "HSTS preload for mandatory HTTPS"
+  risk_level: high
+  rollback_time: "6+ months (preload list)"
+
+# CORS policy lockdown
+SECURITY_CORS_LOCKDOWN:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Strict CORS policy with allowlist"
+  risk_level: medium
+  rollback_time: "< 5 minutes"
+
+# ==============================================
+# S3-S4: AUTHENTICATION & CRYPTOGRAPHY
+# ==============================================
+
+# OAuth 2.0 DPoP (Demonstrating Proof-of-Possession)
+SECURITY_DPOP_ENFORCE:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "DPoP tokens for replay protection"
+  risk_level: high
+  rollback_time: "< 5 minutes"
+
+# Mutual TLS for internal service communication
+SECURITY_MTLS_INTERNAL:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "mTLS for service-to-service auth"
+  risk_level: high
+  rollback_time: "< 10 minutes"
+
+# CSRF token enforcement
+SECURITY_CSRF_ENFORCE:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "CSRF protection for state-changing operations"
+  risk_level: medium
+  rollback_time: "< 2 minutes"
+
+# TLS 1.3 strict enforcement
+SECURITY_TLS13_STRICT:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "TLS 1.3 only with modern ciphers"
+  risk_level: medium
+  rollback_time: "< 5 minutes"
+
+# Post-Quantum Cryptography hybrid mode
+SECURITY_PQC_HYBRID_ENCRYPT:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Hybrid classical + post-quantum encryption"
+  risk_level: medium
+  rollback_time: "< 10 minutes"
+
+# Field-level database encryption
+SECURITY_FIELD_ENCRYPTION:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Application-layer PII field encryption"
+  risk_level: high
+  rollback_time: "< 30 minutes"
+
+# Data residency enforcement
+SECURITY_RESIDENCY_ENFORCE:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Geographic data processing restrictions"
+  risk_level: medium
+  rollback_time: "< 15 minutes"
+
+# Backup and disaster recovery encryption
+SECURITY_BACKUP_DR:
+  enabled: true  # Safe default - basic backup security
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Encrypted backups with immutable storage"
+  risk_level: low
+  rollback_time: "N/A (safe default)"
+
+# ==============================================
+# S6: EDGE & RUNTIME PROTECTION
+# ==============================================
+
+# Advanced Web Application Firewall
+SECURITY_WAF_ADVANCED:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "ML-based WAF with strict rules"
+  risk_level: high
+  rollback_time: "< 2 minutes"
+
+# Container runtime sandboxing
+SECURITY_RUNTIME_SANDBOX:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Non-root containers with seccomp/rlimits"
+  risk_level: medium
+  rollback_time: "< 15 minutes"
+
+# Egress traffic allowlist
+SECURITY_EGRESS_ALLOWLIST:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Outbound connection restrictions"
+  risk_level: high
+  rollback_time: "< 5 minutes"
+
+# Server-Side Request Forgery protection
+SECURITY_SSRF_GUARD:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "SSRF protection with metadata IP blocking"
+  risk_level: medium
+  rollback_time: "< 5 minutes"
+
+# ==============================================
+# S7: SUPPLY CHAIN SECURITY
+# ==============================================
+
+# Software Bill of Materials + SLSA provenance
+SUPPLY_CHAIN_SBOM_SLSA:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "SBOM generation and SLSA provenance"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# SLSA Level 3 enforcement
+SECURITY_SLSA_L3:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "SLSA L3 build requirements"
+  risk_level: medium
+  rollback_time: "< 10 minutes"
+
+# Cosign container signing requirement
+SECURITY_COSIGN_REQUIRED:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Mandatory container signature verification"
+  risk_level: medium
+  rollback_time: "< 5 minutes"
+
+# Open Policy Agent enforcement
+SECURITY_OPA_ENFORCE:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Policy-as-code enforcement"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# Container vulnerability scanning
+SECURITY_CONTAINER_SCANNING:
+  enabled: true  # Safe default - scanning only
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Automated container vulnerability scanning"
+  risk_level: low
+  rollback_time: "N/A (safe default)"
+
+# ==============================================
+# S8: OBSERVABILITY & PRIVACY
+# ==============================================
+
+# OpenTelemetry PII redaction enforcement
+OTEL_REDACTION_ENFORCE:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Automatic PII redaction in telemetry"
+  risk_level: medium
+  rollback_time: "< 5 minutes"
+
+# Strict PII redaction in all outputs
+SECURITY_PII_REDACTION_STRICT:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Comprehensive PII detection and redaction"
+  risk_level: low
+  rollback_time: "< 2 minutes"
+
+# ==============================================
+# S17: ORGANIZATIONAL CONTROLS
+# ==============================================
+
+# Branch protection enforcement
+SECURITY_BRANCH_PROTECTION:
+  enabled: true  # Safe default - GitHub security
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Strict branch protection rules"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# Signed commits requirement
+SECURITY_SIGNED_COMMITS:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Mandatory commit signing"
+  risk_level: medium
+  rollback_time: "< 10 minutes"
+
+# Enhanced secret scanning
+SECURITY_SECRET_SCANNING_STRICT:
+  enabled: true  # Safe default - detection only
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Comprehensive secret detection"
+  risk_level: low
+  rollback_time: "N/A (safe default)"
+
+# Organization SSO + 2FA enforcement
+SECURITY_ORG_SSO_2FA:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Mandatory SSO and 2FA for all users"
+  risk_level: high
+  rollback_time: "< 30 minutes"
+
+# ==============================================
+# ADVANCED CONTROLS
+# ==============================================
+
+# Device attestation for admin access
+SECURITY_DEVICE_ATTESTATION:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights]  # Admin only initially
+  description: "Hardware-based device attestation"
+  risk_level: high
+  rollback_time: "< 15 minutes"
+
+# Honeytokens for breach detection
+SECURITY_HONEYTOKENS:
+  enabled: false
+  canary_pct: 0
+  apps: [admin_insights, dev_portal, proof_messenger]
+  description: "Canary tokens for exfiltration detection"
+  risk_level: low
+  rollback_time: "< 5 minutes"
+
+# ==============================================
+# CANARY DEPLOYMENT CONFIGURATION
+# ==============================================
+
+# Global canary settings
+canary:
+  # Application rollout order (risk-based)
+  rollout_order: [dev_portal, proof_messenger, admin_insights]
+  
+  # Traffic allocation phases
+  phases:
+    - percentage: 10
+      duration_hours: 24
+      success_criteria:
+        error_rate_max: 0.01
+        p95_latency_max: 200
+        lighthouse_perf_min: 90
+        
+    - percentage: 50  
+      duration_hours: 48
+      success_criteria:
+        error_rate_max: 0.005
+        p95_latency_max: 180
+        lighthouse_perf_min: 92
+        
+    - percentage: 100
+      duration_hours: 168  # 1 week monitoring
+      success_criteria:
+        error_rate_max: 0.002
+        p95_latency_max: 160
+        lighthouse_perf_min: 95
+
+  # Automatic rollback triggers
+  rollback_triggers:
+    error_rate_threshold: 0.05
+    latency_threshold_ms: 500
+    duration_threshold_minutes: 5
+    
+# ==============================================
+# EVIDENCE COLLECTION REQUIREMENTS
+# ==============================================
+
+evidence:
+  collection_schedule: "post-deployment"
+  retention_days: 90
+  
+  required_artifacts:
+    headers: ["curl-headers.txt", "lighthouse-security.json"]
+    auth: ["dpop-test.log", "mtls-verify.log"] 
+    crypto: ["pqc-perf.json", "field-encrypt-test.log"]
+    supply_chain: ["sbom.json", "slsa-provenance.json", "cosign-verify.log"]
+    runtime: ["container-scan.json", "sandbox-test.log"]
+    privacy: ["otel-redaction.json", "pii-scan.json"]
+    
+  storage_path: "docs/evidence/${UTC-YYYYMMDD-HHMM}/"
+  
+# ==============================================
+# COMPLIANCE MAPPING
+# ==============================================
+
+compliance:
+  soc2:
+    CC6_1_encryption: [SECURITY_FIELD_ENCRYPTION, SECURITY_MTLS_INTERNAL, SECURITY_BACKUP_DR]
+    CC6_2_access: [SECURITY_ORG_SSO_2FA, SECURITY_DEVICE_ATTESTATION]
+    CC7_1_monitoring: [OTEL_REDACTION_ENFORCE, SECURITY_SECRET_SCANNING_STRICT]
+    
+  iso27001:
+    A_10_1_1_crypto: [SECURITY_PQC_HYBRID_ENCRYPT, SECURITY_FIELD_ENCRYPTION]
+    A_13_1_1_network: [SECURITY_MTLS_INTERNAL, SECURITY_CORS_LOCKDOWN]
+    A_14_2_1_development: [SUPPLY_CHAIN_SBOM_SLSA, SECURITY_SIGNED_COMMITS]
+    
+  gdpr:
+    article_32_security: [SECURITY_FIELD_ENCRYPTION, OTEL_REDACTION_ENFORCE, SECURITY_BACKUP_DR]
+    article_17_erasure: [SECURITY_FIELD_ENCRYPTION, SECURITY_PII_REDACTION_STRICT]
