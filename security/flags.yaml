@@ -11,8 +11,8 @@
 
 # OPA/Conftest policy enforcement
 SECURITY_OPA_ENFORCE:
-  enabled: false
-  canary_pct: 0
+  enabled: true
+  canary_pct: 100
   apps: [admin_insights, dev_portal, proof_messenger, messenger]
   description: "Policy-as-code enforcement for releases"
   risk_level: medium
@@ -61,8 +61,8 @@ SECURITY_ORG_SSO_2FA:
 # Content Security Policy with nonce enforcement
 SECURITY_CSP_STRICT:
   enabled: true
-  canary_pct: 10
-  apps: [dev_portal]  # Start with dev_portal only
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
   description: "Strict CSP with nonce-based script execution"
   risk_level: medium
   rollback_time: "< 2 minutes"
@@ -70,8 +70,8 @@ SECURITY_CSP_STRICT:
 # Trusted Types API for DOM XSS prevention
 SECURITY_TRUSTED_TYPES:
   enabled: true
-  canary_pct: 10
-  apps: [dev_portal]  # Start with dev_portal only
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
   description: "Trusted Types enforcement for DOM operations"
   risk_level: medium
   rollback_time: "< 2 minutes"
@@ -79,26 +79,26 @@ SECURITY_TRUSTED_TYPES:
 # Subresource Integrity for external resources
 SECURITY_SRI_REQUIRED:
   enabled: true
-  canary_pct: 10
-  apps: [dev_portal]  # Start with dev_portal only
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
   description: "Mandatory SRI hashes for external resources"
   risk_level: low
   rollback_time: "< 1 minute"
 
 # Cross-Origin Isolation (COOP + COEP)
 SECURITY_COOP_COEP:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
   description: "Cross-origin isolation for process security"
   risk_level: high
   rollback_time: "< 2 minutes"
 
 # HTTP Strict Transport Security with preload
 SECURITY_HSTS_PRELOAD:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
   description: "HSTS preload for mandatory HTTPS"
   risk_level: high
   rollback_time: "6+ months (preload list)"
@@ -298,8 +298,8 @@ SECURITY_MTLS_INTERNAL:
 # CSRF token enforcement
 SECURITY_CSRF_ENFORCE:
   enabled: true
-  canary_pct: 10
-  apps: [dev_portal, admin_insights, proof_messenger]  # Enable for all apps
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
   description: "CSRF protection for state-changing operations"
   risk_level: medium
   rollback_time: "< 2 minutes"
@@ -307,8 +307,8 @@ SECURITY_CSRF_ENFORCE:
 # TLS 1.3 strict enforcement
 SECURITY_TLS13_STRICT:
   enabled: true
-  canary_pct: 10
-  apps: [admin_insights, dev_portal, proof_messenger]  # Enable for all apps
+  canary_pct: 100
+  apps: [admin_insights, dev_portal, proof_messenger, messenger]
   description: "TLS 1.3 only with modern ciphers"
   risk_level: medium
   rollback_time: "< 5 minutes"

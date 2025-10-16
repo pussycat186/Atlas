@@ -17,18 +17,26 @@ export interface SecurityConfig {
 
 // Load security flags (would be replaced with actual flag loading)
 function loadSecurityFlags(): Record<string, { enabled: boolean; canary_pct: number; apps: string[] }> {
-  // In production, this would load from security/flags.yaml
+  // ATLAS_PERFECT_MODE_CLOSEOUT - Production flags enabled at 100%
   return {
-    SECURITY_CSP_NONCE: { enabled: true, canary_pct: 15, apps: ['dev_portal', 'messenger'] },
-    SECURITY_TRUSTED_TYPES: { enabled: true, canary_pct: 10, apps: ['dev_portal'] },
-    SECURITY_COOP_ENFORCE: { enabled: true, canary_pct: 20, apps: ['admin_insights', 'dev_portal', 'messenger'] },
-    SECURITY_COEP_ENFORCE: { enabled: true, canary_pct: 15, apps: ['admin_insights', 'dev_portal'] },
-    SECURITY_HSTS_PROD_ENFORCE: { enabled: true, canary_pct: 25, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
-    SECURITY_DPOP_ENFORCE: { enabled: true, canary_pct: 10, apps: ['dev_portal'] },
-    SECURITY_FRAME_PROTECTION: { enabled: true, canary_pct: 30, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
-    SECURITY_REFERRER_STRICT: { enabled: true, canary_pct: 25, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
-    SECURITY_PERMISSIONS_POLICY: { enabled: true, canary_pct: 20, apps: ['admin_insights', 'dev_portal', 'messenger'] },
-    SECURITY_TRANSPORT_HARDENING: { enabled: true, canary_pct: 30, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] }
+    SECURITY_CSP_STRICT: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_TRUSTED_TYPES: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_SRI_REQUIRED: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_COOP_COEP: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_HSTS_PRELOAD: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_CSRF_ENFORCE: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_TLS13_STRICT: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_OPA_ENFORCE: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    // Legacy flags for backward compatibility
+    SECURITY_CSP_NONCE: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_COOP_ENFORCE: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_COEP_ENFORCE: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_HSTS_PROD_ENFORCE: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_DPOP_ENFORCE: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_FRAME_PROTECTION: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_REFERRER_STRICT: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_PERMISSIONS_POLICY: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] },
+    SECURITY_TRANSPORT_HARDENING: { enabled: true, canary_pct: 100, apps: ['admin_insights', 'dev_portal', 'proof_messenger', 'messenger'] }
   };
 }
 
@@ -51,27 +59,28 @@ export function createSecurityHeaders(config: SecurityConfig): Record<string, st
   const headers: Record<string, string> = {};
   const { app } = config;
   
-  // CSP with nonces
-  if (isFeatureEnabled('SECURITY_CSP_NONCE', app)) {
+  // CSP with nonces and Trusted Types
+  if (isFeatureEnabled('SECURITY_CSP_NONCE', app) || isFeatureEnabled('SECURITY_CSP_STRICT', app)) {
     const nonce = generateNonce();
     const cspPolicies = [
       "default-src 'self'",
-      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://vercel.live https://vercel.com`,
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
       "object-src 'none'",
       "base-uri 'self'",
       "frame-ancestors 'none'",
       "img-src 'self' data: https:",
       "font-src 'self' https://fonts.gstatic.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "connect-src 'self' https://api.github.com https://vercel.com wss: ws:",
+      "connect-src 'self' https://api.github.com wss: ws:",
       "media-src 'self' data:",
       "worker-src 'self' blob:"
     ];
     
     // Add Trusted Types if enabled
     if (isFeatureEnabled('SECURITY_TRUSTED_TYPES', app)) {
-      cspPolicies.push("trusted-types nextjs#bundler");
+      cspPolicies.push("trusted-types nextjs#bundler atlas default 'allow-duplicates'");
       cspPolicies.push("require-trusted-types-for 'script'");
+      headers['Trusted-Types'] = 'nextjs#bundler atlas default';
     }
     
     headers['Content-Security-Policy'] = cspPolicies.join('; ');

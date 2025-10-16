@@ -1,33 +1,36 @@
 /**
  * Atlas Security Middleware - Proof Messenger  
- * Next.js middleware for security header injection based on flags
- * Supports CSP nonces, Trusted Types, and canary rollout
+ * ATLAS_PERFECT_MODE_CLOSEOUT with all security headers enabled
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import securityMiddleware from '@atlas/security-middleware';
 
-// Import security configuration (fallback if not available)
-let atlasSecurityConfig;
-try {
-  atlasSecurityConfig = require('../../../libs/atlas-security.js');
-} catch (error) {
-  console.warn('Atlas security config not available, using safe defaults');
-}
+// Proof Messenger specific security configuration for ATLAS_PERFECT_MODE_CLOSEOUT
+const proofMessengerSecurityConfig = {
+  app: 'proof_messenger' as const,
+  cspNonce: true,
+  trustedTypes: true,
+  coopPolicy: 'same-origin' as const,
+  coepPolicy: 'require-corp' as const,
+  hstsEnabled: true,
+  dpopEnabled: true,
+  frameProtection: true,
+  strictReferrer: true,
+  permissionsPolicy: true,
+  mtlsInternal: true
+};
+
+// Create security middleware for proof-messenger with all flags enabled
+const proofMessengerSecurityMiddleware = securityMiddleware(proofMessengerSecurityConfig);
 
 /**
- * Security middleware for all requests
- * Generates CSP nonces and applies security headers based on flags
+ * ATLAS_PERFECT_MODE_CLOSEOUT Security middleware for proof-messenger
+ * Implements all security headers with 100% rollout
  */
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-  
-  // Set app context for security config
-  process.env.ATLAS_APP_NAME = 'proof_messenger';
-  
-  // Generate security headers
-  const securityHeaders = getSecurityHeaders();
-  
-  // Apply headers to response
+  // Apply all security headers via the security middleware
+  const response = proofMessengerSecurityMiddleware(request);
   securityHeaders.forEach(({ key, value }) => {
     response.headers.set(key, value);
   });

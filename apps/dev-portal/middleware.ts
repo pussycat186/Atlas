@@ -1,33 +1,28 @@
 /**
- * Atlas Security Middleware
- * Next.js middleware for security header injection based on flags
- * Supports CSP nonces, Trusted Types, canary rollout, and S3 Auth Hardening
+ * Atlas Security Middleware - Dev Portal
+ * ATLAS_PERFECT_MODE_CLOSEOUT with all security headers enabled
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSecurityMiddleware, DPoPManager } from '../../middleware/security-headers';
+import securityMiddleware from '@atlas/security-middleware';
 
-// Dev Portal specific security configuration for S4
+// Dev Portal specific security configuration for ATLAS_PERFECT_MODE_CLOSEOUT
 const devPortalSecurityConfig = {
-  // Developer portal with moderate restrictions  
+  app: 'dev_portal' as const,
+  cspNonce: true,
+  trustedTypes: true,
   coopPolicy: 'same-origin-allow-popups' as const, // Allow OAuth popups
   coepPolicy: 'credentialless' as const, // Less strict for dev resources
-  trustedTypes: true, // Enable for XSS protection
-  hstsMaxAge: 31536000, // 1 year
-  hstsPreload: true,
-  permissionsPolicy: {
-    'geolocation': ['none'],
-    'camera': ['self'], // Allow for WebRTC demos
-    'microphone': ['self'], // Allow for WebRTC demos  
-    'usb': ['none'],
-    'bluetooth': ['none'],
-    'payment': ['self'], // Allow for payment API demos
-    'gyroscope': ['none'],
-    'accelerometer': ['none'],
-    'magnetometer': ['none'],
-    'ambient-light-sensor': ['none'],
-    'autoplay': ['self'],
-    'encrypted-media': ['self'],
+  hstsEnabled: true,
+  dpopEnabled: true,
+  frameProtection: true,
+  strictReferrer: true,
+  permissionsPolicy: true,
+  mtlsInternal: true
+};
+
+// Create security middleware for dev-portal with all flags enabled
+const devPortalSecurityMiddleware = securityMiddleware(devPortalSecurityConfig);
     'fullscreen': ['self'],
     'picture-in-picture': ['self']
   }

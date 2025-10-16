@@ -1,54 +1,121 @@
-# Secrets Setup Guide for Atlas
+# ATLAS GitHub Organization Secrets Guide
 
-## Required GitHub Secrets
+**Required for**: ATLAS_PERFECT_MODE_CLOSEOUT PERFECT_LIVE status  
+**Last Updated**: 2025-10-16 23:50 UTC  
+**Status**: MISSING_SECRETS (blocking PERFECT_LIVE deployment)
 
-To enable full Atlas functionality, configure these secrets in your repository:
+## 🎯 Required Secrets
 
-**Repository Settings → Secrets and variables → Actions → New repository secret**
+The following secrets must be configured in **GitHub Organization Settings**:
 
 ### Vercel Deployment Secrets
+| Secret Name | Description | How to Obtain |
+|-------------|-------------|---------------|
+| `VERCEL_TOKEN` | Vercel API token with deployment permissions | [Vercel Dashboard](https://vercel.com/account/tokens) → Create Token |
+| `VERCEL_ORG_ID` | Vercel organization/team ID | `vercel teams ls` |
+| `VERCEL_PROJECT_ID_ADMIN_INSIGHTS` | Project ID for admin-insights app | `vercel projects ls \| grep admin-insights` |
+| `VERCEL_PROJECT_ID_DEV_PORTAL` | Project ID for dev-portal app | `vercel projects ls \| grep dev-portal` |
+| `VERCEL_PROJECT_ID_PROOF_MESSENGER` | Project ID for proof-messenger app | `vercel projects ls \| grep proof-messenger` |
 
-```
-VERCEL_TOKEN=your_vercel_token_here
-VERCEL_ORG_ID=team_xxxxxxxxxxxxxxx
-VERCEL_PROJECT_ID=prj_xxxxxxxxxxxxxxx
-```
+### Cloudflare CDN/DNS Secrets
+| Secret Name | Description | How to Obtain |
+|-------------|-------------|---------------|
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID | Cloudflare Dashboard → Account ID |
+| `CLOUDFLARE_API_TOKEN` | API token with Zone:Edit permissions | Cloudflare → My Profile → API Tokens |
 
-### How to Get Vercel Values
+## 📋 Setup Instructions
 
-1. **VERCEL_TOKEN**:
-   - Go to https://vercel.com/account/tokens
-   - Click "Create Token"
-   - Name: "Atlas GitHub Actions"
-   - Scope: Full Account access
-   - Expiration: No expiration (or 1 year max)
-   - Copy the generated token
+### 1. Configure GitHub Organization Secrets
 
-2. **VERCEL_ORG_ID**:
-   - Go to https://vercel.com/teams
-   - Click on your team/personal account
-   - Settings → General
-   - Copy "Team ID" value
+1. Go to: **GitHub** → **Settings** → **Security** → **Actions** → **Secrets and variables** → **Organization secrets**
+2. Click **"New organization secret"**
+3. Add each required secret with exact name and value
+4. Set repository access to **"Selected repositories"** → **pussycat186/Atlas**
 
-3. **VERCEL_PROJECT_ID**:
-   - Go to your Vercel dashboard
-   - Select your Atlas project
-   - Settings → General  
-   - Copy "Project ID" value
+### 2. Obtain Vercel Values
 
-### Additional Secrets (Optional)
-
-```
-# For enhanced security scanning
-SONAR_TOKEN=your_sonarcloud_token
-
-# For Slack notifications (if desired)
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+#### Install Vercel CLI
+```bash
+npm install -g vercel
+vercel login
 ```
 
-## Validation
+#### Get Organization ID
+```bash
+vercel teams ls
+# Copy the ID for your organization
+```
 
-After adding secrets, check:
+#### Get Project IDs
+```bash
+# List all projects
+vercel projects ls
+
+# Get specific project IDs
+vercel projects ls --format json | jq '.[] | select(.name=="admin-insights") | .id'
+vercel projects ls --format json | jq '.[] | select(.name=="dev-portal") | .id'  
+vercel projects ls --format json | jq '.[] | select(.name=="proof-messenger") | .id'
+```
+
+#### Create API Token
+1. Go to: https://vercel.com/account/tokens
+2. Click **"Create Token"**
+3. Name: "ATLAS GitHub Actions"
+4. Scope: **Full Account** (for organization deployments)
+5. Expiration: **No expiration** (for CI/CD)
+6. Copy the generated token
+
+### 3. Obtain Cloudflare Values
+
+#### Account ID
+1. Go to: https://dash.cloudflare.com/
+2. Copy **Account ID** from right sidebar
+
+#### API Token
+1. Go to: https://dash.cloudflare.com/profile/api-tokens
+2. Click **"Create Token"**
+3. Use **"Custom token"** template
+4. Permissions:
+   - **Zone** : **Zone** : **Edit**
+   - **Zone** : **DNS** : **Edit**
+5. Zone Resources: **Include** : **All zones**
+6. Copy the generated token
+
+## ✅ Verification
+
+After configuring all secrets, the `atlas-secrets-audit.yml` workflow will automatically verify them.
+
+Expected output: **STATUS: ALL_SECRETS_PRESENT** ✅
+
+## 🚨 Security Best Practices
+
+- **Organization secrets** are shared across repositories
+- Use **Selected repositories** access, not **All repositories**
+- Rotate tokens every 90 days
+- Monitor secret usage in Actions logs
+- Never commit secrets to code
+
+## 🔄 Next Steps
+
+Once all secrets are configured:
+1. Run `atlas-secrets-audit.yml` → **ALL_SECRETS_PRESENT**
+2. Enable security flags in `security/flags.yaml`
+3. Deploy with security headers
+4. Execute `atlas-quality-gates.yml`
+5. Achieve **PERFECT_LIVE** status 🎉
+
+## 📞 Support
+
+If you need help configuring these secrets:
+1. Check the auto-created GitHub issue labeled `secrets`, `atlas-perfect-mode`
+2. Verify you have organization admin permissions
+3. Ensure the Atlas repository has access to organization secrets
+
+---
+
+**Auto-generated by**: ATLAS_PERFECT_MODE_CLOSEOUT  
+**Repository**: https://github.com/pussycat186/Atlas  
+**Workflow**: atlas-secrets-audit.yml
 
 1. **GitHub Actions**: Should deploy successfully without "VERCEL_TOKEN not configured" messages
 2. **Vercel Dashboard**: Should show deployments triggered by GitHub

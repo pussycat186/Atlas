@@ -5,49 +5,38 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSecurityMiddleware } from '../../middleware/security-headers';
+import securityMiddleware from '@atlas/security-middleware';
 
-// Admin Insights specific security configuration for S4
+// Admin Insights specific security configuration for ATLAS_PERFECT_MODE_CLOSEOUT
 const adminInsightsSecurityConfig = {
-  // Admin dashboard needs strictest policies
+  app: 'admin_insights' as const,
+  cspNonce: true,
+  trustedTypes: true,
   coopPolicy: 'same-origin' as const,
   coepPolicy: 'require-corp' as const,
-  trustedTypes: true,
-  hstsMaxAge: 63072000, // 2 years for admin
-  hstsPreload: true,
-  permissionsPolicy: {
-    'geolocation': ['none'],
-    'camera': ['none'], 
-    'microphone': ['none'],
-    'usb': ['none'],
-    'bluetooth': ['none'],
-    'payment': ['none'],
-    'gyroscope': ['none'],
-    'accelerometer': ['none'],
-    'magnetometer': ['none'],
-    'ambient-light-sensor': ['none'],
-    'autoplay': ['none'],
-    'encrypted-media': ['none'],
-    'fullscreen': ['self'],
-    'picture-in-picture': ['none']
-  }
+  hstsEnabled: true,
+  dpopEnabled: true,
+  frameProtection: true,
+  strictReferrer: true,
+  permissionsPolicy: true,
+  mtlsInternal: true
 };
 
-// Create S4 security middleware for admin-insights
-const s4SecurityMiddleware = createSecurityMiddleware('admin-insights', adminInsightsSecurityConfig);
+// Create security middleware for admin-insights with all flags enabled
+const adminSecurityMiddleware = securityMiddleware(adminInsightsSecurityConfig);
 
 /**
- * S4 Security middleware for admin-insights
- * Implements transport security hardening with CSP nonces, COOP/COEP, HSTS, etc.
+ * ATLAS_PERFECT_MODE_CLOSEOUT Security middleware for admin-insights
+ * Implements all security headers with 100% rollout
  */
 export function middleware(request: NextRequest) {
-  // Apply S4 security headers via the security middleware
-  const response = s4SecurityMiddleware(request);
+  // Apply all security headers via the security middleware
+  const response = adminSecurityMiddleware(request);
   
   // Admin-specific security enhancements
   response.headers.set('X-Admin-Dashboard', 'true');
   response.headers.set('X-Require-Auth', 'admin');
-  response.headers.set('X-Security-Level', 'S4-ADMIN');
+  response.headers.set('X-Security-Level', 'PERFECT_LIVE');
   
   // Prevent caching of admin pages (sensitive data)
   response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
