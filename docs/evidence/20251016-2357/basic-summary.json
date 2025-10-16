@@ -1,0 +1,9 @@
+﻿{
+    "status":  "NEEDS_REMEDIATION",
+    "passed_tests":  10,
+    "timestamp":  "20251016-2357",
+    "failed_tests":  2,
+    "total_tests":  12,
+    "evidence_path":  "D:\\Atlas\\docs\\evidence\\20251016-2357",
+    "success_rate":  "83.3%"
+}
