@@ -1,0 +1,174 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format.html",
+  "$description": "Atlas Design System - Core primitive tokens (colors, spacing, typography)",
+  
+  "color": {
+    "gray": {
+      "1": { "value": "#fafafa", "type": "color" },
+      "2": { "value": "#f5f5f5", "type": "color" },
+      "3": { "value": "#e5e5e5", "type": "color" },
+      "4": { "value": "#d4d4d4", "type": "color" },
+      "5": { "value": "#a3a3a3", "type": "color" },
+      "6": { "value": "#737373", "type": "color" },
+      "7": { "value": "#525252", "type": "color" },
+      "8": { "value": "#404040", "type": "color" },
+      "9": { "value": "#262626", "type": "color" },
+      "10": { "value": "#171717", "type": "color" },
+      "11": { "value": "#0a0a0a", "type": "color" }
+    },
+    "blue": {
+      "1": { "value": "#eff6ff", "type": "color" },
+      "2": { "value": "#dbeafe", "type": "color" },
+      "3": { "value": "#bfdbfe", "type": "color" },
+      "4": { "value": "#93c5fd", "type": "color" },
+      "5": { "value": "#60a5fa", "type": "color" },
+      "6": { "value": "#3b82f6", "type": "color" },
+      "7": { "value": "#2563eb", "type": "color" },
+      "8": { "value": "#1d4ed8", "type": "color" },
+      "9": { "value": "#1e40af", "type": "color" },
+      "10": { "value": "#1e3a8a", "type": "color" }
+    },
+    "green": {
+      "1": { "value": "#f0fdf4", "type": "color" },
+      "2": { "value": "#dcfce7", "type": "color" },
+      "3": { "value": "#bbf7d0", "type": "color" },
+      "4": { "value": "#86efac", "type": "color" },
+      "5": { "value": "#4ade80", "type": "color" },
+      "6": { "value": "#22c55e", "type": "color" },
+      "7": { "value": "#16a34a", "type": "color" },
+      "8": { "value": "#15803d", "type": "color" },
+      "9": { "value": "#166534", "type": "color" },
+      "10": { "value": "#14532d", "type": "color" }
+    },
+    "red": {
+      "1": { "value": "#fef2f2", "type": "color" },
+      "2": { "value": "#fee2e2", "type": "color" },
+      "3": { "value": "#fecaca", "type": "color" },
+      "4": { "value": "#fca5a5", "type": "color" },
+      "5": { "value": "#f87171", "type": "color" },
+      "6": { "value": "#ef4444", "type": "color" },
+      "7": { "value": "#dc2626", "type": "color" },
+      "8": { "value": "#b91c1c", "type": "color" },
+      "9": { "value": "#991b1b", "type": "color" },
+      "10": { "value": "#7f1d1d", "type": "color" }
+    },
+    "amber": {
+      "1": { "value": "#fffbeb", "type": "color" },
+      "2": { "value": "#fef3c7", "type": "color" },
+      "3": { "value": "#fde68a", "type": "color" },
+      "4": { "value": "#fcd34d", "type": "color" },
+      "5": { "value": "#fbbf24", "type": "color" },
+      "6": { "value": "#f59e0b", "type": "color" },
+      "7": { "value": "#d97706", "type": "color" },
+      "8": { "value": "#b45309", "type": "color" },
+      "9": { "value": "#92400e", "type": "color" },
+      "10": { "value": "#78350f", "type": "color" }
+    },
+    "white": { "value": "#ffffff", "type": "color" },
+    "black": { "value": "#000000", "type": "color" }
+  },
+  
+  "spacing": {
+    "0": { "value": "0", "type": "dimension" },
+    "1": { "value": "0.25rem", "type": "dimension" },
+    "2": { "value": "0.5rem", "type": "dimension" },
+    "3": { "value": "0.75rem", "type": "dimension" },
+    "4": { "value": "1rem", "type": "dimension" },
+    "5": { "value": "1.25rem", "type": "dimension" },
+    "6": { "value": "1.5rem", "type": "dimension" },
+    "8": { "value": "2rem", "type": "dimension" },
+    "10": { "value": "2.5rem", "type": "dimension" },
+    "12": { "value": "3rem", "type": "dimension" },
+    "16": { "value": "4rem", "type": "dimension" },
+    "20": { "value": "5rem", "type": "dimension" },
+    "24": { "value": "6rem", "type": "dimension" },
+    "32": { "value": "8rem", "type": "dimension" }
+  },
+  
+  "font": {
+    "family": {
+      "sans": { 
+        "value": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "type": "fontFamily" 
+      },
+      "mono": { 
+        "value": "'JetBrains Mono', 'Fira Code', Consolas, Monaco, 'Courier New', monospace",
+        "type": "fontFamily" 
+      }
+    },
+    "size": {
+      "xs": { "value": "0.75rem", "type": "dimension" },
+      "sm": { "value": "0.875rem", "type": "dimension" },
+      "base": { "value": "1rem", "type": "dimension" },
+      "lg": { "value": "1.125rem", "type": "dimension" },
+      "xl": { "value": "1.25rem", "type": "dimension" },
+      "2xl": { "value": "1.5rem", "type": "dimension" },
+      "3xl": { "value": "1.875rem", "type": "dimension" },
+      "4xl": { "value": "2.25rem", "type": "dimension" },
+      "5xl": { "value": "3rem", "type": "dimension" }
+    },
+    "weight": {
+      "normal": { "value": "400", "type": "fontWeight" },
+      "medium": { "value": "500", "type": "fontWeight" },
+      "semibold": { "value": "600", "type": "fontWeight" },
+      "bold": { "value": "700", "type": "fontWeight" }
+    },
+    "lineHeight": {
+      "tight": { "value": "1.25", "type": "number" },
+      "normal": { "value": "1.5", "type": "number" },
+      "relaxed": { "value": "1.75", "type": "number" }
+    }
+  },
+  
+  "radius": {
+    "none": { "value": "0", "type": "dimension" },
+    "sm": { "value": "0.25rem", "type": "dimension" },
+    "base": { "value": "0.5rem", "type": "dimension" },
+    "md": { "value": "0.75rem", "type": "dimension" },
+    "lg": { "value": "1rem", "type": "dimension" },
+    "xl": { "value": "1.5rem", "type": "dimension" },
+    "full": { "value": "9999px", "type": "dimension" }
+  },
+  
+  "shadow": {
+    "sm": { 
+      "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      "type": "shadow" 
+    },
+    "base": { 
+      "value": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
+      "type": "shadow" 
+    },
+    "md": { 
+      "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+      "type": "shadow" 
+    },
+    "lg": { 
+      "value": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
+      "type": "shadow" 
+    },
+    "xl": { 
+      "value": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+      "type": "shadow" 
+    },
+    "none": { 
+      "value": "none",
+      "type": "shadow" 
+    }
+  },
+  
+  "transition": {
+    "fast": { "value": "150ms", "type": "duration" },
+    "base": { "value": "200ms", "type": "duration" },
+    "slow": { "value": "300ms", "type": "duration" }
+  },
+  
+  "zIndex": {
+    "base": { "value": "0", "type": "number" },
+    "dropdown": { "value": "1000", "type": "number" },
+    "sticky": { "value": "1020", "type": "number" },
+    "modal": { "value": "1040", "type": "number" },
+    "popover": { "value": "1060", "type": "number" },
+    "tooltip": { "value": "1080", "type": "number" }
+  }
+}
