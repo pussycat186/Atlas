@@ -1,0 +1,17 @@
+﻿Testing headers for: https://atlas-proof-messenger.vercel.app
+Status: 200
+Headers:
+Access-Control-Allow-Origin: *
+Age: 625073
+Content-Disposition: inline
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+X-Vercel-Cache: HIT
+X-Vercel-Id: sin1::6mbcr-1760615070241-9bf79e143c9d
+Accept-Ranges: bytes
+Content-Length: 9794
+Cache-Control: public, s-maxage=60, stale-while-revalidate=300
+Content-Type: text/html; charset=utf-8
+Date: Thu, 16 Oct 2025 11:44:30 GMT
+ETag: "751b0e8874258a0a11598c17c89c205d"
+Last-Modified: Thu, 09 Oct 2025 06:06:37 GMT
+Server: Vercel

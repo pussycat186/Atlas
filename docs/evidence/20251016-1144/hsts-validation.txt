@@ -1,0 +1,2 @@
+﻿Dev Portal HSTS: max-age=63072000; includeSubDomains; preload
+âœ… HSTS preload detected

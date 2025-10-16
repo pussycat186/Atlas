@@ -1,0 +1,21 @@
+﻿Testing headers for: https://atlas-dev-portal.vercel.app
+Status: 200
+Headers:
+Access-Control-Allow-Origin: *
+Age: 1211416
+Content-Disposition: inline
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+Vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-Matched-Path: /
+X-Vercel-Cache: HIT
+X-Vercel-Id: sin1::sxrks-1760615069108-45c36ab69c9b
+X-Xss-Protection: 1; mode=block
+Accept-Ranges: bytes
+Content-Length: 8270
+Cache-Control: public, max-age=0, must-revalidate
+Content-Type: text/html; charset=utf-8
+Date: Thu, 16 Oct 2025 11:44:29 GMT
+ETag: "01bbc144f708dcc749266a72202ef39f"
+Server: Vercel
