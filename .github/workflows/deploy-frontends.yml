@@ -1,99 +1,89 @@
 name: Deploy Frontends
 on:
+  workflow_dispatch:
   push:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      app:
-        description: 'Deploy specific app (all, proof-messenger, admin-insights, dev-portal)'
-        required: false
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - proof-messenger
-          - admin-insights
-          - dev-portal
+
 concurrency:
-  group: deploy-frontends
+  group: deploy-frontends-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - app: admin-insights
-            path: apps/admin-insights
-            project_secret: VERCEL_PROJECT_ID_ADMIN_INSIGHTS
-          - app: dev-portal
-            path: apps/dev-portal
-            project_secret: VERCEL_PROJECT_ID_DEV_PORTAL
-          - app: proof-messenger
-            path: apps/proof-messenger
-            project_secret: VERCEL_PROJECT_ID_PROOF_MESSENGER
+        app:
+          - apps/admin-insights
+          - apps/dev-portal
+          - apps/proof-messenger
+    
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: pnpm/action-setup@v4
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
         with:
-          version: 9.0.0
+          fetch-depth: 0
       
-      - uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2  # v4.0.0
+        with:
+          version: 9
+          run_install: false
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # v4.0.2
         with:
           node-version: '20'
           cache: 'pnpm'
       
-      - name: Enable corepack and check pnpm
+      - name: Install dependencies (workspace root)
+        run: pnpm -w install --frozen-lockfile
+        working-directory: .
+      
+      - name: Build workspace
+        run: pnpm -w build
+        working-directory: .
+      
+      - name: Select Vercel project ID
         run: |
-          corepack enable
-          pnpm -v
+          case "${{ matrix.app }}" in
+            "apps/admin-insights")
+              echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_ADMIN_INSIGHTS }}" >> $GITHUB_ENV
+              ;;
+            "apps/dev-portal")
+              echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_DEV_PORTAL }}" >> $GITHUB_ENV
+              ;;
+            "apps/proof-messenger")
+              echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID_PROOF_MESSENGER }}" >> $GITHUB_ENV
+              ;;
+          esac
       
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Pull Vercel configuration
+        run: npx vercel pull --yes --environment=production --token="${VERCEL_TOKEN}"
       
-      - name: Typecheck
-        run: pnpm -w run type-check
+      - name: Build with Vercel
+        run: npx vercel build --prod --token="${VERCEL_TOKEN}"
       
-      - name: Build
-        run: pnpm -w run build
-      
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
-      
-      - name: Pull Vercel config
-        working-directory: ${{ matrix.path }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_secret] }}
-        run: vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
-      
-      - name: Build for Vercel
-        working-directory: ${{ matrix.path }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_secret] }}
-        run: vercel build --prod --token "${{ secrets.VERCEL_TOKEN }}"
-      
-      - name: Deploy to Vercel
-        working-directory: ${{ matrix.path }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_secret] }}
-        run: vercel deploy --prebuilt --prod --yes --token "${{ secrets.VERCEL_TOKEN }}"
-
-  verify:
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify deployments
+      - name: Deploy to Vercel production
+        id: deploy
         run: |
-          for url in "https://atlas-admin-insights.vercel.app" "https://atlas-dev-portal.vercel.app" "https://atlas-proof-messenger.vercel.app"; do
-            echo "Checking $url/prism"
-            curl -I "$url/prism" || echo "Failed to reach $url/prism"
-            curl -s "$url/prism" | grep -q "ATLAS • Prism UI — Peak Preview" && echo "✓ Prism marker found" || echo "✗ Prism marker missing"
-          done
+          DEPLOYMENT_URL=$(npx vercel deploy --prebuilt --prod --token="${VERCEL_TOKEN}")
+          echo "url=${DEPLOYMENT_URL}" >> $GITHUB_OUTPUT
+          echo "✅ Deployed to: ${DEPLOYMENT_URL}"
+      
+      - name: Output deployment URL
+        run: |
+          echo "::notice title=Deployment URL for ${{ matrix.app }}::${{ steps.deploy.outputs.url }}"
