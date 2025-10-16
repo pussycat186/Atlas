@@ -1,0 +1,18 @@
+﻿=== dev-portal Security Gate ===
+âœ… X-Content-Type-Options : PRESENT
+âœ… X-Frame-Options : PRESENT
+âŒ Referrer-Policy : MISSING
+âŒ Content-Security-Policy : MISSING
+
+=== admin-insights Security Gate ===
+âœ… X-Content-Type-Options : PRESENT
+âœ… X-Frame-Options : PRESENT
+âŒ Referrer-Policy : MISSING
+âŒ Content-Security-Policy : MISSING
+
+=== proof-messenger Security Gate ===
+âŒ X-Content-Type-Options : MISSING
+âŒ X-Frame-Options : MISSING
+âŒ Referrer-Policy : MISSING
+âŒ Content-Security-Policy : MISSING
+

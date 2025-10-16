@@ -10,27 +10,27 @@
 
 # Content Security Policy with nonce enforcement
 SECURITY_CSP_STRICT:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [dev_portal]  # Start with dev_portal only
   description: "Strict CSP with nonce-based script execution"
   risk_level: medium
   rollback_time: "< 2 minutes"
 
 # Trusted Types API for DOM XSS prevention
 SECURITY_TRUSTED_TYPES:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [dev_portal]  # Start with dev_portal only
   description: "Trusted Types enforcement for DOM operations"
   risk_level: medium
   rollback_time: "< 2 minutes"
 
 # Subresource Integrity for external resources
 SECURITY_SRI_REQUIRED:
-  enabled: false
-  canary_pct: 0
-  apps: [admin_insights, dev_portal, proof_messenger]
+  enabled: true
+  canary_pct: 10
+  apps: [dev_portal]  # Start with dev_portal only
   description: "Mandatory SRI hashes for external resources"
   risk_level: low
   rollback_time: "< 1 minute"
