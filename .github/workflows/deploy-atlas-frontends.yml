@@ -6,6 +6,12 @@ on:
     branches: [main]
     paths: ['apps/**', 'packages/**']
 
+# Security: Minimal permissions for deployment
+permissions:
+  contents: read
+  deployments: write
+  actions: read
+
 env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

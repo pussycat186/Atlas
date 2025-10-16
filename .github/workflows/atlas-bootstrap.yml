@@ -6,6 +6,12 @@ on:
     branches: [main]
     paths: ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'turbo.json', 'tsconfig*.json']
 
+# Security: Minimal permissions for bootstrap operations
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
 env:
   NODE_OPTIONS: '--max-old-space-size=8192'
 

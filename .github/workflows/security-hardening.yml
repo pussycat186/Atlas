@@ -1,0 +1,200 @@
+name: Security Hardening Gates
+
+on:
+  workflow_dispatch:
+    inputs:
+      security_level:
+        description: 'Security hardening level (0-9)'
+        required: true
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
+          - '2'
+          - '3'
+  pull_request:
+    branches: [main]
+    paths: 
+      - '.env.security'
+      - 'libs/security-config.js'
+      - '.github/workflows/**'
+  schedule:
+    - cron: '0 8 * * *'  # Daily security assessment
+
+# Security: OIDC and minimal permissions
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  security-assessment:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        with:
+          version: 9
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Validate security configuration
+        run: |
+          echo "🔍 Validating security flag configuration..."
+          
+          # Check all apps have security config
+          for app in apps/*; do
+            if [ -d "$app" ] && [ ! -f "$app/.env.security" ]; then
+              echo "❌ Missing .env.security in $app"
+              exit 1
+            fi
+          done
+          
+          # Validate security config loader
+          node -e "
+            const { loadSecurityConfig, isSecurityFeatureEnabled } = require('./libs/security-config.js');
+            const config = loadSecurityConfig();
+            console.log('✅ Security config loaded:', Object.keys(config).length, 'flags');
+            
+            // Ensure all security features are OFF by default (except basic ones)
+            const criticalFlags = [
+              'SECURITY_CSP_STRICT',
+              'SECURITY_COOP_COEP', 
+              'SECURITY_DPOP_ENFORCE',
+              'SECURITY_PQC_HYBRID_ENCRYPT',
+              'SECURITY_FIELD_ENCRYPTION'
+            ];
+            
+            criticalFlags.forEach(flag => {
+              if (isSecurityFeatureEnabled(flag)) {
+                console.error('❌ Critical security flag enabled by default:', flag);
+                process.exit(1);
+              }
+            });
+            
+            console.log('✅ All critical security flags properly disabled by default');
+          "
+      
+      - name: Security headers test
+        run: |
+          echo "🔍 Testing security headers configuration..."
+          node -e "
+            const { getSecurityHeaders } = require('./libs/security-config.js');
+            const headers = getSecurityHeaders();
+            console.log('Generated security headers:');
+            headers.forEach(h => console.log(\`  \${h.key}: \${h.value}\`));
+            
+            // Ensure basic security headers are present
+            const requiredHeaders = ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy'];
+            const headerKeys = headers.map(h => h.key);
+            
+            requiredHeaders.forEach(required => {
+              if (!headerKeys.includes(required)) {
+                console.error('❌ Missing required security header:', required);
+                process.exit(1);
+              }
+            });
+            
+            console.log('✅ All basic security headers present');
+          "
+      
+      - name: Dependency vulnerability scan
+        uses: github/dependency-review-action@72eb03d02c7872a771aacd928f3123ac62ad6d3a # v4.3.3
+        with:
+          fail-on-severity: moderate
+          deny-licenses: GPL-2.0, GPL-3.0
+      
+      - name: CodeQL security analysis
+        uses: github/codeql-action/init@afb54ba388a7dca6ecae48f608c4ff05ff4cc77a # v3.25.15
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@afb54ba388a7dca6ecae48f608c4ff05ff4cc77a # v3.25.15
+      
+      - name: OSSF Scorecard security assessment
+        uses: ossf/scorecard-action@62b2cac7ed8198b15735ed49ab1e5cf35480ba46 # v2.4.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: false
+      
+      - name: Upload Scorecard results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@afb54ba388a7dca6ecae48f608c4ff05ff4cc77a # v3.25.15
+        with:
+          sarif_file: results.sarif
+      
+      - name: Security rollback validation
+        run: |
+          echo "🔍 Validating security rollback procedures..."
+          
+          # Test that security config can be disabled
+          export SECURITY_ROLLBACK=true
+          node -e "
+            process.env.SECURITY_ROLLBACK = 'true';
+            const { getSecurityHeaders } = require('./libs/security-config.js');
+            const headers = getSecurityHeaders();
+            
+            // In rollback mode, should have minimal headers
+            if (headers.length > 5) {
+              console.error('❌ Too many headers in rollback mode:', headers.length);
+              process.exit(1);
+            }
+            
+            console.log('✅ Rollback mode working - minimal headers:', headers.length);
+          "
+      
+      - name: Security gate decision
+        run: |
+          SECURITY_LEVEL="${{ github.event.inputs.security_level || '0' }}"
+          echo "🚦 Security level: S$SECURITY_LEVEL"
+          
+          case $SECURITY_LEVEL in
+            0) echo "✅ S0: Impact assessment and rollback procedures validated" ;;
+            1) echo "✅ S1: Security flags and CI guards implemented" ;;
+            2) echo "🚧 S2: Browser policy hardening (CSP/COOP/COEP)" ;;
+            3) echo "🚧 S3: Authentication hardening (DPoP/mTLS)" ;;
+            *) echo "🔮 S$SECURITY_LEVEL: Advanced security controls" ;;
+          esac
+          
+          # Create security assessment artifact
+          cat > security-assessment.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "security_level": "$SECURITY_LEVEL",
+            "git_sha": "${{ github.sha }}",
+            "validation_results": {
+              "config_loader": "PASS",
+              "default_flags": "PASS", 
+              "security_headers": "PASS",
+              "rollback_procedures": "PASS"
+            },
+            "next_actions": [
+              "S$(($SECURITY_LEVEL + 1)): Ready for next security hardening phase"
+            ]
+          }
+          EOF
+      
+      - name: Upload security assessment
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.6.0
+        with:
+          name: security-assessment-${{ github.run_number }}
+          path: security-assessment.json
+          retention-days: 90

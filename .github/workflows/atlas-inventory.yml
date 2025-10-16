@@ -5,22 +5,31 @@ on:
   push:
     branches: [main]
     paths: ['package.json', 'pnpm-workspace.yaml', '**/tsconfig*.json']
+  schedule:
+    - cron: '0 6 * * *'  # Daily security scan
+
+# Security: Minimal permissions for inventory scanning
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+  pull-requests: write
 
 jobs:
   inventory:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'pnpm'
       
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
         with:
           version: 9
           run_install: false
@@ -95,8 +104,13 @@ jobs:
           echo "Evidence generated in $evidence_dir"
           ls -la "$evidence_dir"
       
+      - name: Security dependency scan
+        uses: github/dependency-review-action@72eb03d02c7872a771aacd928f3123ac62ad6d3a # v4.3.3
+        with:
+          fail-on-severity: moderate
+      
       - name: Upload inventory artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.6.0
         with:
           name: atlas-inventory-${{ github.run_number }}
           path: docs/evidence/
