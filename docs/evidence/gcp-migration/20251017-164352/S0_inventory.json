@@ -1,0 +1,154 @@
+{
+  "timestamp": "20251017-164352",
+  "stage": "S0 - Discovery, Sanity, Locks",
+  "status": "SECRETS_REQUIRED",
+  "packageManager": "pnpm@9.0.0",
+  "node_version_target": "20",
+  "monorepo": {
+    "root": "d:\\Atlas",
+    "workspace_yaml": "pnpm-workspace.yaml",
+    "lockfile": "pnpm-lock.yaml",
+    "turbo_config": true
+  },
+  "apps": [
+    {
+      "name": "proof-messenger",
+      "path": "apps/proof-messenger",
+      "next_version": "^14.0.4",
+      "port": 3006,
+      "description": "Primary app with verifiable receipts and integrity timeline",
+      "next_config_exists": true,
+      "standalone_configured": false,
+      "transpile_packages": [
+        "@atlas/ui",
+        "@atlas/ui-primitives",
+        "@atlas/ui-system",
+        "@atlas/ui-tokens",
+        "@atlas/config",
+        "@atlas/core",
+        "@atlas/db",
+        "@atlas/mls-core",
+        "@atlas/receipt",
+        "@atlas/design-system"
+      ],
+      "outputFileTracingRoot": "path.join(__dirname, '../../')",
+      "routes_estimate": "primary messenger routes (~10-15 routes)"
+    },
+    {
+      "name": "admin-insights",
+      "path": "apps/admin-insights",
+      "next_version": "^14.0.4",
+      "port": 3007,
+      "description": "Cluster health, metrics, and witness quorum monitoring",
+      "next_config_exists": true,
+      "standalone_configured": false,
+      "transpile_packages": [
+        "@atlas/ui",
+        "@atlas/ui-primitives",
+        "@atlas/ui-system",
+        "@atlas/ui-tokens",
+        "@atlas/config",
+        "@atlas/core",
+        "@atlas/db",
+        "@atlas/mls-core",
+        "@atlas/receipt",
+        "@atlas/design-system"
+      ],
+      "outputFileTracingRoot": "path.join(__dirname, '../../')",
+      "routes_estimate": "admin/metrics routes (~5-8 routes)"
+    },
+    {
+      "name": "dev-portal",
+      "path": "apps/dev-portal",
+      "next_version": "^14.0.4",
+      "port": 3008,
+      "description": "SDK quickstarts, API docs, and integration guides",
+      "next_config_exists": true,
+      "standalone_configured": false,
+      "transpile_packages": [
+        "@atlas/ui",
+        "@atlas/ui-primitives",
+        "@atlas/ui-system",
+        "@atlas/ui-tokens",
+        "@atlas/config",
+        "@atlas/core",
+        "@atlas/db",
+        "@atlas/mls-core",
+        "@atlas/receipt",
+        "@atlas/design-system"
+      ],
+      "outputFileTracingRoot": "path.join(__dirname, '../../')",
+      "routes_estimate": "developer docs routes (~8-12 routes)"
+    }
+  ],
+  "workspace_packages": [
+    "@atlas/config",
+    "@atlas/core",
+    "@atlas/db",
+    "@atlas/ui",
+    "@atlas/ui-system",
+    "@atlas/ui-tokens",
+    "@atlas/ui-primitives",
+    "@atlas/design-system",
+    "@atlas/fabric-client",
+    "@atlas/fabric-protocol",
+    "@atlas/mls-core",
+    "@atlas/receipt"
+  ],
+  "transpile_candidates": [
+    "@atlas/ui",
+    "@atlas/ui-primitives",
+    "@atlas/ui-system",
+    "@atlas/ui-tokens",
+    "@atlas/config",
+    "@atlas/core",
+    "@atlas/db",
+    "@atlas/mls-core",
+    "@atlas/receipt",
+    "@atlas/design-system"
+  ],
+  "secrets_validated": false,
+  "secrets_check_method": "GitHub CLI not available",
+  "required_secrets": {
+    "CRITICAL": [
+      "GCP_PROJECT_ID",
+      "GCP_REGION",
+      "GCP_WORKLOAD_ID_PROVIDER",
+      "GCP_DEPLOYER_SA",
+      "ARTIFACT_REPO",
+      "DOMAINS_JSON"
+    ],
+    "OPTIONAL": [
+      "EXTRA_ENV_JSON",
+      "KMS_KEY_RESOURCE",
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_API_TOKEN",
+      "FIGMA_TOKEN",
+      "FIGMA_FILE_KEY"
+    ]
+  },
+  "required_secrets_present": [],
+  "blocker": "READY_NO_SECRETS",
+  "message": "Cannot proceed with GCP Cloud Run migration. Required GitHub repository secrets must be configured before S1.",
+  "instructions": [
+    "Navigate to GitHub repository Settings → Secrets and variables → Actions",
+    "Add the following 6 required secrets:",
+    "  1. GCP_PROJECT_ID - Your GCP project ID (e.g., 'atlas-production-123456')",
+    "  2. GCP_REGION - Target region (e.g., 'asia-southeast1')",
+    "  3. GCP_WORKLOAD_ID_PROVIDER - Full OIDC resource name (e.g., 'projects/123456/locations/global/workloadIdentityPools/github/providers/github-oidc')",
+    "  4. GCP_DEPLOYER_SA - Service account email (e.g., 'atlas-deployer@PROJECT_ID.iam.gserviceaccount.com')",
+    "  5. ARTIFACT_REPO - Artifact Registry repository name (e.g., 'atlas')",
+    "  6. DOMAINS_JSON - JSON mapping apps to custom domains (e.g., '{\"proof-messenger\":\"proof.example.com\",\"admin-insights\":\"admin.example.com\",\"dev-portal\":\"dev.example.com\"}')",
+    "Optional: Add EXTRA_ENV_JSON for app-specific environment variables",
+    "Verify service account has IAM roles: run.admin, artifactregistry.writer, secretmanager.secretAccessor, compute.viewer, certificatemanager.editor",
+    "Re-run this migration after secrets are configured"
+  ],
+  "next_stage_actions": [
+    "S1: Patch next.config.js files with output:'standalone'",
+    "S2: Create Dockerfiles for all 3 apps + .dockerignore",
+    "S3: Create infra bootstrap scripts (GCP APIs, AR, CR, LB/CDN)",
+    "S4: Create OIDC GitHub Actions workflow (deploy-cloudrun.yml)",
+    "S5: Generate Secret Manager templates and sync script"
+  ],
+  "concurrency_guard": "atlas-cloudrun (to be added to workflows)"
+}
