@@ -1,6 +1,4 @@
-﻿"use client";
-
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { SecurityBadge } from './(ui)/SecurityBadge';
 
 // Force dynamic rendering - disable static generation
