@@ -7,7 +7,29 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Atlas Proof Messenger',
-  description: 'Secure messaging with cryptographic proof verification',
+  description: 'Tin nhắn bảo mật với xác minh mật mã - Secure messaging with cryptographic proof verification',
+  openGraph: {
+    title: 'Atlas Proof Messenger',
+    description: 'Tin nhắn bảo mật với xác minh mật mã - Secure messaging with cryptographic proof verification',
+    url: 'https://atlas-proof-messenger.vercel.app',
+    siteName: 'Atlas Proof Messenger',
+    images: [
+      {
+        url: 'https://atlas-proof-messenger.vercel.app/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Atlas Proof Messenger - E2EE Messaging',
+      },
+    ],
+    locale: 'vi_VN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Atlas Proof Messenger',
+    description: 'Tin nhắn bảo mật với xác minh mật mã',
+    images: ['https://atlas-proof-messenger.vercel.app/og-image.png'],
+  },
 };
 
 export const viewport: Viewport = {
@@ -25,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
           {children}
