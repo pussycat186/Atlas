@@ -110,27 +110,7 @@ jobs:
           vercel pull --yes --environment=production --token=$VERCEL_TOKEN
           echo "✅ Environment pulled"
 
-      - name: Clear build cache
-        working-directory: apps/proof-messenger
-        run: |
-          echo "🧹 Clearing .next build cache..."
-          rm -rf .next .vercel/output
-          echo "✅ Cache cleared"
-
-      - name: Build for production (with cache bust)
-        working-directory: apps/proof-messenger
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROOF_MESSENGER }}
-          NEXT_PRIVATE_BUILD_TAG: ${{ github.run_id }}-${{ github.sha }}
-        run: |
-          echo "🏗️  Building proof-messenger for production..."
-          echo "Build tag: $NEXT_PRIVATE_BUILD_TAG"
-          vercel build --prod --token=$VERCEL_TOKEN --force
-          echo "✅ Build complete"
-
-      - name: Deploy to production
+      - name: Deploy to production (build on Vercel)
         id: deploy
         working-directory: apps/proof-messenger
         env:
@@ -138,8 +118,9 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROOF_MESSENGER }}
         run: |
-          echo "🚀 Deploying to production..."
-          DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+          echo "🚀 Deploying to production (build on Vercel)..."
+          echo "Commit: ${{ github.sha }}"
+          DEPLOY_URL=$(vercel deploy --prod --token=$VERCEL_TOKEN --yes)
           echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
           echo "✅ Deployed to: $DEPLOY_URL"
 
