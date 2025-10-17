@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-10-17T07:16:52+00:00",
+  "status": "VERIFIED",
+  "receipt_count": 2,
+  "evidence_dir": "docs/evidence/20251017-0637",
+  "signature_algorithm": "hs2019",
+  "verified": true
+}

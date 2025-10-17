@@ -1,0 +1,7 @@
+{
+  "timestamp": "2025-10-17T07:16:52+00:00",
+  "status": "HEALTHY",
+  "days_since_rotation": 15,
+  "max_age_days": 90,
+  "next_rotation_due": "2025-12-16T00:00:00Z"
+}
