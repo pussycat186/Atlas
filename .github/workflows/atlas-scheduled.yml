@@ -1,0 +1,294 @@
+name: Atlas Cloud Run Scheduled Monitoring
+
+on:
+  schedule:
+    # Headers check every 15 minutes
+    - cron: '*/15 * * * *'
+    # Quality gates daily at 2 AM UTC
+    - cron: '0 2 * * *'
+    # Receipt/integrity check hourly
+    - cron: '0 * * * *'
+    # Supply chain check weekly (Sundays at 3 AM UTC)
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      check_type:
+        description: 'Type of check to run'
+        required: true
+        type: choice
+        options:
+          - headers
+          - quality
+          - receipts
+          - supply-chain
+          - all
+
+permissions:
+  contents: read
+  issues: write # For creating alerts
+
+jobs:
+  determine-checks:
+    name: Determine Checks to Run
+    runs-on: ubuntu-latest
+    outputs:
+      run_headers: ${{ steps.determine.outputs.run_headers }}
+      run_quality: ${{ steps.determine.outputs.run_quality }}
+      run_receipts: ${{ steps.determine.outputs.run_receipts }}
+      run_supply: ${{ steps.determine.outputs.run_supply }}
+    steps:
+      - name: Determine checks
+        id: determine
+        run: |
+          # Manual trigger
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "${{ inputs.check_type }}" in
+              headers)
+                echo "run_headers=true" >> $GITHUB_OUTPUT
+                ;;
+              quality)
+                echo "run_quality=true" >> $GITHUB_OUTPUT
+                ;;
+              receipts)
+                echo "run_receipts=true" >> $GITHUB_OUTPUT
+                ;;
+              supply-chain)
+                echo "run_supply=true" >> $GITHUB_OUTPUT
+                ;;
+              all)
+                echo "run_headers=true" >> $GITHUB_OUTPUT
+                echo "run_quality=true" >> $GITHUB_OUTPUT
+                echo "run_receipts=true" >> $GITHUB_OUTPUT
+                echo "run_supply=true" >> $GITHUB_OUTPUT
+                ;;
+            esac
+          else
+            # Scheduled trigger - check cron schedule
+            MINUTE=$(date -u +%M)
+            HOUR=$(date -u +%H)
+            DOW=$(date -u +%u)
+            
+            # Headers: every 15 minutes
+            if [ $((MINUTE % 15)) -eq 0 ]; then
+              echo "run_headers=true" >> $GITHUB_OUTPUT
+            fi
+            
+            # Quality: daily at 2 AM
+            if [ "$HOUR" = "2" ] && [ "$MINUTE" = "0" ]; then
+              echo "run_quality=true" >> $GITHUB_OUTPUT
+            fi
+            
+            # Receipts: hourly at :00
+            if [ "$MINUTE" = "0" ]; then
+              echo "run_receipts=true" >> $GITHUB_OUTPUT
+            fi
+            
+            # Supply chain: Sundays at 3 AM
+            if [ "$DOW" = "7" ] && [ "$HOUR" = "3" ] && [ "$MINUTE" = "0" ]; then
+              echo "run_supply=true" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  headers-check:
+    name: Security Headers Check
+    needs: determine-checks
+    if: needs.determine-checks.outputs.run_headers == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [proof-messenger, admin-insights, dev-portal]
+    steps:
+      - name: Check headers
+        id: check
+        run: |
+          SERVICE_URL="https://atlas-${{ matrix.service }}-REPLACE_WITH_CLOUD_RUN_URL.run.app/prism"
+          
+          echo "Checking $SERVICE_URL..."
+          HEADERS=$(curl -I -s "$SERVICE_URL" || echo "FAILED")
+          
+          # Check for required headers
+          MISSING=""
+          for header in "Content-Security-Policy" "Strict-Transport-Security" "X-Frame-Options" "X-Content-Type-Options"; do
+            if ! echo "$HEADERS" | grep -qi "$header:"; then
+              MISSING="$MISSING $header"
+            fi
+          done
+          
+          if [ -n "$MISSING" ]; then
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "missing=$MISSING" >> $GITHUB_OUTPUT
+          else
+            echo "status=passed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create alert issue
+        if: steps.check.outputs.status == 'failed'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const title = `🚨 SLO Breach: Missing Security Headers on ${{ matrix.service }}`;
+            const body = `
+            **Service**: atlas-${{ matrix.service }}
+            **Missing Headers**: ${{ steps.check.outputs.missing }}
+            **Timestamp**: ${new Date().toISOString()}
+            **SLO**: All security headers must be present
+            
+            **Action Required**: Investigate and restore missing headers within 1 hour.
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['slo-breach', 'security', 'p0']
+            });
+
+  quality-gates:
+    name: Quality Gates Check
+    needs: determine-checks
+    if: needs.determine-checks.outputs.run_quality == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [proof-messenger, admin-insights, dev-portal]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run Lighthouse CI
+        id: lhci
+        run: |
+          npm install -g @lhci/cli@0.13.x
+          
+          SERVICE_URL="https://atlas-${{ matrix.service }}-REPLACE_WITH_CLOUD_RUN_URL.run.app/prism"
+          
+          lhci autorun --collect.url="$SERVICE_URL" \
+            --assert.assertions.performance=0.90 \
+            --assert.assertions.accessibility=0.95 \
+            --assert.assertions.best-practices=0.80 \
+            || echo "status=failed" >> $GITHUB_OUTPUT
+
+      - name: Create alert issue
+        if: steps.lhci.outputs.status == 'failed'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const title = `🚨 SLO Breach: Quality Gates Failed on ${{ matrix.service }}`;
+            const body = `
+            **Service**: atlas-${{ matrix.service }}
+            **Check**: Lighthouse CI
+            **Timestamp**: ${new Date().toISOString()}
+            **SLO**: Performance ≥ 0.90, Accessibility ≥ 0.95, Best Practices ≥ 0.80
+            
+            **Action Required**: Review performance/accessibility regressions.
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['slo-breach', 'quality', 'p1']
+            });
+
+  receipts-check:
+    name: Receipt Integrity Check
+    needs: determine-checks
+    if: needs.determine-checks.outputs.run_receipts == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        with:
+          version: 9.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run receipt E2E test
+        id: receipts
+        run: |
+          # Run Playwright test for receipt generation
+          pnpm exec playwright test tests/e2e/receipt-flow.spec.ts --project=chromium || echo "status=failed" >> $GITHUB_OUTPUT
+
+      - name: Create alert issue
+        if: steps.receipts.outputs.status == 'failed'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const title = `🚨 SLO Breach: Receipt Integrity Check Failed`;
+            const body = `
+            **Service**: proof-messenger
+            **Check**: E2E Receipt Flow
+            **Timestamp**: ${new Date().toISOString()}
+            **SLO**: Receipt generation success rate ≥ 99.5%
+            
+            **Action Required**: Investigate receipt verification failures within 2 hours.
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['slo-breach', 'receipts', 'p0']
+            });
+
+  supply-chain-check:
+    name: Supply Chain Verification
+    needs: determine-checks
+    if: needs.determine-checks.outputs.run_supply == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [proof-messenger, admin-insights, dev-portal]
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # v2.1.7
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_ID_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a # v2.1.2
+
+      - name: Verify image signatures
+        id: verify
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO }}/atlas-${{ matrix.service }}:latest"
+          
+          # Verify with cosign (requires cosign to be installed)
+          cosign verify "$IMAGE" || echo "status=failed" >> $GITHUB_OUTPUT
+
+      - name: Create alert issue
+        if: steps.verify.outputs.status == 'failed'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const title = `🚨 SLO Breach: Image Signature Verification Failed on ${{ matrix.service }}`;
+            const body = `
+            **Service**: atlas-${{ matrix.service }}
+            **Check**: Cosign Signature Verification
+            **Timestamp**: ${new Date().toISOString()}
+            **SLO**: All deployed images must have valid signatures
+            
+            **Action Required**: Investigate unsigned/tampered image immediately.
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['slo-breach', 'supply-chain', 'p0']
+            });

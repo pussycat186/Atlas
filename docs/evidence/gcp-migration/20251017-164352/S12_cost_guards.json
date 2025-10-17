@@ -1,0 +1,131 @@
+{
+  "stage": "S12",
+  "stage_name": "Cost & Scaling Guards",
+  "timestamp": "2025-01-17T16:43:52Z",
+  "status": "COMPLETE",
+  "artifacts_created": [
+    {
+      "type": "documentation",
+      "path": "docs/COST_GUARDS.md",
+      "purpose": "Comprehensive cost optimization and scaling strategy for GCP Cloud Run"
+    }
+  ],
+  "resource_configuration": {
+    "cloud_run_limits": {
+      "min_instances": 1,
+      "max_instances": 50,
+      "concurrency": 80,
+      "cpu": "1 vCPU",
+      "memory": "512Mi",
+      "timeout": "60s",
+      "cpu_allocation": "always"
+    },
+    "cost_protection": {
+      "max_concurrent_requests": 4000,
+      "max_monthly_cost_per_service": "$500",
+      "max_total_monthly_cost": "$1500",
+      "typical_monthly_cost": "$100-150"
+    }
+  },
+  "budget_alerts": {
+    "thresholds": [
+      {
+        "percent": 50,
+        "amount_usd": 100,
+        "action": "Email notification (informational)"
+      },
+      {
+        "percent": 75,
+        "amount_usd": 150,
+        "action": "Email + Slack alert (review traffic)"
+      },
+      {
+        "percent": 90,
+        "amount_usd": 180,
+        "action": "Email + Slack + PagerDuty (reduce max-instances to 20)"
+      },
+      {
+        "percent": 100,
+        "amount_usd": 200,
+        "action": "Halt non-essential services (keep proof-messenger only)"
+      }
+    ],
+    "configuration_command": "gcloud billing budgets create --budget-amount=200USD --threshold-rule=percent=50,75,90,100"
+  },
+  "scaling_strategy": {
+    "auto_scale_triggers": [
+      "Request concurrency > (instances × 80)",
+      "CPU utilization > 60%",
+      "Request queue depth > 10"
+    ],
+    "scale_up_time": "10-30 seconds (cold start)",
+    "scale_down_time": "15 minutes of idle",
+    "traffic_capacity": {
+      "min_instances_1": "80 concurrent requests",
+      "max_instances_50": "4000 concurrent requests"
+    }
+  },
+  "cost_optimization_roadmap": {
+    "immediate": [
+      "Enable Cloud CDN (saves ~$20-30/month on backend requests)",
+      "Monitor concurrency vs. latency (tune 60-100 range)",
+      "Adjust min-instances based on cold start % (<1% = min=0, >5% = min=2)"
+    ],
+    "long_term": [
+      "Multi-region deployment (asia-southeast1 + us-central1, +50% cost)",
+      "Committed Use Discounts (15-30% savings for 1-3 year commitment)",
+      "Right-size memory (reduce to 256Mi if usage <350Mi, save 20%)"
+    ]
+  },
+  "emergency_procedures": {
+    "cost_exceeds_90_percent": {
+      "action": "Reduce max-instances to 20 (cuts max cost by 60%)",
+      "command": "gcloud run services update <service> --max-instances=20"
+    },
+    "cost_exceeds_100_percent": {
+      "action": "Disable admin-insights + dev-portal, reduce proof-messenger to min=0 max=10",
+      "commands": [
+        "gcloud run services update atlas-admin-insights --no-traffic",
+        "gcloud run services update atlas-dev-portal --no-traffic",
+        "gcloud run services update atlas-proof-messenger --min-instances=0 --max-instances=10"
+      ]
+    }
+  },
+  "cost_comparison": {
+    "vercel_pro": {
+      "fixed_cost": "$20/month per member",
+      "bandwidth_cost": "$40 per 100GB",
+      "function_cost": "$2 per 1M invocations",
+      "estimated_monthly": "$100-200 (unpredictable)"
+    },
+    "gcp_cloud_run": {
+      "fixed_cost": "$0 (pay-per-use)",
+      "bandwidth_cost": "$0.12/GB (CDN) + $0.20/GB (egress)",
+      "request_cost": "~$0.0001 per request",
+      "estimated_monthly": "$100-150 (predictable with caps)"
+    },
+    "expected_savings": "$20-50/month (15-25% reduction) + improved cost predictability"
+  },
+  "success_metrics": {
+    "cost_per_1k_requests": "≤$0.10",
+    "cost_per_active_user": "≤$0.50/month",
+    "cdn_cache_hit_rate": "≥60%",
+    "average_instances_peak": "2-3",
+    "average_instances_offpeak": "1",
+    "total_monthly_cost": "$100-150"
+  },
+  "monitoring_checklist": {
+    "weekly": [
+      "Check GCP billing dashboard for anomalies",
+      "Review instance count trends (normal: 1-5 instances)",
+      "Verify CDN cache hit rate > 60%",
+      "Delete unused Cloud Run revisions"
+    ],
+    "monthly": [
+      "Compare actual cost vs. $200 budget",
+      "Analyze cost by service (proof-messenger 60%, admin-insights 25%, dev-portal 15%)",
+      "Review scaling events for traffic spikes",
+      "Adjust min/max instances based on usage patterns"
+    ]
+  }
+}

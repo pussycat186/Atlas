@@ -1,0 +1,123 @@
+{
+  "stage": "S11",
+  "stage_name": "Observability & SLOs",
+  "timestamp": "2025-01-17T16:43:52Z",
+  "status": "COMPLETE",
+  "artifacts_created": [
+    {
+      "type": "github_workflow",
+      "path": ".github/workflows/atlas-scheduled.yml",
+      "purpose": "Scheduled monitoring for headers, quality gates, receipts, supply chain",
+      "schedules": {
+        "headers_check": "*/15 * * * * (every 15 minutes)",
+        "quality_gates": "0 2 * * * (daily at 2 AM UTC)",
+        "receipts_check": "0 * * * * (hourly)",
+        "supply_chain": "0 3 * * 0 (weekly on Sundays at 3 AM UTC)"
+      },
+      "alert_mechanism": "GitHub Issues with labels (slo-breach, p0/p1)",
+      "sha256_actions_pinned": true
+    }
+  ],
+  "slo_baselines": {
+    "performance": {
+      "source": "budgets/perf.json",
+      "availability": {
+        "target": "99.95%",
+        "window": "30d",
+        "measurement": "Cloud Run service health checks"
+      },
+      "ttfb_p95": {
+        "prism_endpoint": "≤200ms",
+        "root": "≤300ms",
+        "measurement": "Cloud Run request metrics"
+      },
+      "lighthouse": {
+        "performance": "≥0.90",
+        "best_practices": "≥0.80"
+      }
+    },
+    "accessibility": {
+      "source": "budgets/a11y.json",
+      "lighthouse_score": {
+        "target": "≥95",
+        "minimum": "≥90"
+      },
+      "wcag_level": "AA",
+      "automated_coverage": "≥80%"
+    },
+    "error_rates": {
+      "source": "budgets/error.json",
+      "e2e_success_rate": {
+        "target": "≥99.5%",
+        "minimum": "≥99.0%",
+        "window": "24h"
+      },
+      "http_5xx": {
+        "target": "≤0.5%",
+        "maximum": "≤1.0%"
+      },
+      "critical_paths": {
+        "passkey_auth": "≥99.9% success",
+        "message_send": "≥99.5% success",
+        "receipt_verification": "≥99.8% success"
+      }
+    }
+  },
+  "monitoring_strategy": {
+    "proactive_checks": [
+      "Security headers validation (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)",
+      "Performance regression detection (Lighthouse CI)",
+      "Receipt integrity validation (E2E Playwright test)",
+      "Supply chain verification (Cosign signature validation)"
+    ],
+    "alert_priority_levels": {
+      "p0": "Immediate action required (security, receipts, supply chain)",
+      "p1": "Review within 24h (quality gates)"
+    },
+    "observability_stack": "Google Cloud Logging + Cloud Monitoring + GitHub Issues"
+  },
+  "gcp_specific_metrics": {
+    "cloud_run_metrics": [
+      "request_count (for availability SLO)",
+      "request_latencies (for TTFB SLO)",
+      "container_cpu_utilization (for scaling decisions)",
+      "container_memory_utilization (for cost optimization)",
+      "billable_instance_time (for cost tracking)"
+    ],
+    "logging_queries": {
+      "5xx_errors": "resource.type=\"cloud_run_revision\" severity>=ERROR",
+      "slow_requests": "resource.type=\"cloud_run_revision\" httpRequest.latency>200ms",
+      "security_headers": "resource.type=\"cloud_run_revision\" httpRequest.requestUrl=~\"/prism\""
+    }
+  },
+  "slo_breach_procedures": {
+    "headers_missing": {
+      "slo": "All security headers must be present",
+      "action": "Investigate and restore headers within 1 hour",
+      "escalation": "Create GitHub Issue with label 'slo-breach, security, p0'"
+    },
+    "quality_regression": {
+      "slo": "Lighthouse performance ≥0.90, accessibility ≥0.95",
+      "action": "Review performance/accessibility regressions",
+      "escalation": "Create GitHub Issue with label 'slo-breach, quality, p1'"
+    },
+    "receipt_failures": {
+      "slo": "Receipt generation success rate ≥99.5%",
+      "action": "Investigate receipt verification failures within 2 hours",
+      "escalation": "Create GitHub Issue with label 'slo-breach, receipts, p0'"
+    },
+    "unsigned_image": {
+      "slo": "All deployed images must have valid signatures",
+      "action": "Investigate unsigned/tampered image immediately",
+      "escalation": "Create GitHub Issue with label 'slo-breach, supply-chain, p0'"
+    }
+  },
+  "next_steps": {
+    "after_deployment": [
+      "Enable Cloud Monitoring alerting policies",
+      "Configure uptime checks for all 3 services",
+      "Set up log-based metrics for custom SLOs",
+      "Validate scheduled workflow triggers (wait 15min for headers check)"
+    ]
+  }
+}
