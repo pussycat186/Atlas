@@ -1,0 +1,93 @@
+{
+  "timestamp": "20251017-164352",
+  "stage": "S2 - Dockerfiles + Ignore",
+  "status": "SUCCESS",
+  "dockerfiles_created": [
+    {
+      "app": "proof-messenger",
+      "path": "apps/proof-messenger/Dockerfile",
+      "stages": 3,
+      "base_image": "node:20-alpine",
+      "pnpm_version": "9.0.0",
+      "features": [
+        "Multi-stage build (deps → builder → runner)",
+        "Frozen lockfile for reproducibility",
+        "Workspace package pre-build (@atlas/config, @atlas/ui-tokens, @atlas/design-system)",
+        "Next.js standalone output",
+        "Non-root user (nextjs:nodejs, uid=1001)",
+        "Health check on /api/health",
+        "Port 8080 (Cloud Run standard)",
+        "Production NODE_ENV"
+      ],
+      "cmd": "node apps/proof-messenger/server.js"
+    },
+    {
+      "app": "admin-insights",
+      "path": "apps/admin-insights/Dockerfile",
+      "stages": 3,
+      "base_image": "node:20-alpine",
+      "pnpm_version": "9.0.0",
+      "features": [
+        "Multi-stage build (deps → builder → runner)",
+        "Frozen lockfile for reproducibility",
+        "Workspace package pre-build (@atlas/config, @atlas/ui-tokens, @atlas/design-system)",
+        "Next.js standalone output",
+        "Non-root user (nextjs:nodejs, uid=1001)",
+        "Health check on /api/health",
+        "Port 8080 (Cloud Run standard)",
+        "Production NODE_ENV"
+      ],
+      "cmd": "node apps/admin-insights/server.js"
+    },
+    {
+      "app": "dev-portal",
+      "path": "apps/dev-portal/Dockerfile",
+      "stages": 3,
+      "base_image": "node:20-alpine",
+      "pnpm_version": "9.0.0",
+      "features": [
+        "Multi-stage build (deps → builder → runner)",
+        "Frozen lockfile for reproducibility",
+        "Workspace package pre-build (@atlas/config, @atlas/ui-tokens, @atlas/design-system)",
+        "Next.js standalone output",
+        "Non-root user (nextjs:nodejs, uid=1001)",
+        "Health check on /api/health",
+        "Port 8080 (Cloud Run standard)",
+        "Production NODE_ENV"
+      ],
+      "cmd": "node apps/dev-portal/server.js"
+    }
+  ],
+  "dockerignore": {
+    "path": ".dockerignore",
+    "excluded_patterns": [
+      ".git",
+      "node_modules",
+      ".next",
+      "dist",
+      "tests",
+      ".env",
+      "docs/evidence",
+      "*.md (except README.md)",
+      ".github",
+      "packages/core-rs (Rust/WASM)",
+      "playwright-report",
+      "temp/tmp/cache"
+    ],
+    "purpose": "Minimize build context size, exclude non-production files"
+  },
+  "build_optimization": {
+    "layer_caching": "Dependencies stage cached separately from source",
+    "install_filter": "pnpm --filter=@atlas/<app>... (installs only required workspace deps)",
+    "workspace_pre_build": "Build @atlas/config, @atlas/ui-tokens, @atlas/design-system before app",
+    "alpine_base": "Minimal image size (~50MB base vs ~900MB full Node.js)"
+  },
+  "cloud_run_compatibility": {
+    "port": 8080,
+    "non_root_user": true,
+    "health_check": "/api/health endpoint",
+    "env_vars": ["NODE_ENV=production", "PORT=8080", "HOSTNAME=0.0.0.0"],
+    "signal_handling": "Graceful shutdown via Node.js process signals"
+  },
+  "next_stage": "S3 - Create infrastructure bootstrap scripts (GCP APIs, Artifact Registry, Cloud Run services, Load Balancer)"
+}
