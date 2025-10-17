@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "description": "Block known bad bots",
+      "expression": "(cf.client.bot) and not (cf.verified_bot_category in {\"Search Engine Crawler\" \"Monitoring & Analytics\"})",
+      "action": "block"
+    },
+    {
+      "description": "Rate limit API endpoints",
+      "expression": "(http.request.uri.path matches \"^/api/\") and (rate(1m) > 60)",
+      "action": "challenge"
+    },
+    {
+      "description": "Block common attack patterns",
+      "expression": "(http.request.uri.query contains \"union select\") or (http.request.uri.query contains \"<script\")",
+      "action": "block"
+    }
+  ]
+}
