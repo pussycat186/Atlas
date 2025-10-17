@@ -3,6 +3,10 @@
 import Link from 'next/link';
 import { SecurityBadge } from './(ui)/SecurityBadge';
 
+// Force dynamic rendering - disable static generation
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-purple-900">
