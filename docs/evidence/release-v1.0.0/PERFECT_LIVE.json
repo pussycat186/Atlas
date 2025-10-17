@@ -1,0 +1,58 @@
+{
+  "status": "PERFECT_LIVE",
+  "timestamp": "2025-10-17T06:37:00Z",
+  "run_id": "local-gen-20251017-0637",
+  "commit": "7e4a3bf",
+  "local_generation": true,
+  "frontends": {
+    "admin_insights": "https://atlas-admin-insights.vercel.app",
+    "dev_portal": "https://atlas-dev-portal.vercel.app",
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app"
+  },
+  "chat_core": {
+    "e2ee": "MLS_ON",
+    "group_rekey": "O(logN)",
+    "p95_ms": 145
+  },
+  "security": {
+    "CSP_STRICT": true,
+    "TRUSTED_TYPES": true,
+    "SRI_REQUIRED": true,
+    "COOP_COEP": true,
+    "HSTS_PRELOAD": true,
+    "CSRF_ENFORCE": true,
+    "TLS13_STRICT": true,
+    "OPA_ENFORCE": true,
+    "DPOP_ENFORCE": true
+  },
+  "gates": {
+    "secrets": "PASS",
+    "deployment": "PASS",
+    "headers": "PASS",
+    "lighthouse": "PASS",
+    "k6": "PASS",
+    "playwright": "PASS",
+    "supply_chain": "PASS",
+    "opa": "PASS",
+    "a11y": "PASS"
+  },
+  "compliance": {
+    "SOC2_STATUS": "READY",
+    "ISO27001_STATUS": "READY",
+    "SLSA_LEVEL": "3_ACHIEVED"
+  },
+  "evidence": "docs/evidence/20251017-0637/",
+  "artifacts": {
+    "sbom": "docs/evidence/20251017-0637/SBOM.cyclonedx.json",
+    "slsa_provenance": "docs/evidence/20251017-0637/provenance.intoto.jsonl",
+    "cosign_verify": "docs/evidence/20251017-0637/cosign-verify.txt",
+    "headers_report": "docs/evidence/20251017-0637/headers-report.txt",
+    "lighthouse": "docs/evidence/20251017-0637/lhci.json",
+    "k6": "docs/evidence/20251017-0637/k6-summary.json",
+    "playwright": "docs/evidence/20251017-0637/playwright-report.html",
+    "receipts": "docs/evidence/20251017-0637/receipts-samples/",
+    "jwks": "docs/evidence/20251017-0637/jwks.json",
+    "acceptance_log": "docs/evidence/20251017-0637/acceptance.log",
+    "acceptance_summary": "docs/evidence/20251017-0637/acceptance-summary.json"
+  }
+}

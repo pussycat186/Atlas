@@ -1,0 +1,146 @@
+# ATLAS Scheduled: Security Headers Validation (every 15 minutes)
+name: Scheduled - Headers Validation
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  ALERT_THRESHOLD: 1  # Alert if any header validation fails
+
+jobs:
+  validate_headers:
+    name: Validate Security Headers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Validate production headers
+        id: validate
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M")
+          REPORT_FILE="docs/monitoring/headers-${TIMESTAMP}.txt"
+          mkdir -p docs/monitoring
+          
+          echo "ATLAS Security Headers Validation" > "$REPORT_FILE"
+          echo "Timestamp: $(date -u --iso-8601=seconds)" >> "$REPORT_FILE"
+          echo "==========================================" >> "$REPORT_FILE"
+          echo "" >> "$REPORT_FILE"
+          
+          URLS=(
+            "https://atlas-admin-insights.vercel.app/prism"
+            "https://atlas-dev-portal.vercel.app/prism"
+            "https://atlas-proof-messenger.vercel.app/prism"
+          )
+          
+          FAILED=0
+          
+          for URL in "${URLS[@]}"; do
+            echo "Checking: $URL" | tee -a "$REPORT_FILE"
+            
+            HEADERS=$(curl -sI "$URL" 2>&1 || echo "CURL_FAILED")
+            
+            if [[ "$HEADERS" == *"CURL_FAILED"* ]]; then
+              echo "❌ FAILED: Could not fetch headers" | tee -a "$REPORT_FILE"
+              FAILED=$((FAILED + 1))
+              continue
+            fi
+            
+            # CSP Check
+            if echo "$HEADERS" | grep -qi "content-security-policy:.*nonce-"; then
+              if ! echo "$HEADERS" | grep -qi "unsafe-inline"; then
+                echo "  ✅ CSP: nonce-based, no unsafe-inline" | tee -a "$REPORT_FILE"
+              else
+                echo "  ⚠️  CSP: nonce present but unsafe-inline detected" | tee -a "$REPORT_FILE"
+                FAILED=$((FAILED + 1))
+              fi
+            else
+              echo "  ❌ CSP: Missing or no nonce" | tee -a "$REPORT_FILE"
+              FAILED=$((FAILED + 1))
+            fi
+            
+            # Trusted-Types Check
+            if echo "$HEADERS" | grep -qi "require-trusted-types-for"; then
+              echo "  ✅ Trusted-Types: Present" | tee -a "$REPORT_FILE"
+            else
+              echo "  ❌ Trusted-Types: Missing" | tee -a "$REPORT_FILE"
+              FAILED=$((FAILED + 1))
+            fi
+            
+            # COOP/COEP Check
+            if echo "$HEADERS" | grep -qi "cross-origin-opener-policy"; then
+              echo "  ✅ COOP: Present" | tee -a "$REPORT_FILE"
+            else
+              echo "  ❌ COOP: Missing" | tee -a "$REPORT_FILE"
+              FAILED=$((FAILED + 1))
+            fi
+            
+            if echo "$HEADERS" | grep -qi "cross-origin-embedder-policy"; then
+              echo "  ✅ COEP: Present" | tee -a "$REPORT_FILE"
+            else
+              echo "  ❌ COEP: Missing" | tee -a "$REPORT_FILE"
+              FAILED=$((FAILED + 1))
+            fi
+            
+            # HSTS Check
+            if echo "$HEADERS" | grep -qi "strict-transport-security.*preload"; then
+              echo "  ✅ HSTS: Preload enabled" | tee -a "$REPORT_FILE"
+            else
+              echo "  ❌ HSTS: Missing or no preload" | tee -a "$REPORT_FILE"
+              FAILED=$((FAILED + 1))
+            fi
+            
+            echo "" | tee -a "$REPORT_FILE"
+          done
+          
+          echo "FAILED=$FAILED" >> $GITHUB_OUTPUT
+          echo "REPORT_FILE=$REPORT_FILE" >> $GITHUB_ENV
+          
+          if [ $FAILED -ge ${{ env.ALERT_THRESHOLD }} ]; then
+            echo "status=ALERT" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "status=PASS" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit validation report
+        if: always()
+        run: |
+          git config user.name "atlas-monitor"
+          git config user.email "atlas-monitor@github.actions"
+          
+          git add "$REPORT_FILE" || true
+          git commit -m "monitor: headers validation $(date -u +%Y%m%d-%H%M)" || echo "No changes"
+          git push origin main || echo "Push failed"
+
+      - name: Create alert issue
+        if: steps.validate.outputs.status == 'ALERT'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Security Headers Validation Failed',
+              body: `Security headers validation detected failures.\n\nTimestamp: ${new Date().toISOString()}\nWorkflow: ${context.workflow}\nRun: ${context.runNumber}\n\nCheck the validation report for details.`,
+              labels: ['security', 'alert', 'headers']
+            });
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Security Headers Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.validate.outputs.status }}" == "PASS" ]; then
+            echo "✅ **Status**: PASS" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status**: ALERT" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "**Timestamp**: $(date -u --iso-8601=seconds)" >> $GITHUB_STEP_SUMMARY
+          echo "**Report**: \`$REPORT_FILE\`" >> $GITHUB_STEP_SUMMARY

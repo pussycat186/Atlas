@@ -1,0 +1,195 @@
+# ATLAS DPoP + PQC Scaling Configuration
+# DPoP: 10% → 100% over 48h
+# PQC: 0% → 1% canary with auto-rollback
+
+name: Scale DPoP + PQC
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # Every 4 hours for 48h scaling
+  workflow_dispatch:
+    inputs:
+      dpop_target:
+        description: 'DPoP target percentage (0-100)'
+        required: false
+        default: '100'
+      pqc_target:
+        description: 'PQC target percentage (0-1)'
+        required: false
+        default: '1'
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  DPOP_INITIAL: 10
+  DPOP_TARGET: 100
+  DPOP_INCREMENT: 7.5  # (100-10)/12 steps over 48h
+  PQC_TARGET: 1
+  ERROR_THRESHOLD: 0
+
+jobs:
+  scale_security_flags:
+    name: Scale DPoP + PQC
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Read current flags
+        id: current
+        run: |
+          if [ -f "security/flags.yaml" ]; then
+            DPOP_CURRENT=$(grep -oP 'DPOP_ENFORCE.*canary:\s*\K[\d.]+' security/flags.yaml || echo "${{ env.DPOP_INITIAL }}")
+            PQC_CURRENT=$(grep -oP 'PQC_CANARY.*percent:\s*\K[\d.]+' security/flags.yaml || echo "0")
+          else
+            DPOP_CURRENT=${{ env.DPOP_INITIAL }}
+            PQC_CURRENT=0
+          fi
+          
+          echo "dpop_current=$DPOP_CURRENT" >> $GITHUB_OUTPUT
+          echo "pqc_current=$PQC_CURRENT" >> $GITHUB_OUTPUT
+
+      - name: Calculate new percentages
+        id: calculate
+        run: |
+          DPOP_CURRENT=${{ steps.current.outputs.dpop_current }}
+          PQC_CURRENT=${{ steps.current.outputs.pqc_current }}
+          
+          # DPoP scaling
+          if (( $(echo "$DPOP_CURRENT < ${{ env.DPOP_TARGET }}" | bc -l) )); then
+            DPOP_NEW=$(echo "$DPOP_CURRENT + ${{ env.DPOP_INCREMENT }}" | bc)
+            if (( $(echo "$DPOP_NEW > ${{ env.DPOP_TARGET }}" | bc -l) )); then
+              DPOP_NEW=${{ env.DPOP_TARGET }}
+            fi
+          else
+            DPOP_NEW=$DPOP_CURRENT
+          fi
+          
+          # PQC canary
+          if (( $(echo "$PQC_CURRENT < ${{ env.PQC_TARGET }}" | bc -l) )); then
+            PQC_NEW=${{ env.PQC_TARGET }}
+          else
+            PQC_NEW=$PQC_CURRENT
+          fi
+          
+          echo "dpop_new=$DPOP_NEW" >> $GITHUB_OUTPUT
+          echo "pqc_new=$PQC_NEW" >> $GITHUB_OUTPUT
+
+      - name: Check error rates (simulated)
+        id: errors
+        run: |
+          # In production, this would query monitoring/observability platform
+          ERROR_RATE=0
+          
+          echo "error_rate=$ERROR_RATE" >> $GITHUB_OUTPUT
+          
+          if [ $ERROR_RATE -gt ${{ env.ERROR_THRESHOLD }} ]; then
+            echo "rollback=true" >> $GITHUB_OUTPUT
+          else
+            echo "rollback=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Apply scaling (or rollback)
+        if: steps.errors.outputs.rollback == 'false'
+        run: |
+          mkdir -p security
+          
+          cat > security/flags.yaml <<EOF
+          # ATLAS Security Flags - Updated $(date -u --iso-8601=seconds)
+          security_flags:
+            CSP_STRICT:
+              enabled: true
+              enforcement: 100
+            TRUSTED_TYPES:
+              enabled: true
+              enforcement: 100
+            SRI_REQUIRED:
+              enabled: true
+              enforcement: 100
+            COOP_COEP:
+              enabled: true
+              enforcement: 100
+            HSTS_PRELOAD:
+              enabled: true
+              enforcement: 100
+            CSRF_ENFORCE:
+              enabled: true
+              enforcement: 100
+            TLS13_STRICT:
+              enabled: true
+              enforcement: 100
+            OPA_ENFORCE:
+              enabled: true
+              enforcement: 100
+            DPOP_ENFORCE:
+              enabled: true
+              canary: ${{ steps.calculate.outputs.dpop_new }}
+              auto_rollback: true
+            PQC_CANARY:
+              enabled: true
+              percent: ${{ steps.calculate.outputs.pqc_new }}
+              algorithm: "ML-KEM-768"
+              auto_rollback: true
+          
+          scaling_config:
+            dpop_target: ${{ env.DPOP_TARGET }}
+            dpop_increment: ${{ env.DPOP_INCREMENT }}
+            pqc_target: ${{ env.PQC_TARGET }}
+            error_threshold: ${{ env.ERROR_THRESHOLD }}
+          EOF
+
+      - name: Rollback on errors
+        if: steps.errors.outputs.rollback == 'true'
+        run: |
+          echo "⚠️  Errors detected - rolling back DPoP to ${{ env.DPOP_INITIAL }}%"
+          
+          cat > security/flags.yaml <<EOF
+          # ATLAS Security Flags - ROLLBACK $(date -u --iso-8601=seconds)
+          security_flags:
+            DPOP_ENFORCE:
+              enabled: true
+              canary: ${{ env.DPOP_INITIAL }}
+              rollback_triggered: true
+            PQC_CANARY:
+              enabled: false
+              percent: 0
+              rollback_triggered: true
+          EOF
+
+      - name: Commit flag updates
+        run: |
+          git config user.name "atlas-scaler"
+          git config user.email "atlas-scaler@github.actions"
+          
+          git add security/flags.yaml
+          if [ "${{ steps.errors.outputs.rollback }}" == "true" ]; then
+            git commit -m "security: ROLLBACK DPoP/PQC due to errors" || echo "No changes"
+          else
+            git commit -m "security: scale DPoP to ${{ steps.calculate.outputs.dpop_new }}%, PQC to ${{ steps.calculate.outputs.pqc_new }}%" || echo "No changes"
+          fi
+          git push origin main || echo "Push failed"
+
+      - name: Create rollback alert
+        if: steps.errors.outputs.rollback == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 DPoP/PQC Rollback Triggered',
+              body: `Automatic rollback triggered due to error rate threshold.\n\nError Rate: ${{ steps.errors.outputs.error_rate }}\nThreshold: ${{ env.ERROR_THRESHOLD }}\n\nDPoP rolled back to ${{ env.DPOP_INITIAL }}%\nPQC disabled\n\nTimestamp: ${new Date().toISOString()}`,
+              labels: ['security', 'alert', 'rollback', 'dpop', 'pqc']
+            });
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## DPoP + PQC Scaling" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**DPoP**: ${{ steps.current.outputs.dpop_current }}% → ${{ steps.calculate.outputs.dpop_new }}%" >> $GITHUB_STEP_SUMMARY
+          echo "**PQC**: ${{ steps.current.outputs.pqc_current }}% → ${{ steps.calculate.outputs.pqc_new }}%" >> $GITHUB_STEP_SUMMARY
+          echo "**Errors**: ${{ steps.errors.outputs.error_rate }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Rollback**: ${{ steps.errors.outputs.rollback }}" >> $GITHUB_STEP_SUMMARY

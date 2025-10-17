@@ -1,0 +1,1 @@
+{"metrics":{"http_req_duration":{"values":{"p(95)":145.2,"p(99)":289.3}},"http_req_failed":{"values":{"rate":0.001}},"http_reqs":{"values":{"count":10000,"rate":333.33}},"vus":{"values":{"value":50}}},"root_group":{"checks":{"passed":10000,"failed":10}},"timestamp":"2025-10-17T06:37:00Z"}

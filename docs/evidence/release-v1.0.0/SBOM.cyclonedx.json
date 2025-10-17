@@ -1,0 +1,15 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:local-gen-20251017-0637",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2025-10-17T06:37:00Z",
+    "component": {
+      "type": "application",
+      "name": "atlas",
+      "version": "main-7e4a3bf"
+    }
+  },
+  "components": []
+}
