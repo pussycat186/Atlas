@@ -1,0 +1,41 @@
+{
+  "status": "USER_FIRST_LIVE",
+  "timestamp": "2025-10-17T08:03:00Z",
+  "commit": "819ca7779611f9e3149a395175b7da975d99abb2",
+  "routes": [
+    "/",
+    "/onboarding",
+    "/chats",
+    "/chats/<id>",
+    "/verify",
+    "/contacts",
+    "/security",
+    "/settings"
+  ],
+  "frontends": {
+    "proof_messenger": "https://atlas-proof-messenger.vercel.app",
+    "admin_insights": "https://atlas-admin-insights.vercel.app",
+    "dev_portal": "https://atlas-dev-portal.vercel.app"
+  },
+  "gates": {
+    "lighthouse": "PASS",
+    "k6": "PASS",
+    "playwright": "PASS",
+    "headers": "PASS",
+    "policy": "PASS"
+  },
+  "ux": {
+    "tokens": "BUILT",
+    "a11y": "AA",
+    "vietnamese_first": true,
+    "large_text_mode": true,
+    "passkey_auth": true
+  },
+  "security": {
+    "e2ee": "ENABLED",
+    "dpop": "ENABLED",
+    "pqc_canary": "1%",
+    "rfc_9421_receipts": "ENABLED"
+  },
+  "evidence": "docs/evidence/20251017-0803"
+}
