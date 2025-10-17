@@ -1,9 +1,0 @@
-{
-  "proof_messenger_url": "https://github.com/atlas-ecosystem/atlas/actions/runs/9876543210/artifacts/proof-messenger-build.zip",
-  "admin_insights_url": "https://github.com/atlas-ecosystem/atlas/actions/runs/9876543210/artifacts/admin-insights-build.zip",
-  "dev_portal_url": "https://github.com/atlas-ecosystem/atlas/actions/runs/9876543210/artifacts/dev-portal-build.zip",
-  "build_status": "All applications built successfully",
-  "build_timestamp": "2025-09-17T05:27:00Z",
-  "deployment_status": "BLOCKER: Hosting infrastructure required (VERCEL_TOKEN, CF_API_TOKEN, or GitHub Pages config)"
-}
-
