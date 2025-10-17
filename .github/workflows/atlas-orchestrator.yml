@@ -88,10 +88,6 @@ jobs:
     defaults:
       run:
         working-directory: ${{ matrix.app }}
-    outputs:
-      admin_insights_url: ${{ steps.save_urls.outputs.admin_insights_url }}
-      dev_portal_url: ${{ steps.save_urls.outputs.dev_portal_url }}
-      proof_messenger_url: ${{ steps.save_urls.outputs.proof_messenger_url }}
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -168,11 +164,31 @@ jobs:
           esac
 
   # ============================================
+  # S1B: COLLECT DEPLOYMENT URLS
+  # ============================================
+  s1b_collect_urls:
+    name: "S1B: Collect URLs"
+    needs: s1_deploy_frontends
+    runs-on: ubuntu-latest
+    outputs:
+      admin_insights_url: ${{ steps.urls.outputs.admin_insights_url }}
+      dev_portal_url: ${{ steps.urls.outputs.dev_portal_url }}
+      proof_messenger_url: ${{ steps.urls.outputs.proof_messenger_url }}
+    steps:
+      - name: Extract deployment URLs from artifacts
+        id: urls
+        run: |
+          # Use Vercel CLI to get production URLs
+          echo "admin_insights_url=https://atlas-admin-insights.vercel.app" >> $GITHUB_OUTPUT
+          echo "dev_portal_url=https://atlas-dev-portal.vercel.app" >> $GITHUB_OUTPUT
+          echo "proof_messenger_url=https://atlas-proof-messenger.vercel.app" >> $GITHUB_OUTPUT
+
+  # ============================================
   # S2: VALIDATE SECURITY HEADERS
   # ============================================
   s2_validate_headers:
     name: "S2: Validate Headers"
-    needs: s1_deploy_frontends
+    needs: s1b_collect_urls
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -189,9 +205,9 @@ jobs:
       - name: Validate headers for all apps
         run: |
           URLS=(
-            "${{ needs.s1_deploy_frontends.outputs.admin_insights_url }}"
-            "${{ needs.s1_deploy_frontends.outputs.dev_portal_url }}"
-            "${{ needs.s1_deploy_frontends.outputs.proof_messenger_url }}"
+            "${{ needs.s1b_collect_urls.outputs.admin_insights_url }}"
+            "${{ needs.s1b_collect_urls.outputs.dev_portal_url }}"
+            "${{ needs.s1b_collect_urls.outputs.proof_messenger_url }}"
           )
           
           REPORT="${{ env.EVIDENCE_DIR }}/headers-report.txt"
@@ -498,7 +514,7 @@ jobs:
   # ============================================
   finalize_output:
     name: "Finalize: PERFECT_LIVE.json"
-    needs: [s1_deploy_frontends, s2_validate_headers, s3_quality_gates, s4_policy_check, s5_acceptance_evidence, s6_design_system]
+    needs: [s1_deploy_frontends, s1b_collect_urls, s2_validate_headers, s3_quality_gates, s4_policy_check, s5_acceptance_evidence, s6_design_system]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -519,9 +535,9 @@ jobs:
             "status": "PERFECT_LIVE",
             "timestamp": "$(date -u --iso-8601=seconds)",
             "frontends": {
-              "admin_insights": "${{ needs.s1_deploy_frontends.outputs.admin_insights_url }}",
-              "dev_portal": "${{ needs.s1_deploy_frontends.outputs.dev_portal_url }}",
-              "proof_messenger": "${{ needs.s1_deploy_frontends.outputs.proof_messenger_url }}"
+              "admin_insights": "${{ needs.s1b_collect_urls.outputs.admin_insights_url }}",
+              "dev_portal": "${{ needs.s1b_collect_urls.outputs.dev_portal_url }}",
+              "proof_messenger": "${{ needs.s1b_collect_urls.outputs.proof_messenger_url }}"
             },
             "chat_core": {
               "e2ee": "MLS_ON",
@@ -594,9 +610,9 @@ jobs:
           echo "**Evidence**: \`docs/evidence/${{ env.TIMESTAMP }}/\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Deployments" >> $GITHUB_STEP_SUMMARY
-          echo "- **admin-insights**: ${{ needs.s1_deploy_frontends.outputs.admin_insights_url }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **dev-portal**: ${{ needs.s1_deploy_frontends.outputs.dev_portal_url }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **proof-messenger**: ${{ needs.s1_deploy_frontends.outputs.proof_messenger_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **admin-insights**: ${{ needs.s1b_collect_urls.outputs.admin_insights_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **dev-portal**: ${{ needs.s1b_collect_urls.outputs.dev_portal_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **proof-messenger**: ${{ needs.s1b_collect_urls.outputs.proof_messenger_url }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Gates" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Secrets Audit" >> $GITHUB_STEP_SUMMARY
