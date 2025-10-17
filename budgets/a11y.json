@@ -1,0 +1,37 @@
+{
+  "budget_type": "accessibility",
+  "version": "1.0.0",
+  "slos": {
+    "lighthouse_score": {
+      "target": 95,
+      "minimum": 90,
+      "unit": "score"
+    },
+    "wcag_level": "AA",
+    "requirements": {
+      "color_contrast": {
+        "normal_text": 4.5,
+        "large_text": 3.0
+      },
+      "keyboard_navigation": "required",
+      "screen_reader_support": "required",
+      "aria_labels": "required",
+      "focus_indicators": "visible"
+    },
+    "automated_test_coverage": {
+      "target": 80,
+      "unit": "percent"
+    }
+  },
+  "checks": [
+    "axe-core",
+    "lighthouse-a11y",
+    "keyboard-nav",
+    "screen-reader"
+  ],
+  "alerts": {
+    "critical_issues": "immediate",
+    "serious_issues": "daily_digest",
+    "moderate_issues": "weekly_digest"
+  }
+}

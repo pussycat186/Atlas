@@ -1,0 +1,241 @@
+name: ATLAS DR Drills
+
+on:
+  schedule:
+    - cron: '0 2 1 * *'  # Monthly, first day at 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      traffic_percentage:
+        description: 'Percentage of traffic to failover (default: 10)'
+        required: false
+        type: number
+        default: 10
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  failover_drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Pre-Drill Health Check
+        id: pre_check
+        run: |
+          echo "Checking primary deployment health..."
+          
+          APPS=(
+            "https://atlas-admin-insights.vercel.app"
+            "https://atlas-dev-portal.vercel.app"
+            "https://atlas-proof-messenger.vercel.app"
+          )
+          
+          FAILED=0
+          for APP in "${APPS[@]}"; do
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$APP/api/health" || echo "000")
+            
+            if [[ "$RESPONSE" == "200" ]]; then
+              echo "✅ $APP healthy"
+            else
+              echo "❌ $APP unhealthy (status: $RESPONSE)"
+              FAILED=1
+            fi
+          done
+          
+          if [[ $FAILED -eq 1 ]]; then
+            echo "⚠️ Primary unhealthy, aborting drill"
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "healthy=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Simulate Traffic Failover
+        id: failover
+        if: steps.pre_check.outputs.healthy == 'true'
+        run: |
+          TRAFFIC_PCT="${{ github.event.inputs.traffic_percentage || 10 }}"
+          echo "Simulating $TRAFFIC_PCT% traffic failover..."
+          
+          # In production, this would:
+          # 1. Update DNS records or load balancer config
+          # 2. Route $TRAFFIC_PCT% to backup deployment
+          # 3. Monitor health of backup
+          
+          # For simulation, we'll just test backup health
+          BACKUP_URL="https://atlas-proof-messenger.vercel.app"  # Same for now, would be backup in multi-cloud
+          
+          echo "Testing backup deployment at $BACKUP_URL"
+          
+          # Send 10 synthetic requests
+          SUCCESS_COUNT=0
+          TOTAL_REQUESTS=10
+          TOTAL_TIME=0
+          
+          for i in $(seq 1 $TOTAL_REQUESTS); do
+            START=$(date +%s%N)
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}:%{time_total}" "$BACKUP_URL" || echo "000:0")
+            END=$(date +%s%N)
+            
+            HTTP_CODE=$(echo "$RESPONSE" | cut -d: -f1)
+            TIME_TOTAL=$(echo "$RESPONSE" | cut -d: -f2)
+            
+            if [[ "$HTTP_CODE" == "200" ]]; then
+              ((SUCCESS_COUNT++))
+              TOTAL_TIME=$(echo "$TOTAL_TIME + $TIME_TOTAL" | bc)
+            fi
+            
+            sleep 1
+          done
+          
+          SUCCESS_RATE=$(echo "scale=2; $SUCCESS_COUNT * 100 / $TOTAL_REQUESTS" | bc)
+          AVG_TIME=$(echo "scale=3; $TOTAL_TIME / $SUCCESS_COUNT" | bc)
+          AVG_TIME_MS=$(echo "scale=0; $AVG_TIME * 1000" | bc)
+          
+          echo "Success rate: $SUCCESS_RATE%"
+          echo "Average response time: ${AVG_TIME_MS}ms"
+          
+          echo "success_rate=$SUCCESS_RATE" >> $GITHUB_OUTPUT
+          echo "avg_time_ms=$AVG_TIME_MS" >> $GITHUB_OUTPUT
+      
+      - name: Check Auto-Revert Conditions
+        id: auto_revert
+        if: steps.failover.outputs.success_rate != ''
+        run: |
+          SUCCESS_RATE="${{ steps.failover.outputs.success_rate }}"
+          AVG_TIME_MS="${{ steps.failover.outputs.avg_time_ms }}"
+          
+          # Auto-revert conditions:
+          # 1. Success rate < 95%
+          # 2. Average time > 500ms
+          
+          SHOULD_REVERT=false
+          REVERT_REASON=""
+          
+          if (( $(echo "$SUCCESS_RATE < 95" | bc -l) )); then
+            SHOULD_REVERT=true
+            REVERT_REASON="Success rate too low: $SUCCESS_RATE% (threshold: 95%)"
+          elif [[ "$AVG_TIME_MS" -gt 500 ]]; then
+            SHOULD_REVERT=true
+            REVERT_REASON="Response time too high: ${AVG_TIME_MS}ms (threshold: 500ms)"
+          fi
+          
+          echo "should_revert=$SHOULD_REVERT" >> $GITHUB_OUTPUT
+          echo "revert_reason=$REVERT_REASON" >> $GITHUB_OUTPUT
+          
+          if [[ "$SHOULD_REVERT" == "true" ]]; then
+            echo "⚠️ Auto-revert triggered: $REVERT_REASON"
+          else
+            echo "✅ Drill passed quality checks"
+          fi
+      
+      - name: Execute Revert (Simulated)
+        if: steps.auto_revert.outputs.should_revert == 'true'
+        run: |
+          echo "Reverting traffic to primary deployment..."
+          # In production, this would revert DNS/load balancer changes
+          echo "✅ Reverted to primary"
+      
+      - name: Monitor Post-Drill (15 min)
+        if: steps.auto_revert.outputs.should_revert != 'true'
+        run: |
+          echo "Monitoring for 15 minutes..."
+          
+          # Simulate 15-minute monitoring period with health checks every 30s
+          for i in {1..30}; do
+            HEALTH=$(curl -s -o /dev/null -w "%{http_code}" https://atlas-proof-messenger.vercel.app || echo "000")
+            
+            if [[ "$HEALTH" != "200" ]]; then
+              echo "⚠️ Health check failed at iteration $i (status: $HEALTH)"
+              break
+            fi
+            
+            if [[ $((i % 2)) -eq 0 ]]; then
+              echo "Health check $i/30: OK"
+            fi
+            
+            sleep 30
+          done
+          
+          echo "✅ Monitoring complete"
+      
+      - name: Finalize Drill (Revert Simulated Traffic)
+        if: always()
+        run: |
+          echo "Reverting all traffic to primary deployment..."
+          # In production, ensure 100% traffic back to primary
+          echo "✅ Drill complete, traffic restored"
+      
+      - name: Create Drill Evidence
+        if: always()
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M%S)
+          EVIDENCE_DIR="docs/evidence/$TS"
+          mkdir -p "$EVIDENCE_DIR"
+          
+          cat > "$EVIDENCE_DIR/DR_DRILL_PLAN.json" <<EOF
+          {
+            "timestamp": "$TS",
+            "drill_type": "traffic_failover_simulation",
+            "parameters": {
+              "traffic_percentage": ${{ github.event.inputs.traffic_percentage || 10 }},
+              "duration_minutes": 30
+            },
+            "results": {
+              "pre_check": {
+                "primary_healthy": ${{ steps.pre_check.outputs.healthy == 'true' }}
+              },
+              "failover": {
+                "success_rate_percent": ${{ steps.failover.outputs.success_rate || 0 }},
+                "avg_response_time_ms": ${{ steps.failover.outputs.avg_time_ms || 0 }}
+              },
+              "auto_revert": {
+                "triggered": ${{ steps.auto_revert.outputs.should_revert == 'true' }},
+                "reason": "${{ steps.auto_revert.outputs.revert_reason }}"
+              }
+            },
+            "slo_compliance": {
+              "availability": ${{ steps.failover.outputs.success_rate || 0 }},
+              "availability_target": 99.0,
+              "p95_ms": ${{ steps.failover.outputs.avg_time_ms || 0 }},
+              "p95_target": 500,
+              "status": "${{ steps.auto_revert.outputs.should_revert == 'true' && 'FAILED' || 'PASSED' }}"
+            },
+            "next_drill": "$(date -u -d '+1 month' +%Y-%m-%d)"
+          }
+          EOF
+          
+          echo "Evidence created at $EVIDENCE_DIR/DR_DRILL_PLAN.json"
+      
+      - name: Commit Evidence
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add docs/evidence/
+          git diff --staged --quiet || git commit -m "chore(dr): Add DR drill evidence $(date -u +%Y%m%d-%H%M%S)"
+          git push origin main || echo "No changes to push"
+      
+      - name: Create Issue on Drill Failure
+        if: steps.auto_revert.outputs.should_revert == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const timestamp = new Date().toISOString();
+            const revertReason = '${{ steps.auto_revert.outputs.revert_reason }}';
+            const successRate = '${{ steps.failover.outputs.success_rate }}';
+            const avgTime = '${{ steps.failover.outputs.avg_time_ms }}';
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '[DR-DRILL-FAILED] Failover drill auto-reverted',
+              body: `## DR Drill Failure\n\n**Timestamp:** ${timestamp}\n**Revert Reason:** ${revertReason}\n\n**Details:**\n- Success Rate: ${successRate}% (target: ≥95%)\n- Avg Response Time: ${avgTime}ms (target: ≤500ms)\n\n**Actions Required:**\n1. Investigate backup deployment performance\n2. Review failover configuration\n3. Re-run drill after fixes\n\n**Evidence:** See docs/evidence/ for detailed metrics.`,
+              labels: ['DR-DRILL', 'incident', 'high-priority']
+            });

@@ -1,0 +1,52 @@
+{
+  "budget_type": "error_rate",
+  "version": "1.0.0",
+  "slos": {
+    "e2e_success_rate": {
+      "target": 99.5,
+      "minimum": 99.0,
+      "unit": "percent",
+      "window": "24h"
+    },
+    "http_error_rate": {
+      "4xx": {
+        "target": 5.0,
+        "unit": "percent"
+      },
+      "5xx": {
+        "target": 0.5,
+        "maximum": 1.0,
+        "unit": "percent"
+      }
+    },
+    "client_error_rate": {
+      "target": 1.0,
+      "maximum": 2.0,
+      "unit": "percent"
+    },
+    "critical_paths": {
+      "passkey_auth": {
+        "success_rate": 99.9,
+        "unit": "percent"
+      },
+      "message_send": {
+        "success_rate": 99.5,
+        "unit": "percent"
+      },
+      "receipt_verification": {
+        "success_rate": 99.8,
+        "unit": "percent"
+      }
+    }
+  },
+  "thresholds": {
+    "error_spike_multiplier": 3.0,
+    "error_spike_window": "5m",
+    "consecutive_errors": 10
+  },
+  "alerts": {
+    "critical_error_rate": "immediate",
+    "elevated_error_rate": "15m_window",
+    "error_trends": "daily"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "flags": {
+    "onboarding_experiment": {
+      "enabled": false,
+      "description": "A/B test simplified onboarding flow vs. standard flow",
+      "variants": {
+        "control": {
+          "weight": 50,
+          "description": "Standard onboarding (3 steps)"
+        },
+        "simplified": {
+          "weight": 50,
+          "description": "Simplified onboarding (1 step: Passkey only)"
+        }
+      },
+      "metrics": [
+        "onboarding_completion_rate",
+        "time_to_first_message",
+        "passkey_creation_success"
+      ]
+    },
+    "large_text_default": {
+      "enabled": false,
+      "description": "Enable 120% base font size by default for all users",
+      "rollout_percentage": 0,
+      "target_audience": "all_users"
+    },
+    "pqc_hinting": {
+      "enabled": false,
+      "description": "Show UI hints about post-quantum cryptography readiness",
+      "rollout_percentage": 0,
+      "target_audience": "early_adopters"
+    },
+    "receipt_auto_verify": {
+      "enabled": false,
+      "description": "Automatically verify receipts on message view (vs. manual click)",
+      "rollout_percentage": 0,
+      "metrics": [
+        "verification_rate",
+        "user_trust_score"
+      ]
+    },
+    "dark_mode_default": {
+      "enabled": false,
+      "description": "Enable dark mode by default based on system preference",
+      "rollout_percentage": 100,
+      "target_audience": "all_users"
+    }
+  },
+  "evaluation": {
+    "method": "client_side",
+    "storage": "local_storage",
+    "refresh_interval_hours": 24
+  },
+  "privacy": {
+    "no_pii_tracking": true,
+    "anonymous_counters_only": true,
+    "opt_out_available": true
+  }
+}

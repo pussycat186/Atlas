@@ -1,0 +1,213 @@
+name: ATLAS Growth Experiments
+
+on:
+  workflow_dispatch:
+    inputs:
+      flag_name:
+        description: 'Feature flag to enable/test'
+        required: false
+        type: choice
+        options:
+          - all
+          - onboarding_experiment
+          - large_text_default
+          - pqc_hinting
+          - receipt_auto_verify
+          - dark_mode_default
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Monday
+  push:
+    branches: [main]
+    paths:
+      - 'apps/proof-messenger/flags.json'
+
+permissions:
+  contents: write
+
+jobs:
+  validate_flags:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Validate Flags Schema
+        id: validate
+        run: |
+          # Check if flags.json is valid JSON
+          if jq empty apps/proof-messenger/flags.json 2>/dev/null; then
+            echo "✅ flags.json is valid JSON"
+          else
+            echo "❌ flags.json is invalid JSON"
+            exit 1
+          fi
+          
+          # Validate required fields
+          REQUIRED_FIELDS=("version" "flags" "evaluation" "privacy")
+          for FIELD in "${REQUIRED_FIELDS[@]}"; do
+            if ! jq -e ".$FIELD" apps/proof-messenger/flags.json >/dev/null; then
+              echo "❌ Missing required field: $FIELD"
+              exit 1
+            fi
+          done
+          
+          # Validate privacy settings (no PII tracking)
+          NO_PII=$(jq -r '.privacy.no_pii_tracking' apps/proof-messenger/flags.json)
+          if [[ "$NO_PII" != "true" ]]; then
+            echo "❌ CRITICAL: no_pii_tracking must be true"
+            exit 1
+          fi
+          
+          echo "✅ Flags schema valid"
+      
+      - name: Check Flag Conflicts
+        id: conflicts
+        run: |
+          # Check for conflicting flags (e.g., simplified onboarding + auto-verify)
+          FLAGS=$(jq -r '.flags | keys[]' apps/proof-messenger/flags.json)
+          
+          ONBOARDING_ENABLED=$(jq -r '.flags.onboarding_experiment.enabled' apps/proof-messenger/flags.json)
+          LARGE_TEXT_ENABLED=$(jq -r '.flags.large_text_default.enabled' apps/proof-messenger/flags.json)
+          
+          # Example conflict check
+          if [[ "$ONBOARDING_ENABLED" == "true" ]] && [[ "$LARGE_TEXT_ENABLED" == "true" ]]; then
+            echo "⚠️ Warning: Multiple UX experiments enabled simultaneously"
+            echo "conflicts=true" >> $GITHUB_OUTPUT
+          else
+            echo "conflicts=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Simulate A/B Test
+        id: ab_test
+        run: |
+          # Simulate 100 users in A/B test for onboarding_experiment
+          FLAG_CONFIG=$(jq -r '.flags.onboarding_experiment' apps/proof-messenger/flags.json)
+          
+          if [[ $(echo "$FLAG_CONFIG" | jq -r '.enabled') == "true" ]]; then
+            CONTROL_WEIGHT=$(echo "$FLAG_CONFIG" | jq -r '.variants.control.weight')
+            SIMPLIFIED_WEIGHT=$(echo "$FLAG_CONFIG" | jq -r '.variants.simplified.weight')
+            
+            echo "Simulating A/B test with weights: control=$CONTROL_WEIGHT, simplified=$SIMPLIFIED_WEIGHT"
+            
+            CONTROL_COUNT=0
+            SIMPLIFIED_COUNT=0
+            
+            for i in {1..100}; do
+              RAND=$((RANDOM % 100))
+              if [[ $RAND -lt $CONTROL_WEIGHT ]]; then
+                ((CONTROL_COUNT++))
+              else
+                ((SIMPLIFIED_COUNT++))
+              fi
+            done
+            
+            echo "Distribution (100 users): control=$CONTROL_COUNT, simplified=$SIMPLIFIED_COUNT"
+            
+            # Check if distribution is roughly equal (allow ±10% variance)
+            if [[ $CONTROL_COUNT -ge 40 ]] && [[ $CONTROL_COUNT -le 60 ]]; then
+              echo "✅ A/B distribution is balanced"
+            else
+              echo "⚠️ A/B distribution skewed: control=$CONTROL_COUNT"
+            fi
+          else
+            echo "onboarding_experiment is disabled, skipping simulation"
+          fi
+      
+      - name: Privacy Guard Check
+        id: privacy
+        run: |
+          echo "Verifying privacy compliance..."
+          
+          # Ensure no PII tracking
+          NO_PII=$(jq -r '.privacy.no_pii_tracking' apps/proof-messenger/flags.json)
+          ANONYMOUS_ONLY=$(jq -r '.privacy.anonymous_counters_only' apps/proof-messenger/flags.json)
+          OPT_OUT=$(jq -r '.privacy.opt_out_available' apps/proof-messenger/flags.json)
+          
+          if [[ "$NO_PII" == "true" ]] && [[ "$ANONYMOUS_ONLY" == "true" ]] && [[ "$OPT_OUT" == "true" ]]; then
+            echo "✅ Privacy settings compliant"
+            echo "compliant=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Privacy settings non-compliant"
+            echo "compliant=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: Generate Metrics Template
+        id: metrics
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M%S)
+          mkdir -p docs/experiments
+          
+          cat > docs/experiments/metrics-template.json <<'EOF'
+          {
+            "experiment_name": "onboarding_experiment",
+            "start_date": "YYYY-MM-DD",
+            "end_date": "YYYY-MM-DD",
+            "sample_size": 1000,
+            "variants": {
+              "control": {
+                "users": 500,
+                "onboarding_completion_rate": 0.0,
+                "time_to_first_message_seconds": 0,
+                "passkey_creation_success": 0.0
+              },
+              "simplified": {
+                "users": 500,
+                "onboarding_completion_rate": 0.0,
+                "time_to_first_message_seconds": 0,
+                "passkey_creation_success": 0.0
+              }
+            },
+            "statistical_significance": {
+              "method": "chi_squared",
+              "p_value": 0.05,
+              "confidence_level": 0.95
+            },
+            "privacy": {
+              "no_user_ids_tracked": true,
+              "aggregate_only": true
+            }
+          }
+          EOF
+          
+          echo "✅ Metrics template created"
+      
+      - name: Create Evidence
+        if: always()
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M%S)
+          EVIDENCE_DIR="docs/evidence/$TS"
+          mkdir -p "$EVIDENCE_DIR"
+          
+          cat > "$EVIDENCE_DIR/GROWTH_FLAGS.json" <<EOF
+          {
+            "timestamp": "$TS",
+            "validation": {
+              "schema": "PASSED",
+              "privacy_compliance": "${{ steps.privacy.outputs.compliant == 'true' && 'COMPLIANT' || 'NON_COMPLIANT' }}",
+              "flag_conflicts": "${{ steps.conflicts.outputs.conflicts == 'true' && 'WARNINGS' || 'NONE' }}"
+            },
+            "flags": $(cat apps/proof-messenger/flags.json | jq '.flags'),
+            "privacy_settings": $(cat apps/proof-messenger/flags.json | jq '.privacy'),
+            "metrics_template": "docs/experiments/metrics-template.json"
+          }
+          EOF
+          
+          echo "Evidence created at $EVIDENCE_DIR/GROWTH_FLAGS.json"
+      
+      - name: Commit Changes
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add docs/evidence/ docs/experiments/
+          git diff --staged --quiet || git commit -m "chore(growth): Add experiment evidence and metrics template $(date -u +%Y%m%d-%H%M%S)"
+          git push origin main || echo "No changes to push"

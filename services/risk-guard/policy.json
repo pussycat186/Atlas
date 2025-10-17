@@ -1,0 +1,105 @@
+{
+  "version": "1.0.0",
+  "policies": {
+    "rate_limits": {
+      "message_send": {
+        "window": "1m",
+        "max_requests": 10,
+        "burst": 3,
+        "action": "throttle"
+      },
+      "media_upload": {
+        "window": "5m",
+        "max_requests": 20,
+        "burst": 5,
+        "action": "throttle"
+      },
+      "receipt_verify": {
+        "window": "1m",
+        "max_requests": 30,
+        "burst": 10,
+        "action": "throttle"
+      },
+      "api_general": {
+        "window": "1m",
+        "max_requests": 60,
+        "burst": 20,
+        "action": "throttle"
+      }
+    },
+    "media": {
+      "max_file_size_mb": 10,
+      "allowed_types": [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "video/mp4",
+        "video/webm"
+      ],
+      "max_dimensions": {
+        "width": 4096,
+        "height": 4096
+      },
+      "scan_for_malware": true
+    },
+    "anti_spam": {
+      "duplicate_message_window": "5m",
+      "max_duplicate_messages": 3,
+      "link_threshold_per_message": 3,
+      "suspicious_patterns": [
+        "\\b(viagra|cialis|crypto|lottery|prize)\\b",
+        "\\b(click here|download now|act now)\\b",
+        "http[s]?://bit\\.ly",
+        "http[s]?://tinyurl\\.com"
+      ],
+      "action": "flag_for_review"
+    },
+    "abuse_detection": {
+      "rapid_account_creation": {
+        "window": "1h",
+        "max_accounts_per_ip": 3,
+        "action": "block"
+      },
+      "credential_stuffing": {
+        "window": "5m",
+        "max_failed_logins": 5,
+        "action": "temporary_block",
+        "block_duration": "15m"
+      },
+      "enumeration_attacks": {
+        "window": "1m",
+        "max_404s": 20,
+        "action": "rate_limit"
+      }
+    },
+    "content_validation": {
+      "max_message_length": 5000,
+      "require_sanitization": true,
+      "block_scripts": true,
+      "block_iframes": true
+    }
+  },
+  "enforcement": {
+    "throttle": {
+      "response_code": 429,
+      "retry_after_header": true
+    },
+    "block": {
+      "response_code": 403,
+      "log_to_security_events": true
+    },
+    "flag_for_review": {
+      "continue_request": true,
+      "notify_moderators": true
+    }
+  },
+  "monitoring": {
+    "emit_metrics": true,
+    "log_violations": true,
+    "alert_on_spike": {
+      "threshold_multiplier": 3.0,
+      "window": "10m"
+    }
+  }
+}

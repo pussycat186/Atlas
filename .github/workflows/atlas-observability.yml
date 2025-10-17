@@ -1,0 +1,235 @@
+name: ATLAS Observability & SLOs
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Health probes every 5 minutes
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'budgets/*.json'
+      - '.github/workflows/atlas-observability.yml'
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  health_probes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install Dependencies
+        run: |
+          npm install -g @lhci/cli
+      
+      - name: Probe All Apps
+        id: probes
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M%S)
+          RESULTS_FILE="probe-results-$TS.json"
+          
+          APPS=(
+            "https://atlas-admin-insights.vercel.app"
+            "https://atlas-dev-portal.vercel.app"
+            "https://atlas-proof-messenger.vercel.app"
+          )
+          
+          ENDPOINTS=("/prism" "/verify" "/")
+          
+          echo "{\"timestamp\":\"$TS\",\"probes\":[]}" > "$RESULTS_FILE"
+          
+          for APP in "${APPS[@]}"; do
+            APP_NAME=$(echo "$APP" | sed 's/https:\/\/atlas-//' | sed 's/.vercel.app//')
+            
+            for ENDPOINT in "${ENDPOINTS[@]}"; do
+              URL="$APP$ENDPOINT"
+              echo "Probing $URL"
+              
+              START=$(date +%s%N)
+              RESPONSE=$(curl -w "\n%{http_code}\n%{time_total}" -s -o /dev/null "$URL" || echo "0\n0")
+              END=$(date +%s%N)
+              
+              HTTP_CODE=$(echo "$RESPONSE" | tail -n2 | head -n1)
+              TIME_TOTAL=$(echo "$RESPONSE" | tail -n1)
+              TTFB_MS=$(echo "scale=0; $TIME_TOTAL * 1000" | bc)
+              
+              SUCCESS="false"
+              if [[ "$HTTP_CODE" == "200" ]] || [[ "$HTTP_CODE" == "404" && "$ENDPOINT" == "/prism" ]]; then
+                SUCCESS="true"
+              fi
+              
+              # Append result
+              jq --arg app "$APP_NAME" \
+                 --arg endpoint "$ENDPOINT" \
+                 --arg code "$HTTP_CODE" \
+                 --arg ttfb "$TTFB_MS" \
+                 --arg success "$SUCCESS" \
+                 '.probes += [{
+                   "app": $app,
+                   "endpoint": $endpoint,
+                   "http_code": $code,
+                   "ttfb_ms": ($ttfb | tonumber),
+                   "success": ($success == "true")
+                 }]' "$RESULTS_FILE" > tmp.json && mv tmp.json "$RESULTS_FILE"
+            done
+          done
+          
+          echo "results_file=$RESULTS_FILE" >> $GITHUB_OUTPUT
+          cat "$RESULTS_FILE"
+      
+      - name: Calculate SLO Metrics
+        id: slo
+        run: |
+          RESULTS_FILE="${{ steps.probes.outputs.results_file }}"
+          
+          # Load budget files
+          PERF_BUDGET=$(cat budgets/perf.json)
+          ERROR_BUDGET=$(cat budgets/error.json)
+          
+          # Calculate availability
+          TOTAL=$(jq '.probes | length' "$RESULTS_FILE")
+          SUCCESS=$(jq '[.probes[] | select(.success == true)] | length' "$RESULTS_FILE")
+          AVAILABILITY=$(echo "scale=4; $SUCCESS * 100 / $TOTAL" | bc)
+          
+          echo "availability=$AVAILABILITY" >> $GITHUB_OUTPUT
+          
+          # Calculate p50, p95 for /prism
+          PRISM_TTFB=$(jq '[.probes[] | select(.endpoint == "/prism") | .ttfb_ms] | sort' "$RESULTS_FILE")
+          PRISM_COUNT=$(echo "$PRISM_TTFB" | jq 'length')
+          
+          if [[ "$PRISM_COUNT" -gt 0 ]]; then
+            P50_IDX=$(echo "scale=0; $PRISM_COUNT * 0.5" | bc | cut -d. -f1)
+            P95_IDX=$(echo "scale=0; $PRISM_COUNT * 0.95" | bc | cut -d. -f1)
+            
+            PRISM_P50=$(echo "$PRISM_TTFB" | jq ".[$P50_IDX]")
+            PRISM_P95=$(echo "$PRISM_TTFB" | jq ".[$P95_IDX]")
+            
+            echo "prism_p50=$PRISM_P50" >> $GITHUB_OUTPUT
+            echo "prism_p95=$PRISM_P95" >> $GITHUB_OUTPUT
+          fi
+          
+          # Calculate error rate
+          ERRORS=$(jq '[.probes[] | select(.success == false)] | length' "$RESULTS_FILE")
+          ERROR_RATE=$(echo "scale=4; $ERRORS * 100 / $TOTAL" | bc)
+          
+          echo "error_rate=$ERROR_RATE" >> $GITHUB_OUTPUT
+      
+      - name: Check SLO Compliance
+        id: compliance
+        run: |
+          AVAILABILITY="${{ steps.slo.outputs.availability }}"
+          PRISM_P95="${{ steps.slo.outputs.prism_p95 }}"
+          ERROR_RATE="${{ steps.slo.outputs.error_rate }}"
+          
+          BREACHES=()
+          
+          # Check availability (target: 99.95%)
+          if (( $(echo "$AVAILABILITY < 99.95" | bc -l) )); then
+            BREACHES+=("Availability: $AVAILABILITY% (target: 99.95%)")
+          fi
+          
+          # Check PRISM p95 (target: ≤200ms)
+          if [[ -n "$PRISM_P95" ]] && (( $(echo "$PRISM_P95 > 200" | bc -l) )); then
+            BREACHES+=("PRISM p95: ${PRISM_P95}ms (target: ≤200ms)")
+          fi
+          
+          # Check error rate (target: ≤0.5%)
+          if (( $(echo "$ERROR_RATE > 0.5" | bc -l) )); then
+            BREACHES+=("Error rate: $ERROR_RATE% (target: ≤0.5%)")
+          fi
+          
+          if [[ ${#BREACHES[@]} -gt 0 ]]; then
+            echo "has_breaches=true" >> $GITHUB_OUTPUT
+            echo "breach_count=${#BREACHES[@]}" >> $GITHUB_OUTPUT
+            
+            # Save breach details
+            printf '%s\n' "${BREACHES[@]}" > slo_breaches.txt
+          else
+            echo "has_breaches=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create Evidence
+        if: always()
+        run: |
+          TS=$(date -u +%Y%m%d-%H%M%S)
+          EVIDENCE_DIR="docs/evidence/$TS"
+          mkdir -p "$EVIDENCE_DIR"
+          
+          RESULTS_FILE="${{ steps.probes.outputs.results_file }}"
+          
+          cat > "$EVIDENCE_DIR/SLO_BASELINES.json" <<EOF
+          {
+            "timestamp": "$TS",
+            "slos": {
+              "availability": {
+                "current": ${{ steps.slo.outputs.availability }},
+                "target": 99.95,
+                "status": "${{ steps.compliance.outputs.has_breaches == 'true' && steps.slo.outputs.availability < 99.95 && 'BREACH' || 'OK' }}"
+              },
+              "ttfb": {
+                "prism_p50_ms": ${{ steps.slo.outputs.prism_p50 || 0 }},
+                "prism_p95_ms": ${{ steps.slo.outputs.prism_p95 || 0 }},
+                "prism_p95_target": 200,
+                "status": "${{ steps.compliance.outputs.has_breaches == 'true' && steps.slo.outputs.prism_p95 > 200 && 'BREACH' || 'OK' }}"
+              },
+              "error_rate": {
+                "current": ${{ steps.slo.outputs.error_rate }},
+                "target": 0.5,
+                "status": "${{ steps.compliance.outputs.has_breaches == 'true' && steps.slo.outputs.error_rate > 0.5 && 'BREACH' || 'OK' }}"
+              }
+            },
+            "breach_count": ${{ steps.compliance.outputs.breach_count || 0 }},
+            "probe_results": $(cat "$RESULTS_FILE")
+          }
+          EOF
+          
+          # Copy probe results
+          cp "$RESULTS_FILE" "$EVIDENCE_DIR/"
+          
+          echo "Evidence created at $EVIDENCE_DIR/SLO_BASELINES.json"
+      
+      - name: Commit Evidence
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 * * * *'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add docs/evidence/
+          git diff --staged --quiet || git commit -m "chore(observability): Add SLO evidence $(date -u +%Y%m%d-%H%M%S)"
+          git push origin main || echo "No changes to push"
+      
+      - name: Create SLO Breach Issue
+        if: steps.compliance.outputs.has_breaches == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const breaches = fs.readFileSync('slo_breaches.txt', 'utf8').trim().split('\n');
+            
+            const body = `## SLO Breach Detected
+            
+            **Timestamp:** ${new Date().toISOString()}
+            
+            **Breached SLOs:**
+            ${breaches.map(b => `- ${b}`).join('\n')}
+            
+            **Actions Required:**
+            1. Review performance metrics
+            2. Check for incidents or outages
+            3. Consider rollback if degradation persists
+            
+            **Evidence:** See \`docs/evidence/\` for detailed metrics.
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[SLO-BREACH] ${breaches.length} SLO(s) breached`,
+              body: body,
+              labels: ['SLO-BREACH', 'critical']
+            });

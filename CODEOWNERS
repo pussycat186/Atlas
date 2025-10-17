@@ -1,0 +1,37 @@
+# CODEOWNERS for Atlas monorepo
+# These owners will be requested for review when someone opens a pull request.
+
+# Default owners for everything in the repo
+* @pussycat186
+
+# Security-critical packages
+/packages/security-middleware/ @pussycat186
+/packages/crypto/ @pussycat186
+/packages/receipts/ @pussycat186
+/packages/jwks/ @pussycat186
+/packages/dpop/ @pussycat186
+
+# Applications
+/apps/admin-insights/ @pussycat186
+/apps/dev-portal/ @pussycat186
+/apps/proof-messenger/ @pussycat186
+
+# Infrastructure and workflows
+/.github/ @pussycat186
+/cloudbuild.yaml @pussycat186
+/docker-compose*.yml @pussycat186
+
+# Design system and tokens
+/packages/design-tokens/ @pussycat186
+/design/ @pussycat186
+
+# Configuration files
+/package.json @pussycat186
+/pnpm-workspace.yaml @pussycat186
+/turbo.json @pussycat186
+/tsconfig*.json @pussycat186
+
+# Documentation
+/docs/SECURITY_MODEL.md @pussycat186
+/docs/PRIVACY_POLICY_DRAFT.md @pussycat186
+/docs/DR_RUNBOOK.md @pussycat186

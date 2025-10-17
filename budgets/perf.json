@@ -1,0 +1,58 @@
+{
+  "budget_type": "performance",
+  "version": "1.0.0",
+  "slos": {
+    "availability": {
+      "target": 99.95,
+      "unit": "percent",
+      "window": "30d"
+    },
+    "ttfb": {
+      "p50": {
+        "prism_endpoint": 150,
+        "root": 200,
+        "unit": "ms"
+      },
+      "p95": {
+        "prism_endpoint": 200,
+        "root": 300,
+        "unit": "ms"
+      },
+      "p99": {
+        "prism_endpoint": 400,
+        "root": 600,
+        "unit": "ms"
+      }
+    },
+    "fcp": {
+      "p50": 1200,
+      "p75": 1800,
+      "p95": 3000,
+      "unit": "ms"
+    },
+    "lcp": {
+      "p50": 1500,
+      "p75": 2500,
+      "p95": 4000,
+      "unit": "ms"
+    },
+    "cls": {
+      "p75": 0.1,
+      "p95": 0.25
+    },
+    "fid": {
+      "p75": 100,
+      "p95": 300,
+      "unit": "ms"
+    },
+    "bundle_size": {
+      "max_per_route": 300,
+      "unit": "kb"
+    }
+  },
+  "alerts": {
+    "breach_threshold": 2,
+    "consecutive_failures": 3,
+    "notification_channels": ["github_issues"]
+  }
+}
