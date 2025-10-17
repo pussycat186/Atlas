@@ -1,0 +1,169 @@
+{
+  "status": "BLOCKER_LIVE_UI:MAX_ATTEMPTS_EXCEEDED",
+  "timestamp": "2025-10-17T09:13:00Z",
+  "attempts_completed": 5,
+  "max_attempts": 5,
+  "severity": "CRITICAL",
+  "summary": "Vietnamese UI deployment failed after 5 attempts - production still showing old Atlas Prism UI",
+  "deployment_timeline": [
+    {
+      "attempt": 1,
+      "time_utc": "2025-10-17T08:47:14Z",
+      "strategy": "vercel build + --prebuilt deploy",
+      "commit": "8b8250f",
+      "result": "FAILED - old UI persists",
+      "evidence_folder": null
+    },
+    {
+      "attempt": 2,
+      "time_utc": "2025-10-17T08:55:14Z",
+      "strategy": "Same strategy after page.tsx update",
+      "commit": "e842d4e",
+      "result": "FAILED - old UI persists",
+      "evidence_folder": null
+    },
+    {
+      "attempt": 3,
+      "time_utc": "2025-10-17T09:01:xx",
+      "strategy": "Added .next cache clear + --force flag",
+      "commit": "7748f5c",
+      "result": "FAILED - old UI persists",
+      "evidence_folder": null
+    },
+    {
+      "attempt": 4,
+      "time_utc": "2025-10-17T09:06:04Z",
+      "strategy": "vercel deploy --prod (Vercel-side build)",
+      "commit": "36159bd",
+      "result": "FAILED - old UI persists",
+      "evidence_folder": null
+    },
+    {
+      "attempt": 5,
+      "time_utc": "2025-10-17T09:11:14Z",
+      "strategy": "Force dynamic rendering (export const dynamic='force-dynamic')",
+      "commit": "9090d8f",
+      "result": "FAILED - old UI persists",
+      "evidence_folder": null
+    }
+  ],
+  "source_code_verification": {
+    "local_file": "d:\\Atlas\\apps\\proof-messenger\\app\\page.tsx",
+    "line_18_content": "Nhắn tin. An toàn. Tự kiểm chứng.",
+    "vietnamese_markers_present": true,
+    "commit_hash": "9090d8f",
+    "last_modified": "2025-10-17T09:10:00Z"
+  },
+  "production_verification": {
+    "url": "https://atlas-proof-messenger.vercel.app/",
+    "content_length_bytes": 9786,
+    "markers_found": {
+      "nhan_tin": false,
+      "an_toan": false,
+      "passkey": false,
+      "xac_minh": false,
+      "atlas_messenger": false
+    },
+    "current_content": "Atlas Prism UI (old)",
+    "cache_headers_used": "Cache-Control: no-cache, no-store, must-revalidate"
+  },
+  "root_cause_analysis": {
+    "hypothesis_1_build_cache": {
+      "description": "Vercel build cache serving stale output",
+      "mitigation_attempted": "rm -rf .next .vercel/output + --force flag",
+      "result": "FAILED - no improvement"
+    },
+    "hypothesis_2_local_build": {
+      "description": "Local build creating incorrect artifacts",
+      "mitigation_attempted": "vercel deploy --prod (Vercel-side build)",
+      "result": "FAILED - no improvement"
+    },
+    "hypothesis_3_static_generation": {
+      "description": "Next.js static generation caching old page",
+      "mitigation_attempted": "export const dynamic='force-dynamic' + revalidate=0",
+      "result": "FAILED - no improvement"
+    },
+    "hypothesis_4_vercel_config": {
+      "description": "Vercel project misconfiguration",
+      "status": "NOT_TESTED - requires manual dashboard access",
+      "potential_issues": [
+        "Production branch not set to 'main'",
+        "Deployment locked/protected",
+        "Build command incorrect",
+        "Environment variables missing",
+        "Edge caching configuration",
+        "Deployment slots/preview vs production mismatch"
+      ]
+    }
+  },
+  "required_manual_actions": [
+    {
+      "priority": "IMMEDIATE",
+      "action": "Check Vercel Dashboard - Project Settings",
+      "steps": [
+        "Login to vercel.com",
+        "Navigate to Atlas proof-messenger project",
+        "Settings > General > Production Branch (verify = 'main')",
+        "Settings > Git > Check deployment protection",
+        "Deployments tab > Verify latest deployment used correct commit (9090d8f)",
+        "Deployments tab > Check build logs for errors"
+      ]
+    },
+    {
+      "priority": "IMMEDIATE",
+      "action": "Clear Vercel Cache Manually",
+      "steps": [
+        "Vercel Dashboard > Project > Settings",
+        "Data Cache > Clear All",
+        "Or via CLI: VERCEL_FORCE_NO_BUILD_CACHE=1 vercel deploy --prod"
+      ]
+    },
+    {
+      "priority": "HIGH",
+      "action": "Manual Redeploy from Dashboard",
+      "steps": [
+        "Vercel Dashboard > Deployments",
+        "Find commit 9090d8f",
+        "Click '...' > Redeploy",
+        "Wait for deployment",
+        "Verify production URL shows Vietnamese content"
+      ]
+    },
+    {
+      "priority": "HIGH",
+      "action": "Check Build Output",
+      "steps": [
+        "Vercel Dashboard > Deployments > Latest",
+        "Click 'View Build Logs'",
+        "Search for 'page.tsx' in build output",
+        "Verify Next.js built the correct file",
+        "Check for any cache-related warnings"
+      ]
+    }
+  ],
+  "technical_debt_identified": [
+    "No pre-deployment content verification in workflow",
+    "Insufficient cache-busting for Next.js static pages",
+    "No visibility into Vercel build process",
+    "Missing deployment health checks",
+    "No rollback mechanism for failed deployments"
+  ],
+  "next_steps": {
+    "automated": "EXHAUSTED - all 5 attempts failed",
+    "manual_required": true,
+    "recommended_approach": "Manual Vercel dashboard investigation + forced cache clear + redeploy",
+    "escalation": "If manual intervention fails, contact Vercel support re: persistent cache issue"
+  },
+  "evidence": {
+    "commits": [
+      "e842d4e: Vietnamese landing page created",
+      "7748f5c: Cache clear added",
+      "36159bd: Vercel-side build",
+      "9090d8f: Force dynamic rendering"
+    ],
+    "workflow_file": ".github/workflows/atlas-force-live-ui.yml",
+    "blocker_report": "BLOCKER_LIVE_UI.md",
+    "local_verification_script": "verify-vietnamese-final.ps1"
+  },
+  "user_message": "BLOCKER_LIVE_UI:verification:max_attempts_exceeded - Manual Vercel dashboard intervention required. Vietnamese content exists in source (commit 9090d8f) but production shows old UI after 5 deployment attempts."
+}
