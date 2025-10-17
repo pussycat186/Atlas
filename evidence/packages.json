@@ -1,0 +1,629 @@
+﻿[
+    {
+        "path":  "package.json",
+        "name":  "atlas",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "apps\\admin-insights\\package.json",
+        "name":  "@atlas/admin-insights",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "apps\\dev-portal\\package.json",
+        "name":  "@atlas/dev-portal",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "apps\\messenger\\package.json",
+        "name":  "messenger",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "apps\\proof-messenger\\package.json",
+        "name":  "@atlas/proof-messenger",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "apps\\verify\\package.json",
+        "name":  "verify",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\@atlas\\design-system\\package.json",
+        "name":  "@atlas/design-system",
+        "deps":  [
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\@atlas\\mls-core\\package.json",
+        "name":  "@atlas/mls-core",
+        "deps":  [
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\@atlas\\receipt\\package.json",
+        "name":  "@atlas/receipt",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\@atlas\\security-middleware\\package.json",
+        "name":  "@atlas/security-middleware",
+        "deps":  [
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\config\\package.json",
+        "name":  "@atlas/config",
+        "deps":  0,
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\core\\package.json",
+        "name":  "@atlas/core",
+        "deps":  null,
+        "devDeps":  [
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\db\\package.json",
+        "name":  "@atlas/db",
+        "deps":  [
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\design-system\\package.json",
+        "name":  "@atlas/design-system",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\fabric-client\\package.json",
+        "name":  "@atlas/fabric-client",
+        "deps":  1,
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\fabric-crypto\\package.json",
+        "name":  "@atlas/fabric-crypto",
+        "deps":  1,
+        "devDeps":  [
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\fabric-protocol\\package.json",
+        "name":  "@atlas/fabric-protocol",
+        "deps":  1,
+        "devDeps":  [
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\ui\\package.json",
+        "name":  "@atlas/ui",
+        "deps":  [
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\ui-primitives\\package.json",
+        "name":  "@atlas/ui-primitives",
+        "deps":  [
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\ui-system\\package.json",
+        "name":  "@atlas/ui-system",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "packages\\ui-tokens\\package.json",
+        "name":  "@atlas/ui-tokens",
+        "deps":  0,
+        "devDeps":  [
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\chat-delivery\\package.json",
+        "name":  "@atlas/chat-delivery",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\drive\\package.json",
+        "name":  "@atlas/drive",
+        "deps":  [
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\gateway\\package.json",
+        "name":  "@atlas/gateway",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\identity\\package.json",
+        "name":  "@atlas/identity",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\jwks\\package.json",
+        "name":  "@atlas/jwks-service",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\key-directory\\package.json",
+        "name":  "@atlas/key-directory",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\media\\package.json",
+        "name":  "@atlas/media",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\risk-guard\\package.json",
+        "name":  "@atlas/risk-guard",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    },
+    {
+        "path":  "services\\witness-node\\package.json",
+        "name":  "@atlas/witness-node",
+        "deps":  [
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1,
+                     1
+                 ],
+        "devDeps":  [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+    }
+]

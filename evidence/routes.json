@@ -1,0 +1,118 @@
+﻿[
+    {
+        "route":  "s/admin-insights/analytics",
+        "file":  "apps\\admin-insights\\app\\analytics\\page.tsx"
+    },
+    {
+        "route":  "s/admin-insights/metrics",
+        "file":  "apps\\admin-insights\\app\\metrics\\page.tsx"
+    },
+    {
+        "route":  "s/admin-insights/prism",
+        "file":  "apps\\admin-insights\\app\\prism\\page.tsx"
+    },
+    {
+        "route":  "s/admin-insights/settings",
+        "file":  "apps\\admin-insights\\app\\settings\\page.tsx"
+    },
+    {
+        "route":  "s/admin-insights/system-status",
+        "file":  "apps\\admin-insights\\app\\system-status\\page.tsx"
+    },
+    {
+        "route":  "s/admin-insights/traces",
+        "file":  "apps\\admin-insights\\app\\traces\\page.tsx"
+    },
+    {
+        "route":  "s/admin-insights/witnesses",
+        "file":  "apps\\admin-insights\\app\\witnesses\\page.tsx"
+    },
+    {
+        "route":  "s/admin-insights",
+        "file":  "apps\\admin-insights\\app\\page.tsx"
+    },
+    {
+        "route":  "s/dev-portal/api",
+        "file":  "apps\\dev-portal\\app\\api\\page.tsx"
+    },
+    {
+        "route":  "s/dev-portal/docs/sdk",
+        "file":  "apps\\dev-portal\\app\\docs\\sdk\\page.tsx"
+    },
+    {
+        "route":  "s/dev-portal/docs",
+        "file":  "apps\\dev-portal\\app\\docs\\page.tsx"
+    },
+    {
+        "route":  "s/dev-portal/examples",
+        "file":  "apps\\dev-portal\\app\\examples\\page.tsx"
+    },
+    {
+        "route":  "s/dev-portal/plugins",
+        "file":  "apps\\dev-portal\\app\\plugins\\page.tsx"
+    },
+    {
+        "route":  "s/dev-portal/prism",
+        "file":  "apps\\dev-portal\\app\\prism\\page.tsx"
+    },
+    {
+        "route":  "s/dev-portal/sdk",
+        "file":  "apps\\dev-portal\\app\\sdk\\page.tsx"
+    },
+    {
+        "route":  "s/dev-portal",
+        "file":  "apps\\dev-portal\\app\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/chats/[id]",
+        "file":  "apps\\proof-messenger\\app\\chats\\[id]\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/chats",
+        "file":  "apps\\proof-messenger\\app\\chats\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/contacts",
+        "file":  "apps\\proof-messenger\\app\\contacts\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/evidence",
+        "file":  "apps\\proof-messenger\\app\\evidence\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/messages",
+        "file":  "apps\\proof-messenger\\app\\messages\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/offline",
+        "file":  "apps\\proof-messenger\\app\\offline\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/onboarding",
+        "file":  "apps\\proof-messenger\\app\\onboarding\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/prism",
+        "file":  "apps\\proof-messenger\\app\\prism\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/receipts",
+        "file":  "apps\\proof-messenger\\app\\receipts\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/security",
+        "file":  "apps\\proof-messenger\\app\\security\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/settings",
+        "file":  "apps\\proof-messenger\\app\\settings\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger/verify",
+        "file":  "apps\\proof-messenger\\app\\verify\\page.tsx"
+    },
+    {
+        "route":  "s/proof-messenger",
+        "file":  "apps\\proof-messenger\\app\\page.tsx"
+    }
+]

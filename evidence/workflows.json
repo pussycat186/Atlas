@@ -1,0 +1,1055 @@
+﻿[
+    {
+        "file":  "atlas-acceptance.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: \u0027S8 Atlas Automated Acceptance Testing\u0027",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-commercializer-v7.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Commercializer v7 - CI-GREEN-OR-DIE",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-commercializer-v8.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Commercializer v8 - Creative UI \u0026 Interactive",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-e2e-k6-evidence.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas E2E K6 Evidence",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-final-k6-package.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Final K6 Package",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-fix-playwright.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Fix Playwright",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-force-live-ui.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Force Live UI",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-gates-step2.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Gates Step 2",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-go-live-simple.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Go-Live Deployment",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-go-live.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Go-Live Deployment",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-infra-rate-limit-mitigation.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Infra Rate Limit Mitigation",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-omnimode.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS OMNIMODE Final",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-orchestrator.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  4,
+                     "Line":  "name: ATLAS Orchestrator",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-perf-auto-fix-loop.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Perf Auto Fix Loop",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-perf-final-diagnosis.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Perf Final Diagnosis",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-perf-fix-retest.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Perf Fix Retest",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-perf-harden.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Perf Harden",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-perfect-complete.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Perfect Mode - Final Orchestration",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-perfect-live-fast.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  2,
+                     "Line":  "name: ATLAS Perfect Live Fast",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-perfect-live-validation.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS PERFECT_LIVE Final Validation",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-perfect-mode.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: \u0027ATLAS_PERFECT_MODE_EXECUTE_AND_VERIFY\u0027",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-playwright-unicode-fix.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Playwright Unicode Fix",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-post-dns-waf-reverify.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Post DNS WAF Reverify",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-quality-gates-v8.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Quality Gates v8 - Creative UI Verification",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-quality-gates.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Quality Gates - Basic \u0026 Pro SKU Verification",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-rate-limit-fasttrack.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Rate Limit Fasttrack",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-rate-limit-mitigation-retest.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Rate Limit Mitigation Retest",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-remote-only.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Remote-Only Pipeline",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-secrets-audit.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Secrets Audit",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-total-conquest.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS Total Conquest",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-v12-public-demo.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas v12 Public Demo",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-v12.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas v12 CI",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-v14-oidc-cloudrun.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: ATLAS v14 â€” OIDC â†’ Cloud Run + k6 Cloud",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-worker-autodeploy.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: atlas-worker-autodeploy",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "atlas-workers-dev-auto-deploy-reverify.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Workers Dev Auto Deploy Reverify",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "ci-build-test.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: CI Build and Test",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "ci-cleanup-verify.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: CI Cleanup Verify",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "ci-release.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: CI Release",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-a11y-enforcer.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy A11y Enforcer",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-atlas-ecosystem.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy ATLAS Ecosystem from Signed Release",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-backends.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Backends",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-commercial.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Commercial",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-complete.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Complete Atlas Ecosystem",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-frontends.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Frontends",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-minimal-v4.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Minimal v4",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-minimal.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Minimal",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-ruthless.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Ruthless",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-simple.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Simple",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-ui-a11y-polish.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy UI \u0026 A11y Polish",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "deploy-vercel-preview.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Deploy Vercel Preview",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "design-system-build.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Design System Build \u0026 Deploy",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "e2e-playwright.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: E2E Playwright Tests",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "lhci-accessibility.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Lighthouse CI Accessibility",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "nightly-k6.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Nightly k6 Performance",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "nightly-lighthouse.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Nightly Lighthouse CI",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "perf-k6.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Performance Testing with k6",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "policy-check.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Policy Check",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "polyglot-executor.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Polyglot Executor",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "release-final.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Atlas Final Release",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "release.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Release \u0026 Publish",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "s5-security-scans.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: S5 Supply Chain Security Scans",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "s7-canary-deployment.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: S7 Canary Deployment Pipeline",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "s9-atlas-perfect-success.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: \u0027S9 ATLAS PERFECT MODE SUCCESS Validation\u0027",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "scale-dpop-pqc.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  5,
+                     "Line":  "name: Scale DPoP + PQC",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "scheduled-headers.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  2,
+                     "Line":  "name: Scheduled - Headers Validation",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "scheduled-quality.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  3,
+                     "Line":  "name: Scheduled - Quality Gates",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "scheduled-receipts-jwks.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  3,
+                     "Line":  "name: Scheduled - Receipts + JWKS",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "scheduled-supply-chain.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  3,
+                     "Line":  "name: Scheduled - Supply Chain",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "secrets-smoke-test-v3.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Secrets Smoke Test v3",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "secrets-smoke-test-v4.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Secrets Smoke Test v4",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "secrets-smoke-test.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Secrets Smoke Test",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "security-quality-gates.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Security Quality Gates",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "setup-branch-protection.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  5,
+                     "Line":  "name: Setup Branch Protection",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "slsa-provenance.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: S5 SLSA L3 Provenance \u0026 Supply Chain Security",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "supply-chain.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Supply Chain Security",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "ui-conformance-enforcer-v13.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: UI-Conformance Enforcer v13",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "ui-conformance-simple-v13.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: UI-Conformance Simple v13",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "ux-ci.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: UX-Gates",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "ux-system.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: UX System CI/CD",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "validate-vercel-mapping.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Validate Vercel Project Mapping",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    },
+    {
+        "file":  "verify-live.yml",
+        "name":  {
+                     "IgnoreCase":  true,
+                     "LineNumber":  1,
+                     "Line":  "name: Verify Live Atlas",
+                     "Filename":  "InputStream",
+                     "Path":  "InputStream",
+                     "Pattern":  "^name:",
+                     "Context":  null,
+                     "Matches":  "name:"
+                 }
+    }
+]
