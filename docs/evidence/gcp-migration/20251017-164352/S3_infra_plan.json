@@ -1,0 +1,106 @@
+{
+  "timestamp": "20251017-164352",
+  "stage": "S3 - Infra Bootstrap",
+  "status": "SUCCESS",
+  "scripts_created": [
+    {
+      "name": "bootstrap.sh",
+      "path": "infra/gcp/scripts/bootstrap.sh",
+      "purpose": "Provision GCP infrastructure (APIs, Artifact Registry, Cloud Run services)",
+      "idempotent": true,
+      "required_env_vars": ["GCP_PROJECT_ID", "GCP_REGION", "ARTIFACT_REPO"],
+      "gcp_apis_enabled": [
+        "run.googleapis.com",
+        "artifactregistry.googleapis.com",
+        "compute.googleapis.com",
+        "secretmanager.googleapis.com",
+        "certificatemanager.googleapis.com",
+        "cloudresourcemanager.googleapis.com"
+      ],
+      "resources_created": [
+        {
+          "type": "Artifact Registry",
+          "name": "$ARTIFACT_REPO",
+          "format": "docker",
+          "location": "$GCP_REGION"
+        },
+        {
+          "type": "Cloud Run Service",
+          "name": "atlas-proof-messenger",
+          "config": {
+            "min_instances": 1,
+            "max_instances": 50,
+            "cpu": 1,
+            "memory": "512Mi",
+            "concurrency": 80,
+            "timeout": "60s",
+            "port": 8080
+          }
+        },
+        {
+          "type": "Cloud Run Service",
+          "name": "atlas-admin-insights",
+          "config": {
+            "min_instances": 1,
+            "max_instances": 50,
+            "cpu": 1,
+            "memory": "512Mi",
+            "concurrency": 80,
+            "timeout": "60s",
+            "port": 8080
+          }
+        },
+        {
+          "type": "Cloud Run Service",
+          "name": "atlas-dev-portal",
+          "config": {
+            "min_instances": 1,
+            "max_instances": 50,
+            "cpu": 1,
+            "memory": "512Mi",
+            "concurrency": 80,
+            "timeout": "60s",
+            "port": 8080
+          }
+        }
+      ],
+      "execution": "Run via GitHub Actions or manually with gcloud CLI"
+    },
+    {
+      "name": "map-domains.sh",
+      "path": "infra/gcp/scripts/map-domains.sh",
+      "purpose": "Map custom domains to Cloud Run services with managed SSL certificates",
+      "idempotent": true,
+      "required_env_vars": ["GCP_PROJECT_ID", "GCP_REGION", "DOMAINS_JSON"],
+      "domains_json_format": "{\"proof-messenger\":\"proof.atlas.com\",\"admin-insights\":\"admin.atlas.com\",\"dev-portal\":\"dev.atlas.com\"}",
+      "resources_created": [
+        "Managed SSL certificates (per domain)",
+        "Cloud Run domain mappings",
+        "CNAME DNS records (manual configuration required)"
+      ],
+      "features": [
+        "Automatic SSL certificate provisioning (10-15 min)",
+        "Global HTTPS Load Balancer integration",
+        "CNAME record generation for DNS provider",
+        "Idempotent - safe to re-run"
+      ],
+      "execution": "Run after bootstrap.sh and DNS configuration"
+    }
+  ],
+  "infrastructure_overview": {
+    "compute": "Cloud Run (managed, serverless)",
+    "registry": "Artifact Registry (regional Docker repository)",
+    "networking": "Global HTTPS Load Balancer + Cloud CDN (via domain mapping)",
+    "security": "Managed SSL certificates, Cloud Armor (optional)",
+    "scaling": "1-50 instances per service, 80 concurrent requests",
+    "cost_controls": "Min instances=1 (warm start), max=50 (cost cap)"
+  },
+  "deployment_flow": [
+    "1. Run bootstrap.sh (provision infrastructure)",
+    "2. Run deploy-cloudrun.yml workflow (build/push/deploy images)",
+    "3. Run map-domains.sh (configure custom domains)",
+    "4. Update DNS provider with CNAME records",
+    "5. Wait 10-15 min for SSL certificate provisioning"
+  ],
+  "next_stage": "S4 - Create GitHub Actions workflow for OIDC-authenticated builds and deploys"
+}
