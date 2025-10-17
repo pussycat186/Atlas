@@ -1,0 +1,86 @@
+{
+  "timestamp": "20251017-164352",
+  "stage": "S1 - Next Config Patch",
+  "status": "SUCCESS",
+  "changes": [
+    {
+      "app": "proof-messenger",
+      "file": "apps/proof-messenger/next.config.js",
+      "patches": [
+        {
+          "property": "output",
+          "value": "standalone",
+          "status": "ADDED",
+          "reason": "Required for Cloud Run standalone deployment"
+        },
+        {
+          "property": "transpilePackages",
+          "value": ["@atlas/ui", "@atlas/ui-primitives", "@atlas/ui-system", "@atlas/ui-tokens", "@atlas/config", "@atlas/core", "@atlas/db", "@atlas/mls-core", "@atlas/receipt", "@atlas/design-system"],
+          "status": "ALREADY_PRESENT",
+          "reason": "Monorepo workspace packages"
+        },
+        {
+          "property": "outputFileTracingRoot",
+          "value": "path.join(__dirname, '../../')",
+          "status": "ALREADY_PRESENT",
+          "reason": "Monorepo root tracing"
+        }
+      ]
+    },
+    {
+      "app": "admin-insights",
+      "file": "apps/admin-insights/next.config.js",
+      "patches": [
+        {
+          "property": "output",
+          "value": "standalone",
+          "status": "ADDED",
+          "reason": "Required for Cloud Run standalone deployment"
+        },
+        {
+          "property": "transpilePackages",
+          "value": ["@atlas/ui", "@atlas/ui-primitives", "@atlas/ui-system", "@atlas/ui-tokens", "@atlas/config", "@atlas/core", "@atlas/db", "@atlas/mls-core", "@atlas/receipt", "@atlas/design-system"],
+          "status": "ALREADY_PRESENT",
+          "reason": "Monorepo workspace packages"
+        },
+        {
+          "property": "outputFileTracingRoot",
+          "value": "path.resolve(__dirname, '../..')",
+          "status": "ALREADY_PRESENT",
+          "reason": "Monorepo root tracing"
+        }
+      ]
+    },
+    {
+      "app": "dev-portal",
+      "file": "apps/dev-portal/next.config.js",
+      "patches": [
+        {
+          "property": "output",
+          "value": "standalone",
+          "status": "ADDED",
+          "reason": "Required for Cloud Run standalone deployment"
+        },
+        {
+          "property": "transpilePackages",
+          "value": ["@atlas/ui", "@atlas/ui-primitives", "@atlas/ui-system", "@atlas/ui-tokens", "@atlas/config", "@atlas/core", "@atlas/db", "@atlas/mls-core", "@atlas/receipt", "@atlas/design-system"],
+          "status": "ALREADY_PRESENT",
+          "reason": "Monorepo workspace packages"
+        },
+        {
+          "property": "outputFileTracingRoot",
+          "value": "path.resolve(__dirname, '../..')",
+          "status": "ALREADY_PRESENT",
+          "reason": "Monorepo root tracing"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "all_apps_patched": true,
+    "standalone_output_enabled": true,
+    "monorepo_tracing_configured": true,
+    "transpile_packages_configured": true
+  },
+  "next_stage": "S2 - Create Dockerfiles for all 3 apps + .dockerignore"
+}

@@ -104,6 +104,7 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   transpilePackages: [
     '@atlas/ui',
     '@atlas/ui-primitives', 
