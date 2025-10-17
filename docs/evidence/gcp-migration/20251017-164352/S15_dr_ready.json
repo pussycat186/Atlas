@@ -1,0 +1,224 @@
+{
+  "stage": "S15",
+  "stage_name": "DR Runbook & Rollback Automation",
+  "timestamp": "2025-01-17T16:43:52Z",
+  "status": "COMPLETE",
+  "artifacts_created": [
+    {
+      "type": "documentation",
+      "path": "docs/DR_RUNBOOK.md",
+      "purpose": "Comprehensive disaster recovery procedures for GCP Cloud Run",
+      "rto": "15 minutes",
+      "rpo": "0 (stateless services)"
+    },
+    {
+      "type": "documentation_archived",
+      "path": "docs/DR_RUNBOOK_VERCEL.md",
+      "purpose": "Original Vercel DR runbook (preserved for reference)"
+    },
+    {
+      "type": "github_workflow",
+      "path": ".github/workflows/atlas-rollback.yml",
+      "purpose": "One-click rollback automation for Cloud Run services"
+    }
+  ],
+  "disaster_scenarios": [
+    {
+      "scenario": "Service Outage",
+      "detection": "Health check failure, 5xx >1%",
+      "rto": "15 minutes",
+      "primary_action": "Rollback to previous revision",
+      "automated": true
+    },
+    {
+      "scenario": "Bad Deployment",
+      "detection": "Quality gates fail (S7-S9)",
+      "rto": "5 minutes",
+      "primary_action": "gh workflow run atlas-rollback.yml",
+      "automated": true
+    },
+    {
+      "scenario": "Regional Outage",
+      "detection": "All services 503, GCP status dashboard",
+      "rto": "30-60 minutes",
+      "primary_action": "Wait for GCP OR deploy to us-central1",
+      "automated": false
+    },
+    {
+      "scenario": "Security Breach",
+      "detection": "Anomalous traffic, image signature fail",
+      "rto": "Immediate - 30 minutes",
+      "primary_action": "Block traffic, rotate secrets, enable Cloud Armor",
+      "automated": false
+    },
+    {
+      "scenario": "Cost Spike",
+      "detection": "Budget alert >90%",
+      "rto": "1 hour",
+      "primary_action": "Reduce max-instances to 20",
+      "automated": false
+    },
+    {
+      "scenario": "Complete GCP Outage",
+      "detection": "Global GCP status incident",
+      "rto": "1-2 hours",
+      "primary_action": "Failover to Vercel (if <7 days post-migration)",
+      "automated": false
+    }
+  ],
+  "rollback_workflow": {
+    "name": "atlas-rollback.yml",
+    "trigger": "workflow_dispatch (manual)",
+    "inputs": [
+      "service (choice: proof-messenger, admin-insights, dev-portal)",
+      "target_revision (optional, auto-detects previous stable if empty)"
+    ],
+    "steps": [
+      "Authenticate to GCP via OIDC",
+      "Get current traffic configuration",
+      "Identify target revision (user-specified or previous stable)",
+      "Shift 100% traffic to target revision",
+      "Verify rollback (health check /prism endpoint)",
+      "Tag failed revision with status=failed label",
+      "Create rollback evidence (docs/evidence/rollbacks/)",
+      "Commit evidence to git",
+      "Create GitHub Issue alert (label: rollback, incident, p1)"
+    ],
+    "execution_time": "2-5 minutes",
+    "success_criteria": [
+      "Traffic shifted to target revision",
+      "Health endpoint returns HTTP 200",
+      "Evidence file created",
+      "GitHub Issue alert created"
+    ]
+  },
+  "rollback_decision_matrix": {
+    "quality_gate_failure": {
+      "target": "Previous stable (auto-detect)",
+      "traffic_split": "100% immediate",
+      "timeline": "2-5 minutes"
+    },
+    "gradual_error_increase": {
+      "target": "Previous stable",
+      "traffic_split": "90% → 100% over 15min",
+      "timeline": "15-30 minutes"
+    },
+    "minor_issue": {
+      "target": "Previous stable",
+      "traffic_split": "50% → 100% over 1 hour",
+      "timeline": "1-2 hours"
+    },
+    "canary_test_failure": {
+      "target": "Previous stable",
+      "traffic_split": "0% canary (no rollback needed)",
+      "timeline": "0 minutes"
+    },
+    "user_reported_bug": {
+      "target": "Specific known-good revision",
+      "traffic_split": "100% immediate",
+      "timeline": "5-10 minutes"
+    }
+  },
+  "emergency_procedures": {
+    "service_outage": {
+      "detection": "atlas-scheduled.yml alerts, Cloud Monitoring",
+      "response_time": "15 minutes",
+      "steps": [
+        "Check service status (gcloud run services describe)",
+        "Check logs for errors (gcloud logging read)",
+        "Identify cause (bad deployment, resource, dependency, config)",
+        "Execute fix (rollback, scale, failover, or secret fix)",
+        "Verify recovery (curl health check, error rate check)"
+      ]
+    },
+    "regional_outage": {
+      "detection": "All services 503, GCP status dashboard",
+      "response_time": "30-60 minutes",
+      "options": [
+        "Option A: Wait for GCP (if ETA <1 hour)",
+        "Option B: Multi-region deploy to us-central1 (if ETA >1 hour)",
+        "Option C: Fallback to Vercel (if <7 days post-migration)"
+      ]
+    },
+    "security_breach": {
+      "detection": "Anomalous traffic, image signature fail",
+      "response_time": "Immediate - 30 minutes",
+      "steps": [
+        "Block all traffic (--no-allow-unauthenticated)",
+        "Rotate secrets (secrets-sync.sh + force redeploy)",
+        "Audit access (gcloud logging read for suspicious IPs)",
+        "Enable Cloud Armor rate limiting (100 req/min per IP)"
+      ]
+    },
+    "cost_spike": {
+      "detection": "Budget alert >90% ($180)",
+      "response_time": "1 hour",
+      "steps": [
+        "Reduce max-instances to 20 (cuts cost by 60%)",
+        "Investigate traffic source (gcloud logging read)",
+        "If cost >100% ($200): Disable non-essential services, reduce proof-messenger to min=0 max=10"
+      ]
+    }
+  },
+  "health_check_verification": {
+    "success_criteria": [
+      "All services status: True",
+      "Health endpoints return 200 OK",
+      "5xx error rate <0.5% (last 15 minutes)",
+      "Security headers present (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)"
+    ],
+    "command": "for service in atlas-proof-messenger atlas-admin-insights atlas-dev-portal; do gcloud run services describe $service --region=asia-southeast1; done"
+  },
+  "progressive_traffic_restoration": {
+    "description": "After major incident, restore traffic gradually to recovered service",
+    "steps": [
+      "10% traffic to recovered revision (wait 15 min)",
+      "50% traffic (wait 15 min)",
+      "100% traffic (if error rate stable)"
+    ]
+  },
+  "post_incident": {
+    "incident_report_template": "docs/incidents/INC-YYYYMMDD-NNN.md",
+    "required_fields": [
+      "Incident ID, severity, affected services",
+      "Timeline (start, detection, response, resolution)",
+      "Root cause analysis",
+      "Action items"
+    ],
+    "post_mortem": {
+      "schedule": "Within 24-48 hours of resolution",
+      "attendees": [
+        "On-call engineer (incident responder)",
+        "Engineering lead",
+        "Product owner (if user-facing impact)"
+      ],
+      "deliverable": "docs/incidents/POSTMORTEM-INC-YYYYMMDD-NNN.md"
+    },
+    "runbook_updates": [
+      "Update DR runbook with new scenarios",
+      "Improve detection (add monitoring)",
+      "Automate response (add workflow)",
+      "Document learnings"
+    ]
+  },
+  "failover_options": {
+    "multi_region_gcp": {
+      "status": "Not configured (future enhancement)",
+      "deployment": "asia-southeast1 + us-central1",
+      "cost": "+50% per region",
+      "rto": "30-45 minutes (manual deploy)"
+    },
+    "vercel_fallback": {
+      "status": "Available for 7 days post-migration",
+      "deployment": "vercel deploy --prod",
+      "cost": "$100-200/month (Vercel Pro)",
+      "rto": "1-2 hours (manual deploy + DNS)"
+    },
+    "multi_cloud": {
+      "status": "Not configured (future enhancement)",
+      "deployment": "AWS Lambda + CloudFront",
+      "cost": "+30% for multi-cloud redundancy",
+      "rto": "Automated DNS failover (5-15 minutes)"
+    }
+  }
+}

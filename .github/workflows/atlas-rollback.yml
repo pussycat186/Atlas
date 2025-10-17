@@ -1,0 +1,222 @@
+name: Atlas Cloud Run Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to rollback'
+        required: true
+        type: choice
+        options:
+          - atlas-proof-messenger
+          - atlas-admin-insights
+          - atlas-dev-portal
+      target_revision:
+        description: 'Target revision (leave empty for previous stable)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  issues: write
+
+jobs:
+  rollback:
+    name: Rollback ${{ inputs.service }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # v2.1.7
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_ID_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a # v2.1.2
+
+      - name: Get current traffic configuration
+        id: current
+        run: |
+          TRAFFIC=$(gcloud run services describe ${{ inputs.service }} \
+            --region=${{ secrets.GCP_REGION }} \
+            --format="value(status.traffic)")
+          
+          echo "current_traffic=$TRAFFIC" >> $GITHUB_OUTPUT
+          echo "Current traffic configuration:"
+          echo "$TRAFFIC"
+
+      - name: Identify target revision
+        id: target
+        run: |
+          if [ -n "${{ inputs.target_revision }}" ]; then
+            # User specified target revision
+            TARGET="${{ inputs.target_revision }}"
+            echo "Using user-specified target: $TARGET"
+          else
+            # Auto-detect previous stable revision
+            REVISIONS=$(gcloud run revisions list \
+              --service=${{ inputs.service }} \
+              --region=${{ secrets.GCP_REGION }} \
+              --sort-by=~creationTimestamp \
+              --format="value(name)" \
+              --limit=10)
+            
+            # Get the first revision with traffic >0 (excluding current 100%)
+            CURRENT=$(echo "$REVISIONS" | head -n1)
+            TARGET=$(echo "$REVISIONS" | sed -n '2p')  # Second revision
+            
+            if [ -z "$TARGET" ]; then
+              echo "::error::No previous revision found to rollback to"
+              exit 1
+            fi
+            
+            echo "Current revision: $CURRENT"
+            echo "Rolling back to: $TARGET"
+          fi
+          
+          echo "target_revision=$TARGET" >> $GITHUB_OUTPUT
+
+      - name: Execute rollback
+        id: rollback
+        run: |
+          echo "Shifting 100% traffic to ${{ steps.target.outputs.target_revision }}..."
+          
+          gcloud run services update-traffic ${{ inputs.service }} \
+            --region=${{ secrets.GCP_REGION }} \
+            --to-revisions=${{ steps.target.outputs.target_revision }}=100
+          
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Verify rollback
+        run: |
+          # Wait 10 seconds for traffic shift
+          sleep 10
+          
+          # Check new traffic configuration
+          NEW_TRAFFIC=$(gcloud run services describe ${{ inputs.service }} \
+            --region=${{ secrets.GCP_REGION }} \
+            --format="value(status.traffic)")
+          
+          echo "New traffic configuration:"
+          echo "$NEW_TRAFFIC"
+          
+          # Get service URL
+          SERVICE_URL=$(gcloud run services describe ${{ inputs.service }} \
+            --region=${{ secrets.GCP_REGION }} \
+            --format="value(status.url)")
+          
+          # Test health endpoint
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/prism")
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Health check failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+          
+          echo "✅ Rollback successful - Service responding with HTTP 200"
+
+      - name: Tag failed revision
+        if: success()
+        run: |
+          # Get current (failed) revision
+          FAILED_REVISION=$(gcloud run revisions list \
+            --service=${{ inputs.service }} \
+            --region=${{ secrets.GCP_REGION }} \
+            --sort-by=~creationTimestamp \
+            --format="value(name)" \
+            --limit=1)
+          
+          # Tag as failed (only if it's not the target we just rolled back to)
+          if [ "$FAILED_REVISION" != "${{ steps.target.outputs.target_revision }}" ]; then
+            gcloud run revisions update $FAILED_REVISION \
+              --region=${{ secrets.GCP_REGION }} \
+              --labels=status=failed,rollback-date=$(date +%Y%m%d),incident-id=rollback-${{ github.run_id }}
+            
+            echo "Tagged $FAILED_REVISION as failed"
+          fi
+
+      - name: Create rollback evidence
+        if: always()
+        run: |
+          mkdir -p docs/evidence/rollbacks
+          
+          EVIDENCE_FILE="docs/evidence/rollbacks/rollback-$(date +%Y%m%d-%H%M%S).json"
+          
+          cat > "$EVIDENCE_FILE" <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "service": "${{ inputs.service }}",
+            "trigger": "manual",
+            "workflow_run_id": "${{ github.run_id }}",
+            "target_revision": "${{ steps.target.outputs.target_revision }}",
+            "status": "${{ steps.rollback.outputs.status }}",
+            "previous_traffic": "${{ steps.current.outputs.current_traffic }}",
+            "actor": "${{ github.actor }}",
+            "reason": "User-initiated rollback"
+          }
+          EOF
+          
+          echo "Evidence saved to $EVIDENCE_FILE"
+
+      - name: Commit evidence
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add docs/evidence/rollbacks/*.json
+          git commit -m "docs(rollback): ${{ inputs.service }} to ${{ steps.target.outputs.target_revision }}" || true
+          git push || true
+
+      - name: Create incident alert
+        if: success()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const title = `🔄 Rollback Executed: ${{ inputs.service }}`;
+            const body = `
+            **Service**: ${{ inputs.service }}
+            **Target Revision**: ${{ steps.target.outputs.target_revision }}
+            **Timestamp**: ${new Date().toISOString()}
+            **Triggered By**: ${{ github.actor }}
+            **Workflow Run**: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            **Action Required**:
+            - Investigate why rollback was necessary
+            - Review failed revision logs
+            - Create incident report
+            - Schedule post-mortem if service degradation occurred
+            
+            **Evidence**: \`docs/evidence/rollbacks/rollback-${new Date().toISOString().split('T')[0]}-*.json\`
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['rollback', 'incident', 'p1']
+            });
+
+      - name: Notify team
+        if: always()
+        run: |
+          echo "============================================"
+          echo "ROLLBACK SUMMARY"
+          echo "============================================"
+          echo "Service: ${{ inputs.service }}"
+          echo "Target Revision: ${{ steps.target.outputs.target_revision }}"
+          echo "Status: ${{ steps.rollback.outputs.status }}"
+          echo "Triggered By: ${{ github.actor }}"
+          echo "============================================"
+          echo ""
+          echo "Next Steps:"
+          echo "1. Verify service health in Cloud Console"
+          echo "2. Review logs for failed revision"
+          echo "3. Create incident report (docs/incidents/INC-YYYYMMDD-NNN.md)"
+          echo "4. Schedule post-mortem within 24-48 hours"
+          echo "============================================"

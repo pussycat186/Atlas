@@ -1,0 +1,249 @@
+{
+  "stage": "S16",
+  "stage_name": "Vercel Decommission Planning",
+  "timestamp": "2025-01-17T16:43:52Z",
+  "status": "COMPLETE",
+  "artifacts_created": [
+    {
+      "type": "documentation",
+      "path": "docs/VERCEL_DECOMMISSION_PLAN.md",
+      "purpose": "Comprehensive decommission plan for Vercel migration"
+    }
+  ],
+  "decommission_status": {
+    "ready_to_remove": false,
+    "reason": "GCP migration not yet deployed (S6-S10 blocked by missing secrets)",
+    "park_period": "7 days",
+    "park_period_start": "TBD (after S17 completion)",
+    "decommission_date": "TBD (7 days after S17)"
+  },
+  "pre_decommission_checklist": {
+    "gcp_deployment": [
+      "All 3 services deployed to Cloud Run (asia-southeast1)",
+      "Custom domains configured with managed SSL",
+      "DNS updated to point to GCP Load Balancer",
+      "SSL certificates active and verified"
+    ],
+    "quality_validation": [
+      "Security headers validated (CSP, HSTS, X-Frame-Options, COEP)",
+      "Quality gates passed (Lighthouse ≥0.90 perf, ≥0.95 a11y)",
+      "Supply chain validated (SBOM generated, images signed)"
+    ],
+    "traffic_verification": [
+      "100% production traffic on GCP (canary promoted)",
+      "No rollbacks required in last 7 days",
+      "Error rate <0.5% on GCP services"
+    ],
+    "observability": [
+      "Cloud Monitoring alerts configured",
+      "atlas-scheduled.yml workflows running successfully",
+      "No SLO breaches in last 7 days"
+    ],
+    "cost_validation": [
+      "Monthly GCP cost within budget ($100-150 actual, <$200 budget)",
+      "Budget alerts configured and tested",
+      "Cost tracking enabled for all 3 services"
+    ],
+    "dr_readiness": [
+      "atlas-rollback.yml workflow tested successfully",
+      "DR runbook reviewed by on-call team",
+      "Incident response procedures documented"
+    ],
+    "stakeholder_approval": [
+      "Engineering lead sign-off",
+      "Product owner notification",
+      "Finance approval (cost comparison validated)"
+    ],
+    "park_period": [
+      "0 critical incidents during 7-day park period",
+      "User acceptance validated (no complaints)",
+      "Vercel bill for park period reviewed"
+    ]
+  },
+  "vercel_current_configuration": {
+    "services": [
+      {
+        "name": "proof-messenger",
+        "vercel_url": "atlas-proof-messenger.vercel.app",
+        "custom_domain": "proof.atlas.com",
+        "status": "active"
+      },
+      {
+        "name": "admin-insights",
+        "vercel_url": "atlas-admin-insights.vercel.app",
+        "custom_domain": "admin.atlas.com",
+        "status": "active"
+      },
+      {
+        "name": "dev-portal",
+        "vercel_url": "atlas-dev-portal.vercel.app",
+        "custom_domain": "dev.atlas.com",
+        "status": "active"
+      }
+    ],
+    "plan": "Pro Plan (assumed)",
+    "monthly_cost": "$100-200 (unpredictable)",
+    "configuration_to_archive": [
+      "Environment variables (vercel env pull)",
+      "Deployment logs (last 30 days)",
+      "Custom domains configuration (DNS CNAME, SSL)",
+      "Build configuration (vercel.json, build commands)",
+      "Team & access control (members, roles, integrations)"
+    ]
+  },
+  "decommission_phases": [
+    {
+      "phase": "Phase 1: Final Verification",
+      "day": 0,
+      "duration": "1 day",
+      "steps": [
+        "Verify GCP is primary (DNS points to GCP Load Balancer)",
+        "Verify Vercel is idle (no recent traffic)",
+        "Archive Vercel configuration (env, logs, domains, settings)"
+      ],
+      "commands": [
+        "dig proof.atlas.com +short (should return GCP IP)",
+        "vercel env pull .vercel-archive/$(date +%Y%m%d)/env.json",
+        "vercel logs --output=.vercel-archive/$(date +%Y%m%d)/logs.txt"
+      ]
+    },
+    {
+      "phase": "Phase 2: Remove Custom Domains",
+      "day": 1,
+      "duration": "1 day",
+      "steps": [
+        "Remove custom domains from Vercel (proof.atlas.com, admin.atlas.com, dev.atlas.com)",
+        "Verify DNS still points to GCP (no impact)"
+      ],
+      "commands": [
+        "vercel domains rm proof.atlas.com",
+        "dig proof.atlas.com +short (should still return GCP IP)"
+      ]
+    },
+    {
+      "phase": "Phase 3: Disable Auto-Deployments",
+      "day": 2,
+      "duration": "1 day",
+      "steps": [
+        "Disable auto-deploy from Git (prevent accidental deployments)",
+        "Verify no new deployments"
+      ],
+      "commands": [
+        "Vercel Dashboard → Settings → Git → Auto Deploy → Disable",
+        "vercel ls --since=1d (should show no new deployments)"
+      ]
+    },
+    {
+      "phase": "Phase 4: Cancel Subscription",
+      "day": 3,
+      "duration": "1 day",
+      "steps": [
+        "Download final invoice",
+        "Review final costs vs. GCP",
+        "Cancel Vercel subscription",
+        "Save cancellation confirmation"
+      ],
+      "commands": [
+        "Vercel Dashboard → Billing → Download Invoice",
+        "Vercel Dashboard → Billing → Cancel Subscription"
+      ]
+    },
+    {
+      "phase": "Phase 5: Archive Projects",
+      "day": "4-7",
+      "duration": "3-4 days",
+      "steps": [
+        "Archive all 3 Vercel projects",
+        "Remove GitHub integration (optional)",
+        "Commit .vercel-archive to git"
+      ],
+      "commands": [
+        "Vercel Dashboard → Settings → Archive Project",
+        "git add .vercel-archive/; git commit -m 'docs(vercel): archive configuration'"
+      ]
+    }
+  ],
+  "rollback_plan": {
+    "availability": "During 7-day park period only",
+    "rto": "15 minutes",
+    "steps": [
+      "Revert DNS to Vercel (update CNAME to cname.vercel-dns.com)",
+      "Re-enable Vercel deployments (auto-deploy on)",
+      "Trigger manual deployment (vercel deploy --prod)",
+      "Verify services operational (curl health checks)"
+    ],
+    "post_rollback": [
+      "Create incident report (docs/incidents/INC-YYYYMMDD-NNN.md)",
+      "Schedule post-mortem",
+      "Plan second GCP migration attempt"
+    ],
+    "note": "After 7-day park period, Vercel rollback is no longer viable (subscription canceled, domains removed)"
+  },
+  "post_decommission_verification": {
+    "no_vercel_traffic": "vercel logs --since=7d (should be 0 requests)",
+    "gcp_only_platform": "gcloud logging read --freshness=7d (all traffic on GCP)",
+    "cost_savings_validated": "Compare last Vercel invoice vs. first full GCP month",
+    "documentation_updated": [
+      "DR_RUNBOOK.md (remove Vercel fallback after 7 days)",
+      "COST_GUARDS.md (final cost comparison)",
+      "S17 final migration report"
+    ]
+  },
+  "communication_plan": {
+    "pre_decommission": [
+      {
+        "audience": "Engineering Team",
+        "timing": "7 days before",
+        "channel": "Slack #atlas-engineering",
+        "message": "GCP migration park period ending in 7 days. Vercel decommission scheduled."
+      },
+      {
+        "audience": "On-Call Team",
+        "timing": "3 days before",
+        "channel": "Email + PagerDuty note",
+        "message": "Vercel decommission in 3 days. No rollback available after."
+      },
+      {
+        "audience": "Finance",
+        "timing": "1 day before",
+        "channel": "Email",
+        "message": "Vercel subscription canceled. Final invoice + expected GCP savings."
+      }
+    ],
+    "post_decommission": [
+      {
+        "audience": "All Stakeholders",
+        "timing": "Day 7+",
+        "channel": "Email + Slack #atlas-general",
+        "subject": "✅ GCP Cloud Run Migration Complete - Vercel Decommissioned",
+        "content": "Migration summary, cost savings, services operational, no action required"
+      }
+    ]
+  },
+  "success_criteria": [
+    "Vercel subscription canceled and confirmed",
+    "All custom domains removed from Vercel",
+    "Vercel projects archived/deleted",
+    "GCP services operational with 100% traffic",
+    "No incidents during 7-day park period",
+    "Cost savings validated ($20-50/month reduction)",
+    "All stakeholders notified",
+    "Vercel configuration archived in .vercel-archive/",
+    "DR runbook updated (Vercel fallback removed)",
+    "Final migration report completed (S17)"
+  ],
+  "abort_conditions": [
+    "GCP services have >3 incidents in park period",
+    "Error rate >1% on GCP services",
+    "Cost exceeds $200/month on GCP",
+    "Rollback required during park period",
+    "Stakeholder approval not obtained",
+    "DNS not fully propagated to GCP"
+  ],
+  "risk_mitigation": {
+    "dns_propagation_delays": "Update DNS 24-48 hours before, verify propagation",
+    "unexpected_rollback_need": "7-day park period allows issue identification",
+    "lost_configuration": "Archive all Vercel settings before decommission",
+    "accidental_domain_removal": "Verify DNS points to GCP BEFORE removing from Vercel"
+  }
+}
