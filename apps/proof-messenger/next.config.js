@@ -171,11 +171,11 @@ const nextConfig = {
     ATLAS_GATEWAY_URL: process.env.ATLAS_GATEWAY_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev',
     ATLAS_DRIVE_URL: process.env.ATLAS_DRIVE_URL || 'https://atlas-gateway.sonthenguyen186.workers.dev',
   },
-  // Enable static generation for better performance
-  output: 'export',
+  // Disable static export to allow dynamic rendering
+  // output: 'export', // DISABLED - prevents dynamic rendering
   trailingSlash: true,
   images: {
-    unoptimized: true,
+    unoptimized: false, // Re-enable image optimization
   },
   // Build healing: disable type checking and eslint during builds
   typescript: {
