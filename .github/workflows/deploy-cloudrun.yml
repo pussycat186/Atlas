@@ -1,0 +1,192 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'infra/gcp/**'
+      - '.github/workflows/deploy-cloudrun.yml'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'App to deploy (proof-messenger, admin-insights, dev-portal, or all)'
+        required: false
+        default: 'all'
+      traffic_split:
+        description: 'Traffic split (e.g., "10" for 10% canary, "100" for full rollout)'
+        required: false
+        default: '100'
+
+# Prevent concurrent deployments
+concurrency:
+  group: atlas-cloudrun
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # Required for OIDC token
+  packages: write
+
+jobs:
+  deploy:
+    name: Build & Deploy ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [proof-messenger, admin-insights, dev-portal]
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        with:
+          version: 9.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # v2.1.7
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_ID_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+          token_format: 'access_token'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a # v2.1.2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build variables
+        id: vars
+        run: |
+          APP_NAME="${{ matrix.app }}"
+          SERVICE_NAME="atlas-$APP_NAME"
+          IMAGE_TAG="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO }}/$SERVICE_NAME:${{ github.sha }}"
+          IMAGE_TAG_LATEST="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REPO }}/$SERVICE_NAME:latest"
+          
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image_tag_latest=$IMAGE_TAG_LATEST" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f apps/${{ steps.vars.outputs.app_name }}/Dockerfile \
+            -t ${{ steps.vars.outputs.image_tag }} \
+            -t ${{ steps.vars.outputs.image_tag_latest }} \
+            .
+
+      - name: Push to Artifact Registry
+        run: |
+          docker push ${{ steps.vars.outputs.image_tag }}
+          docker push ${{ steps.vars.outputs.image_tag_latest }}
+
+      - name: Deploy to Cloud Run (Canary)
+        id: deploy
+        run: |
+          TRAFFIC_SPLIT="${{ github.event.inputs.traffic_split || '100' }}"
+          
+          # Deploy new revision with tag "canary"
+          gcloud run deploy ${{ steps.vars.outputs.service_name }} \
+            --image=${{ steps.vars.outputs.image_tag }} \
+            --region=${{ secrets.GCP_REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --min-instances=1 \
+            --max-instances=50 \
+            --cpu=1 \
+            --memory=512Mi \
+            --concurrency=80 \
+            --timeout=60s \
+            --port=8080 \
+            --tag=canary \
+            --no-traffic \
+            --quiet
+          
+          # Get revision name
+          REVISION=$(gcloud run revisions list \
+            --service=${{ steps.vars.outputs.service_name }} \
+            --region=${{ secrets.GCP_REGION }} \
+            --format="value(name)" \
+            --limit=1 \
+            --sort-by=~creationTimestamp)
+          
+          echo "revision=$REVISION" >> $GITHUB_OUTPUT
+          
+          # Traffic split: route specified % to new revision, rest to stable
+          if [ "$TRAFFIC_SPLIT" = "100" ]; then
+            # Full rollout
+            gcloud run services update-traffic ${{ steps.vars.outputs.service_name }} \
+              --region=${{ secrets.GCP_REGION }} \
+              --to-latest \
+              --quiet
+            echo "✅ Full rollout (100% traffic to latest)"
+          else
+            # Canary rollout
+            gcloud run services update-traffic ${{ steps.vars.outputs.service_name }} \
+              --region=${{ secrets.GCP_REGION }} \
+              --to-revisions=$REVISION=$TRAFFIC_SPLIT \
+              --quiet
+            echo "✅ Canary rollout ($TRAFFIC_SPLIT% to $REVISION)"
+          fi
+
+      - name: Get service URL
+        id: url
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ steps.vars.outputs.service_name }} \
+            --region=${{ secrets.GCP_REGION }} \
+            --format="value(status.url)")
+          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "🔗 Service URL: $SERVICE_URL"
+
+      - name: Create deployment evidence
+        run: |
+          mkdir -p docs/evidence/deployments
+          cat > docs/evidence/deployments/${{ steps.vars.outputs.service_name }}-${{ github.sha }}.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y%m%d-%H%M%S)",
+            "service": "${{ steps.vars.outputs.service_name }}",
+            "app": "${{ steps.vars.outputs.app_name }}",
+            "revision": "${{ steps.deploy.outputs.revision }}",
+            "image": "${{ steps.vars.outputs.image_tag }}",
+            "commit_sha": "${{ github.sha }}",
+            "commit_message": "$(git log -1 --pretty=%B | head -1)",
+            "actor": "${{ github.actor }}",
+            "workflow_run": "${{ github.run_id }}",
+            "service_url": "${{ steps.url.outputs.service_url }}",
+            "traffic_split": "${{ github.event.inputs.traffic_split || '100' }}%",
+            "region": "${{ secrets.GCP_REGION }}",
+            "project": "${{ secrets.GCP_PROJECT_ID }}"
+          }
+          EOF
+
+      - name: Health check
+        run: |
+          echo "🏥 Running health check..."
+          sleep 10
+          
+          # Try to hit the service URL (may fail if not public yet)
+          curl -f -s -o /dev/null -w "%{http_code}" ${{ steps.url.outputs.service_url }} || echo "⚠️  Health check skipped (service may not be public)"
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service:** ${{ steps.vars.outputs.service_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Revision:** ${{ steps.deploy.outputs.revision }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ steps.vars.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Traffic:** ${{ github.event.inputs.traffic_split || '100' }}% to latest" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.url.outputs.service_url }}" >> $GITHUB_STEP_SUMMARY

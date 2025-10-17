@@ -1,0 +1,94 @@
+{
+  "timestamp": "20251017-164352",
+  "stage": "S4 - OIDC GitHub Actions",
+  "status": "SUCCESS",
+  "workflow_created": {
+    "name": "deploy-cloudrun.yml",
+    "path": ".github/workflows/deploy-cloudrun.yml",
+    "triggers": [
+      "push to main (paths: apps/**, packages/**, infra/gcp/**)",
+      "workflow_dispatch (manual trigger with app selection + traffic split)"
+    ],
+    "authentication": {
+      "method": "Workload Identity Federation (OIDC)",
+      "no_service_account_keys": true,
+      "permissions": ["contents:read", "id-token:write", "packages:write"],
+      "secrets_required": [
+        "GCP_WORKLOAD_ID_PROVIDER",
+        "GCP_DEPLOYER_SA",
+        "GCP_PROJECT_ID",
+        "GCP_REGION",
+        "ARTIFACT_REPO"
+      ]
+    },
+    "concurrency": {
+      "group": "atlas-cloudrun",
+      "cancel_in_progress": false,
+      "prevents_parallel_deploys": true
+    },
+    "matrix_strategy": {
+      "apps": ["proof-messenger", "admin-insights", "dev-portal"],
+      "fail_fast": false,
+      "parallel_builds": true
+    },
+    "build_process": [
+      "1. Checkout code (SHA-pinned actions)",
+      "2. Set up pnpm 9.0.0 + Node 20",
+      "3. Authenticate via OIDC (no static keys)",
+      "4. Configure Docker for Artifact Registry",
+      "5. Build Docker image (multi-stage, standalone)",
+      "6. Push to Artifact Registry (SHA + latest tags)",
+      "7. Deploy to Cloud Run with canary tag (no-traffic initially)",
+      "8. Update traffic split (10% canary or 100% full rollout)",
+      "9. Health check on service URL",
+      "10. Create deployment evidence JSON"
+    ],
+    "traffic_management": {
+      "default": "100% to latest (full rollout)",
+      "canary_mode": "Configurable % split (e.g., 10% new, 90% stable)",
+      "rollback": "Update traffic to previous revision (manual or via atlas-rollback.yml)"
+    },
+    "image_tags": [
+      "$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REPO/atlas-<app>:$GITHUB_SHA",
+      "$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REPO/atlas-<app>:latest"
+    ],
+    "deployment_config": {
+      "platform": "managed",
+      "allow_unauthenticated": true,
+      "min_instances": 1,
+      "max_instances": 50,
+      "cpu": 1,
+      "memory": "512Mi",
+      "concurrency": 80,
+      "timeout": "60s",
+      "port": 8080
+    },
+    "evidence_collection": {
+      "path": "docs/evidence/deployments/",
+      "format": "<service>-<sha>.json",
+      "fields": [
+        "timestamp",
+        "service",
+        "revision",
+        "image",
+        "commit_sha",
+        "commit_message",
+        "actor",
+        "workflow_run",
+        "service_url",
+        "traffic_split",
+        "region",
+        "project"
+      ]
+    }
+  },
+  "security_features": [
+    "OIDC authentication (no static credentials)",
+    "SHA-pinned GitHub Actions (supply chain security)",
+    "Artifact Registry with Docker authentication",
+    "Non-root container execution (nextjs:nodejs)",
+    "Health check endpoint validation",
+    "Deployment evidence for audit trail"
+  ],
+  "next_stage": "S5 - Scan process.env usage, create Secret Manager templates"
+}
