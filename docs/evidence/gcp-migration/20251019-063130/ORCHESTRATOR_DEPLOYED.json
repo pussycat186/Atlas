@@ -1,0 +1,30 @@
+﻿{
+    "stage":  "ORCHESTRATOR_DEPLOYED",
+    "stages":  [
+                   "S0",
+                   "S1",
+                   "S2",
+                   "S3",
+                   "S4",
+                   "S5",
+                   "S6",
+                   "S7",
+                   "S8",
+                   "S9",
+                   "S10",
+                   "S12",
+                   "S14",
+                   "S17"
+               ],
+    "workflow_file":  ".github/workflows/atlas-gcp-migrate-oneshot.yml",
+    "timestamp":  "2025-10-19T06:31:30Z",
+    "commit":  "a110ad2",
+    "expected_duration_minutes":  "45-80",
+    "status":  "READY",
+    "pushed_to":  "main",
+    "next_action":  "Configure 8 required GitHub repository secrets at https://github.com/pussycat186/Atlas/settings/secrets/actions",
+    "total_stages":  14,
+    "trigger_file":  ".atlas/autorun/gcp-20251019-062900.txt",
+    "guide_file":  "docs/GCP_MIGRATION_ONE_PROMPT_GUIDE.md",
+    "expected_outcome":  "GCP_MIGRATION_DONE"
+}
