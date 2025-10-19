@@ -1,0 +1,212 @@
+{
+  "timestamp": "2025-10-19T09:47:28.307Z",
+  "stage": "S0",
+  "repository": {
+    "name": "Atlas",
+    "owner": "pussycat186",
+    "branch": "feat/pdf-tech-stack-integration"
+  },
+  "apps": [
+    {
+      "name": "admin-insights",
+      "path": "apps/admin-insights",
+      "hasPackageJson": true,
+      "hasNextConfig": true,
+      "hasMiddleware": true,
+      "hasAppDir": true,
+      "hasPagesDir": false
+    },
+    {
+      "name": "dev-portal",
+      "path": "apps/dev-portal",
+      "hasPackageJson": true,
+      "hasNextConfig": true,
+      "hasMiddleware": true,
+      "hasAppDir": true,
+      "hasPagesDir": false
+    },
+    {
+      "name": "messenger",
+      "path": "apps/messenger",
+      "hasPackageJson": true,
+      "hasNextConfig": true,
+      "hasMiddleware": true,
+      "hasAppDir": false,
+      "hasPagesDir": false
+    },
+    {
+      "name": "proof-messenger",
+      "path": "apps/proof-messenger",
+      "hasPackageJson": true,
+      "hasNextConfig": true,
+      "hasMiddleware": true,
+      "hasAppDir": true,
+      "hasPagesDir": false
+    },
+    {
+      "name": "verify",
+      "path": "apps/verify",
+      "hasPackageJson": true,
+      "hasNextConfig": true,
+      "hasMiddleware": false,
+      "hasAppDir": false,
+      "hasPagesDir": false
+    }
+  ],
+  "packages": [
+    {
+      "name": "@atlas/crypto-pqc",
+      "path": "packages/@atlas/crypto-pqc",
+      "hasPackageJson": true,
+      "hasSrc": true,
+      "hasDist": false
+    },
+    {
+      "name": "@atlas/design-system",
+      "path": "packages/@atlas/design-system",
+      "hasPackageJson": true,
+      "hasSrc": true,
+      "hasDist": false
+    },
+    {
+      "name": "@atlas/feature-flags",
+      "path": "packages/@atlas/feature-flags",
+      "hasPackageJson": true,
+      "hasSrc": true,
+      "hasDist": false
+    },
+    {
+      "name": "@atlas/mls-core",
+      "path": "packages/@atlas/mls-core",
+      "hasPackageJson": true,
+      "hasSrc": true,
+      "hasDist": false
+    },
+    {
+      "name": "@atlas/receipt",
+      "path": "packages/@atlas/receipt",
+      "hasPackageJson": true,
+      "hasSrc": true,
+      "hasDist": false
+    },
+    {
+      "name": "@atlas/security-middleware",
+      "path": "packages/@atlas/security-middleware",
+      "hasPackageJson": true,
+      "hasSrc": true,
+      "hasDist": false
+    }
+  ],
+  "routes": {},
+  "middleware": {
+    "admin-insights": {
+      "exists": true,
+      "hasCSP": true,
+      "hasCOOP": true,
+      "hasCOEP": true,
+      "hasHSTS": true,
+      "hasDPoP": true
+    },
+    "dev-portal": {
+      "exists": true,
+      "hasCSP": true,
+      "hasCOOP": true,
+      "hasCOEP": true,
+      "hasHSTS": true,
+      "hasDPoP": true
+    },
+    "messenger": {
+      "exists": true,
+      "hasCSP": false,
+      "hasCOOP": true,
+      "hasCOEP": true,
+      "hasHSTS": false,
+      "hasDPoP": true
+    },
+    "proof-messenger": {
+      "exists": true,
+      "hasCSP": true,
+      "hasCOOP": false,
+      "hasCOEP": false,
+      "hasHSTS": true,
+      "hasDPoP": true
+    }
+  },
+  "securityHeaders": {
+    "appsWithMiddleware": 4,
+    "appsWithCSP": 3,
+    "appsWithCOOP": 3,
+    "appsWithCOEP": 3,
+    "appsWithHSTS": 3,
+    "appsWithDPoP": 4
+  },
+  "secrets": {
+    "checked": [
+      "VERCEL_TOKEN",
+      "VERCEL_ORG_ID",
+      "VERCEL_PROJECT_ID",
+      "GCP_PROJECT_ID",
+      "GCP_PROJECT_NUMBER",
+      "GCP_REGION",
+      "GCP_WORKLOAD_ID_PROVIDER",
+      "GCP_DEPLOYER_SA",
+      "ARTIFACT_REPO",
+      "DOMAINS_JSON",
+      "FIGMA_TOKEN",
+      "FIGMA_FILE_KEY"
+    ],
+    "present": [
+      "VERCEL_TOKEN",
+      "GCP_PROJECT_ID",
+      "GCP_REGION"
+    ],
+    "missing": [
+      "VERCEL_ORG_ID",
+      "VERCEL_PROJECT_ID",
+      "GCP_PROJECT_NUMBER",
+      "GCP_WORKLOAD_ID_PROVIDER",
+      "GCP_DEPLOYER_SA",
+      "ARTIFACT_REPO",
+      "DOMAINS_JSON"
+    ]
+  },
+  "nextConfigs": {
+    "admin-insights": {
+      "hasHeaders": true,
+      "hasOutputStandalone": true,
+      "hasTranspilePackages": true,
+      "hasOutputFileTracingRoot": true
+    },
+    "dev-portal": {
+      "hasHeaders": true,
+      "hasOutputStandalone": true,
+      "hasTranspilePackages": true,
+      "hasOutputFileTracingRoot": true
+    },
+    "messenger": {
+      "hasHeaders": true,
+      "hasOutputStandalone": false,
+      "hasTranspilePackages": true,
+      "hasOutputFileTracingRoot": true
+    },
+    "proof-messenger": {
+      "hasHeaders": true,
+      "hasOutputStandalone": true,
+      "hasTranspilePackages": true,
+      "hasOutputFileTracingRoot": true
+    },
+    "verify": {
+      "hasHeaders": true,
+      "hasOutputStandalone": false,
+      "hasTranspilePackages": true,
+      "hasOutputFileTracingRoot": true
+    }
+  },
+  "summary": {
+    "totalApps": 5,
+    "totalPackages": 6,
+    "secretsPresent": 3,
+    "secretsMissing": 7,
+    "appsReady": 4
+  }
+}
