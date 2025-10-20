@@ -1,0 +1,31 @@
+# Code Owners for Atlas Repository
+
+# Default owners for everything
+* @security-team
+
+# Security-critical files require security team review
+/crypto/** @security-team
+/security/** @security-team
+/policies/** @security-team
+/.github/workflows/** @security-team @devops-team
+
+# Infrastructure requires both security and devops
+/infra/** @security-team @devops-team
+
+# API specs require API team + security review
+/api/** @api-team @security-team
+
+# Services require service owners + security review
+/services/chat-delivery/** @messaging-team @security-team
+/services/key-directory/** @crypto-team @security-team
+/services/identity/** @identity-team @security-team
+/services/media/** @media-team @security-team
+/services/risk-guard/** @security-team
+
+# Documentation can be reviewed by any team member
+/docs/** @all-team
+
+# Trust Portal requires security team
+/trust-portal/** @security-team
+
+# Require 2 approvals for PRs, with at least 1 from security-team

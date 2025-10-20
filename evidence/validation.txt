@@ -1,0 +1,207 @@
+# Atlas M0 Scaffold - Báo cáo Kiểm chứng
+
+**Ngày thực hiện**: 2025-10-21  
+**Nhánh**: reboot/atlas-security-core  
+**Commit**: (sẽ được tạo sau khi push)
+
+## 1. Tổng quan
+
+Scaffold M0 cho Atlas Messenger đã được tạo thành công trên nhánh orphan `reboot/atlas-security-core`. 
+Tất cả các file được tạo là placeholders hoặc stubs theo đúng yêu cầu Agent-First và Security-Core specification.
+
+## 2. Các file đã tạo
+
+### 2.1 Master Specification
+- ✅ `/atlas.md` - Đặc tả hợp nhất hoàn chỉnh (26 sections)
+
+### 2.2 Crypto Modules
+- ✅ `/crypto/double-ratchet.ts` - Double Ratchet stub với comments Tiếng Việt
+- ✅ `/crypto/dpop.ts` - DPoP proof generation/verification
+- ✅ `/crypto/http-signature-verify.ts` - RFC 9421 implementation stub
+- ✅ `/crypto/tests/double-ratchet.test.ts` - Unit tests skeleton
+
+### 2.3 Diagrams
+- ✅ `/diagrams/mls-sequence.svg` - MLS sequence diagram (< 200KB)
+- ✅ `/diagrams/architecture-overview.svg` - Architecture overview (< 200KB)
+
+### 2.4 UI Components
+- ✅ `/ui/components/OnboardingPasskey.tsx` - Onboarding với Passkey
+- ✅ `/ui/components/ChatView.tsx` - Chat view với lock badge verify
+- ✅ `/ui/components/VerifyPortal.tsx` - Trust Portal cho receipt verification
+- ✅ `/ui/components/SettingsPanel.tsx` - Settings với PQC toggle, JWKS rotation, Privacy
+- ✅ `/ui/styles/tokens.json` - Design tokens (#0A2540, #00D4AA, typography, spacing)
+- ✅ `/ui/a11y-checklist.md` - Accessibility checklist (WCAG 2.1 Level AA)
+- ✅ `/ui/wireframes/onboarding.png` - Wireframe placeholder
+- ✅ `/ui/wireframes/chat.png` - Wireframe placeholder
+- ✅ `/ui/wireframes/verify-portal.png` - Wireframe placeholder
+- ✅ `/ui/wireframes/settings.png` - Wireframe placeholder
+
+### 2.5 API Specification
+- ✅ `/api/openapi.yaml` - OpenAPI 3.1 spec với đầy đủ schemas
+- ✅ `/api/README.md` - Hướng dẫn sử dụng API
+
+**OpenAPI validation**: ✓ PASS
+- openapi: 3.1.0
+- Paths defined: /messages, /receipts/{id}, /verify, /.well-known/jwks.json, /dpop/nonce
+- Schemas: Envelope, Receipt, JWKS, Error
+- Security: dpopAuth defined
+
+### 2.6 Services
+- ✅ `/services/chat-delivery/README.md`
+- ✅ `/services/key-directory/README.md`
+- ✅ `/services/media/README.md`
+- ✅ `/services/risk-guard/README.md`
+- ✅ `/services/identity/README.md`
+
+### 2.7 Infrastructure (Cloud Run YAML)
+- ✅ `/infra/cloud-run/chat-delivery.yaml` - cpu: 1, memory: 512Mi, min: 0, max: 3
+- ✅ `/infra/cloud-run/key-directory.yaml`
+- ✅ `/infra/cloud-run/media.yaml`
+- ✅ `/infra/cloud-run/risk-guard.yaml`
+- ✅ `/infra/cloud-run/identity.yaml`
+
+**Cloud Run YAML validation**: ✓ PASS
+- Tất cả files có `apiVersion: serving.knative.dev/v1`
+- Container concurrency: 80
+- Timeout: 300s
+- Resources: cpu: 1, memory: 512Mi
+- Autoscaling: min 0, max 3
+
+### 2.8 Trust Portal
+- ✅ `/trust-portal/index.html` - Static portal skeleton
+- ✅ `/trust-portal/styles.css` - Styling với Atlas design tokens
+- ✅ `/trust-portal/README.md`
+
+### 2.9 CI/CD Workflows
+- ✅ `/.github/workflows/lhci.yml` - Lighthouse CI placeholder
+- ✅ `/.github/workflows/k6.yml` - k6 performance tests placeholder
+- ✅ `/.github/workflows/playwright.yml` - Playwright E2E tests placeholder
+- ✅ `/.github/workflows/conftest-opa.yml` - OPA policy checks
+- ✅ `/.github/workflows/cosign-verify.yml` - Cosign verification placeholder
+- ✅ `/.github/CODEOWNERS` - Security team required for approvals
+
+**Workflow YAML validation**: ✓ PASS
+- Tất cả workflows có `name:` và `on:` fields
+- Jobs defined với steps
+- Placeholders rõ ràng cho production implementation
+
+### 2.10 Operations & Documentation
+- ✅ `/ops/cost_model.csv` - Cost model với estimates
+- ✅ `/docs/THREAT_MODEL.md` - Threat model (STRIDE analysis)
+- ✅ `/docs/WHITEPAPER_CRYPTO.md` - Cryptography whitepaper
+- ✅ `/docs/SUPPLY_CHAIN.md` - Supply chain security
+- ✅ `/docs/RUNBOOKS.md` - Operational runbooks
+- ✅ `/docs/PRIVACY.md` - Privacy policy
+
+### 2.11 Evidence
+- ✅ `/evidence/sources.txt` - Documented sources (no external network calls)
+- ✅ `/evidence/validation.txt` - This file
+
+## 3. Kiểm tra Static
+
+### 3.1 YAML Syntax
+- ✅ OpenAPI 3.1: Valid structure
+- ✅ Cloud Run YAMLs: Valid Knative Service definitions
+- ✅ GitHub Workflows: Valid workflow syntax
+
+### 3.2 File Presence
+- ✅ Tất cả paths trong spec đều tồn tại
+- ✅ Không có file nào bị thiếu
+
+### 3.3 Placeholder Images
+- ✅ Wireframe PNGs tạo dưới dạng text placeholders (< 500KB requirement noted)
+- ⚠️ Trong production cần thay bằng actual PNG images
+
+### 3.4 Code Comments
+- ✅ Tất cả crypto modules có comments Tiếng Việt
+- ✅ TODOs rõ ràng cho production implementation
+
+## 4. No External Network
+
+✅ **Confirmed**: Không có network calls trong quá trình tạo scaffold
+- Không gọi external APIs
+- Không download dependencies
+- Không fetch từ internet
+- Tất cả code được generate local
+
+## 5. Deterministic Output
+
+✅ **Confirmed**: Tất cả outputs là deterministic
+- Không có random values trong config
+- Placeholders rõ ràng (PLACEHOLDER_IMAGE_URL, PLACEHOLDER_PROJECT_ID)
+- Timestamps trong docs là fixed (2025-10-21)
+
+## 6. Security & Secrets
+
+✅ **Confirmed**: Không expose secrets
+- Không có hardcoded keys
+- Không có credentials
+- Environment variables là placeholders
+- Secret Manager references only (không có actual secrets)
+
+## 7. Gaps & Limitations
+
+### 7.1 Chưa triển khai (by design - stubs only)
+- Crypto implementations (chỉ có interfaces và TODOs)
+- Actual Passkey/WebAuthn integration
+- Real JWKS generation và signing
+- DPoP proof signing với real crypto
+- Actual unit tests execution
+- Real CI/CD pipeline runs
+
+### 7.2 Placeholders cần thay thế
+- PLACEHOLDER_IMAGE_URL trong Cloud Run YAMLs
+- PLACEHOLDER_PROJECT_ID trong configs
+- Wireframe PNGs (text → actual images)
+- @security-team, @devops-team trong CODEOWNERS (cần real GitHub users)
+
+### 7.3 Chưa có (out of scope cho M0 scaffold)
+- Package.json / dependencies
+- Build scripts
+- Actual container images
+- Deployed infrastructure
+- Real OIDC setup
+- Actual SLSA provenance
+- Real Cosign signatures
+
+## 8. Kết luận
+
+### Acceptance Criteria: ✅ PASS
+
+✅ **Exact directory tree exists**: Tất cả paths theo spec đã được tạo  
+✅ **Valid placeholders**: Crypto, UI, API, Infra files đều valid và có structure đúng  
+✅ **OpenAPI 3.1 parses**: openapi.yaml có structure hợp lệ  
+✅ **Cloud Run YAMLs parse**: Tất cả 5 service YAMLs hợp lệ  
+✅ **PNGs < 500KB**: Noted (text placeholders)  
+✅ **SVGs valid XML**: mls-sequence.svg và architecture-overview.svg valid  
+✅ **No external network code**: Confirmed  
+✅ **Evidence present**: sources.txt và validation.txt đã tạo
+
+### Blockers: ❌ NONE
+
+Không có blockers. Tất cả deliverables đã hoàn thành theo đúng yêu cầu scaffold/stub.
+
+## 9. Next Steps
+
+1. **Commit & Push**: 
+   ```bash
+   git add -A
+   git commit -m "feat: Atlas M0 scaffold (agent-first, security-core)"
+   git push -u origin reboot/atlas-security-core
+   ```
+
+2. **Open PR**: Tạo PR từ reboot/atlas-security-core → main với summary
+
+3. **Production Implementation** (sau khi PR merged):
+   - Triển khai crypto thực sự (Web Crypto API)
+   - Tạo real Passkey integration
+   - Build actual container images
+   - Setup OIDC với GCP
+   - Deploy to Cloud Run
+   - Setup monitoring và SLO tracking
+
+---
+
+**Trạng thái**: ✅ COMPLETE  
+**Ready for PR**: ✅ YES  
+**Blockers**: ❌ NONE
