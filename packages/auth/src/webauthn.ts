@@ -47,7 +47,7 @@ export async function beginRegistration(
     rpName: rpConfig.name,
     rpID: rpConfig.id,
     userName,
-    userID: new TextEncoder().encode(userId),
+    userID: new TextEncoder().encode(userId) as any, // TS DOM types workaround
     
     // Timeout: 5 phút
     timeout: 300_000,
@@ -137,7 +137,8 @@ export async function beginAuthentication(
     
     // Nếu có allowedCredentials, gửi cho browser (conditional UI)
     allowCredentials: allowedCredentials?.map(cred => ({
-      id: base64urlDecodeBytes(cred.id),
+      type: 'public-key' as const,
+      id: base64urlDecodeBytes(cred.id) as any, // TS DOM types workaround
       transports: cred.transports as any[]
     }))
   };

@@ -272,7 +272,7 @@ async function deriveKey(
   // Import IKM as raw key
   const key = await crypto.subtle.importKey(
     'raw',
-    ikm,
+    ikm as any, // TS5.x ArrayBuffer/SharedArrayBuffer DOM types workaround
     { name: 'HKDF' },
     false,
     ['deriveBits']
@@ -283,8 +283,8 @@ async function deriveKey(
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt,
-      info: new TextEncoder().encode(info)
+      salt: salt as any,
+      info: new TextEncoder().encode(info) as any
     },
     key,
     256 // 32 bytes = 256 bits
