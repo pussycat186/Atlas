@@ -1,0 +1,15 @@
+
+> @atlas/design-system@1.0.0 build D:\Atlas\packages\design-system
+> npx tsc
+
+error TS2688: Cannot find type definition file for 'hapi__catbox'.
+  The file is in the program because:
+    Entry point for implicit type library 'hapi__catbox'
+error TS2688: Cannot find type definition file for 'hapi__shot'.
+  The file is in the program because:
+    Entry point for implicit type library 'hapi__shot'
+error TS2688: Cannot find type definition file for 'minimatch'.
+  The file is in the program because:
+    Entry point for implicit type library 'minimatch'
+ ELIFECYCLE  Command failed with exit code 2.
+ WARN   Local package.json exists, but node_modules missing, did you mean to install?
