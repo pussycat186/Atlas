@@ -1,0 +1,53 @@
+# DNS & Trust Portal - Cloudflare Integration
+name: DNS & Portal
+on:
+  workflow_dispatch:
+
+jobs:
+  dns:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Verify Cloudflare secrets presence
+        run: |
+          test -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" && echo "✅ CLOUDFLARE_ACCOUNT_ID present" || exit 1
+          test -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" && echo "✅ CLOUDFLARE_API_TOKEN present" || exit 1
+          test -n "${{ secrets.DOMAINS_JSON }}" && echo "✅ DOMAINS_JSON present" || exit 1
+      
+      - name: DNS update plan
+        run: |
+          echo "📡 Would update DNS records via Cloudflare API"
+          echo "Note: No actual API calls made - secrets validated only"
+  
+  portal:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Build static Trust Portal
+        run: |
+          if [ -d "trust-portal" ]; then
+            echo "📄 Building Trust Portal..."
+            ls -la trust-portal
+            echo "✅ Trust Portal ready for deployment"
+          else
+            echo "⚠️ Trust Portal directory not found - creating placeholder"
+            mkdir -p trust-portal
+            echo "<h1>Atlas Trust Portal</h1>" > trust-portal/index.html
+          fi
+      
+      - name: Upload portal artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trust-portal
+          path: trust-portal/**

@@ -177,12 +177,13 @@ export function exportPublicKey(state) {
  */
 async function deriveKey(ikm, salt, info) {
     // Import IKM as raw key
-    const key = await crypto.subtle.importKey('raw', ikm, { name: 'HKDF' }, false, ['deriveBits']);
+    const key = await crypto.subtle.importKey('raw', ikm, // TS5.x ArrayBuffer/SharedArrayBuffer DOM types workaround
+    { name: 'HKDF' }, false, ['deriveBits']);
     // Derive 32 bytes using HKDF-SHA256
     const derivedBits = await crypto.subtle.deriveBits({
         name: 'HKDF',
         hash: 'SHA-256',
-        salt,
+        salt: salt,
         info: new TextEncoder().encode(info)
     }, key, 256 // 32 bytes = 256 bits
     );

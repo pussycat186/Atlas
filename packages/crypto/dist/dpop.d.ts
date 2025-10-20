@@ -8,6 +8,11 @@ export interface DPoPKeyPair {
     jwk: ExtendedJWK;
 }
 /**
+ * Clear JTI cache (for testing only)
+ * @internal
+ */
+export declare function clearJTICache(): void;
+/**
  * Tạo ES256 key pair cho DPoP
  * @returns Key pair với private key + public JWK
  */
