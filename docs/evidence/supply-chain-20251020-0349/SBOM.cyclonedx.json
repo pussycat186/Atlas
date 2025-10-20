@@ -1,0 +1,15 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:supply-chain-weekly-$(uuidgen)",
+  "version": 1,
+  "metadata": {
+    "timestamp": "$(date -u --iso-8601=seconds)",
+    "component": {
+      "type": "application",
+      "name": "atlas",
+      "version": "61d9b7426be7ad81992da9858d7f386549e114d7"
+    }
+  },
+  "components": []
+}

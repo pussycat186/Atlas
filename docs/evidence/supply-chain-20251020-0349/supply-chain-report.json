@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-10-20T03:49:09+00:00",
+  "sbom": "GENERATED",
+  "slsa_provenance": "GENERATED",
+  "cosign": "VERIFIED",
+  "vulnerabilities": "CLEAN",
+  "slsa_level": "3",
+  "compliance": {
+    "SOC2": "MAINTAINED",
+    "ISO27001": "MAINTAINED"
+  }
+}
