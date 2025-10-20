@@ -2,13 +2,13 @@
 // Verify Ed25519 signatures trên HTTP receipts
 // Sử dụng Web Crypto API
 
-import type { HTTPSignature } from './types.js';
+import type { HTTPSignature, ExtendedJWK } from './types.js';
 import { CryptoError } from './types.js';
 
 /**
  * JWKS cache (production nên dùng Redis với TTL)
  */
-const jwksCache = new Map<string, JsonWebKey>();
+const jwksCache = new Map<string, ExtendedJWK>();
 const JWKS_TTL_MS = 300_000; // 5 phút
 
 /**
@@ -124,11 +124,12 @@ export async function verifySignature(
   
   // Verify signature
   const encoder = new TextEncoder();
+  // @ts-ignore - TS5.3+ has ArrayBuffer/SharedArrayBuffer type confusion with DOM types
   const isValid = await crypto.subtle.verify(
     'Ed25519',
     publicKey,
-    signatureBytes,
-    encoder.encode(signatureBase)
+    signatureBytes as any,
+    encoder.encode(signatureBase) as any
   );
   
   if (!isValid) {
@@ -143,7 +144,7 @@ export async function verifySignature(
  * @param jwksUri - JWKS URI (e.g., https://example.com/.well-known/jwks.json)
  * @param keyId - Key ID to lookup
  */
-async function fetchPublicKey(jwksUri: string, keyId: string): Promise<JsonWebKey> {
+async function fetchPublicKey(jwksUri: string, keyId: string): Promise<ExtendedJWK> {
   // Check cache
   const cached = jwksCache.get(`${jwksUri}:${keyId}`);
   if (cached) {
@@ -156,7 +157,7 @@ async function fetchPublicKey(jwksUri: string, keyId: string): Promise<JsonWebKe
     throw new CryptoError('Failed to fetch JWKS', 'INVALID_KEY', { status: response.status });
   }
   
-  const jwks = await response.json() as { keys: JsonWebKey[] };
+  const jwks = await response.json() as { keys: ExtendedJWK[] };
   
   // Find key by kid
   const key = jwks.keys.find(k => k.kid === keyId);

@@ -29,6 +29,15 @@ export interface PublicKeyJWK {
 }
 
 /**
+ * Extended JsonWebKey with additional DPoP/JWS fields
+ */
+export interface ExtendedJWK extends JsonWebKey {
+  alg?: string;
+  kid?: string;
+  use?: string;
+}
+
+/**
  * DPoP proof JWT payload (RFC 9449)
  */
 export interface DPoPProof {

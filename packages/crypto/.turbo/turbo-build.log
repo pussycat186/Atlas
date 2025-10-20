@@ -1,0 +1,24 @@
+
+> @atlas/crypto@0.1.0 build D:\Atlas\packages\crypto
+> tsc
+
+src/double-ratchet.ts(273,35): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(format: "jwk", keyData: JsonWebKey, algorithm: AlgorithmIdentifier | RsaHashedImportParams | EcKeyImportParams | HmacImportParams | AesKeyAlgorithm, extractable: boolean, keyUsages: readonly KeyUsage[]): Promise<...>', gave the following error.
+    Argument of type '"raw"' is not assignable to parameter of type '"jwk"'.
+  Overload 2 of 2, '(format: "raw" | "pkcs8" | "spki", keyData: BufferSource, algorithm: AlgorithmIdentifier | RsaHashedImportParams | EcKeyImportParams | HmacImportParams | AesKeyAlgorithm, extractable: boolean, keyUsages: KeyUsage[]): Promise<...>', gave the following error.
+    Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BufferSource'.
+      Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+        Types of property 'buffer' are incompatible.
+          Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+            Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
+              Types of property '[Symbol.toStringTag]' are incompatible.
+                Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
+src/double-ratchet.ts(286,7): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BufferSource'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
+          Types of property '[Symbol.toStringTag]' are incompatible.
+            Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
+src/dpop.ts(41,13): error TS2339: Property 'kid' does not exist on type 'JsonWebKey'.
+ ELIFECYCLE  Command failed with exit code 2.

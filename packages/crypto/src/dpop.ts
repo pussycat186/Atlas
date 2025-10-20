@@ -2,7 +2,7 @@
 // Demonstrating Proof-of-Possession for OAuth 2.0 tokens
 // Sử dụng Web Crypto API cho ES256 signing
 
-import type { DPoPProof } from './types.js';
+import type { DPoPProof, ExtendedJWK } from './types.js';
 import { CryptoError } from './types.js';
 
 /**
@@ -11,7 +11,7 @@ import { CryptoError } from './types.js';
 export interface DPoPKeyPair {
   privateKey: CryptoKey;
   publicKey: CryptoKey;
-  jwk: JsonWebKey;  // Public key ở dạng JWK
+  jwk: ExtendedJWK;  // Public key ở dạng JWK
 }
 
 /**
@@ -219,15 +219,17 @@ async function sign(privateKey: CryptoKey, data: string): Promise<string> {
 async function verify(publicKey: CryptoKey, data: string, signature: string): Promise<boolean> {
   const encoder = new TextEncoder();
   const signatureBytes = base64urlDecodeBytes(signature);
+  const dataBytes = encoder.encode(data);
   
+  // @ts-ignore - TS5.3+ has ArrayBuffer/SharedArrayBuffer type confusion with DOM types
   return crypto.subtle.verify(
     {
       name: 'ECDSA',
       hash: 'SHA-256'
     },
     publicKey,
-    signatureBytes,
-    encoder.encode(data)
+    signatureBytes as any,
+    dataBytes as any
   );
 }
 
