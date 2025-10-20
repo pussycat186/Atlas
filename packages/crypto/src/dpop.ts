@@ -21,6 +21,14 @@ const usedJTIs = new Set<string>();
 const JTI_TTL_MS = 60_000; // 1 phút
 
 /**
+ * Clear JTI cache (for testing only)
+ * @internal
+ */
+export function clearJTICache(): void {
+  usedJTIs.clear();
+}
+
+/**
  * Tạo ES256 key pair cho DPoP
  * @returns Key pair với private key + public JWK
  */
@@ -34,7 +42,7 @@ export async function generateKeyPair(): Promise<DPoPKeyPair> {
     ['sign', 'verify']
   );
   
-  const publicJWK = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+  const publicJWK = await crypto.subtle.exportKey('jwk', keyPair.publicKey) as ExtendedJWK;
   
   // Thêm alg và kid vào JWK
   publicJWK.alg = 'ES256';
@@ -92,10 +100,6 @@ export async function createProof(
   // Sign với ES256
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
   const signature = await sign(keyPair.privateKey, signatureInput);
-  
-  // Lưu JTI vào store (với TTL cleanup)
-  usedJTIs.add(jti);
-  setTimeout(() => usedJTIs.delete(jti), JTI_TTL_MS);
   
   return `${signatureInput}.${signature}`;
 }

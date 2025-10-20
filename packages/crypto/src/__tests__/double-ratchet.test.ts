@@ -3,7 +3,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import sodium from 'libsodium-wrappers';
-import { initAlice, initBob, encrypt, decrypt, ratchetStep, exportPublicKey } from '../src/double-ratchet.js';
+import { initAlice, initBob, encrypt, decrypt, ratchetStep, exportPublicKey } from '../double-ratchet.js';
 
 beforeAll(async () => {
   await sodium.ready;

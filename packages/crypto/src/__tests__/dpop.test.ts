@@ -1,8 +1,12 @@
 // Atlas Security-Core: DPoP Tests
 // Test RFC 9449 Proof-of-Possession
 
-import { describe, it, expect } from 'vitest';
-import { generateKeyPair, createProof, verifyProof } from '../src/dpop.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { generateKeyPair, createProof, verifyProof, clearJTICache } from '../dpop.js';
+
+beforeEach(() => {
+  clearJTICache(); // Clear JTI cache before each test to prevent cross-test contamination
+});
 
 describe('DPoP', () => {
   it('should generate ES256 key pair with JWK', async () => {
