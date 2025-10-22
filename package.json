@@ -36,6 +36,15 @@
     "typescript": "^5.2.2",
     "vitest": "^1.0.0"
   },
+  "dependencies": {
+    "libsodium-wrappers-sumo": "^0.7.15",
+    "@noble/ed25519": "^1.7.1",
+    "fast-check": "^3.0.0",
+    "@simplewebauthn/server": "^4.4.0",
+    "@types/express": "^4.17.17",
+    "express": "^4.18.2",
+    "cookie-session": "^2.0.0"
+  },
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=8.0.0"

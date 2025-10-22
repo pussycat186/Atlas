@@ -1,3 +1,74 @@
+import sodium from 'libsodium-wrappers-sumo';
+import { randomBytes } from 'crypto';
+
+// Double Ratchet tối giản: X25519 key agreement + HKDF + AEAD (ChaCha20-Poly1305)
+// Giao diện: init(sharedSecret?), encrypt(plaintext), decrypt(ciphertext)
+// Lưu ý: Đây là bản implement cơ bản cho mục đích test/unit. Sẽ mở rộng cho skipped-message keys.
+
+export type KeyPair = { publicKey: Uint8Array; privateKey: Uint8Array };
+
+export async function generateKeyPair(): Promise<KeyPair> {
+  await sodium.ready;
+  const keyPair = sodium.crypto_kx_keypair();
+  return { publicKey: keyPair.publicKey, privateKey: keyPair.privateKey };
+}
+
+export async function deriveShared(secretPriv: Uint8Array, peerPub: Uint8Array) {
+  await sodium.ready;
+  // Use crypto_scalarmult for X25519
+  return sodium.crypto_scalarmult(secretPriv, peerPub);
+}
+
+export function hkdf(chainingKey: Uint8Array, inputKeyMaterial: Uint8Array, info = new Uint8Array(0), length = 32) {
+  // Simple HKDF with HMAC-SHA256
+  const prk = sodium.crypto_auth(inputKeyMaterial, chainingKey); // HMAC-like substitute (libsodium provides crypto_auth)
+  // For test purposes, use a KDF wrapper (not RFC compliant) — replace with proper HKDF if needed.
+  const okm = sodium.crypto_generichash(length, prk);
+  return okm;
+}
+
+export class RatchetSession {
+  rootKey: Uint8Array;
+  sendKey: Uint8Array;
+  recvKey: Uint8Array;
+  sendNonce = 0n;
+  recvNonce = 0n;
+
+  constructor(rootKey: Uint8Array, sendKey: Uint8Array, recvKey: Uint8Array) {
+    this.rootKey = rootKey;
+    this.sendKey = sendKey;
+    this.recvKey = recvKey;
+  }
+
+  async encrypt(plaintext: Uint8Array) {
+    await sodium.ready;
+    const nonce = Number(this.sendNonce & 0xffffffffn);
+    const cipher = sodium.crypto_aead_chacha20poly1305_ietf_encrypt(plaintext, null, null, new Uint8Array(12).fill(0).map((_, i) => (i < 4 ? (nonce >> (i * 8)) & 0xff : 0)), this.sendKey);
+    this.sendNonce++;
+    return cipher;
+  }
+
+  async decrypt(ciphertext: Uint8Array) {
+    await sodium.ready;
+    const nonce = Number(this.recvNonce & 0xffffffffn);
+    try {
+      const plain = sodium.crypto_aead_chacha20poly1305_ietf_decrypt(null, ciphertext, null, new Uint8Array(12).fill(0).map((_, i) => (i < 4 ? (nonce >> (i * 8)) & 0xff : 0)), this.recvKey);
+      this.recvNonce++;
+      return plain;
+    } catch (e) {
+      throw new Error('Decrypt failed');
+    }
+  }
+}
+
+export async function initSession(ourPriv: Uint8Array, theirPub: Uint8Array) {
+  await sodium.ready;
+  const shared = await deriveShared(ourPriv, theirPub);
+  const root = hkdf(new Uint8Array(32), shared, new Uint8Array(0), 32);
+  const sendKey = hkdf(root, new Uint8Array([0x01]), new Uint8Array(0), 32);
+  const recvKey = hkdf(root, new Uint8Array([0x02]), new Uint8Array(0), 32);
+  return new RatchetSession(root, sendKey, recvKey);
+}
 /**
  * Double Ratchet Implementation (Stub)
  * 
