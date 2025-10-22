@@ -5,11 +5,11 @@
 
 [7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mD:/Atlas/packages/crypto[39m
 
- [32m✓[39m src/__tests__/dpop.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 19[2mms[22m[39m
- [32m✓[39m src/__tests__/double-ratchet.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/__tests__/dpop.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/__tests__/double-ratchet.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 20[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
 [2m      Tests [22m [1m[32m9 passed[39m[22m[90m (9)[39m
-[2m   Start at [22m 13:20:10
-[2m   Duration [22m 2.17s[2m (transform 1.06s, setup 0ms, collect 1.42s, tests 40ms, environment 0ms, prepare 1.93s)[22m
+[2m   Start at [22m 13:42:20
+[2m   Duration [22m 586ms[2m (transform 114ms, setup 1ms, collect 243ms, tests 42ms, environment 0ms, prepare 277ms)[22m
 
