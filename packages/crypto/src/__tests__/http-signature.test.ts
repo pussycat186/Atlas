@@ -140,4 +140,105 @@ describe('HTTP Message Signatures (RFC 9421)', () => {
       verifyHttpSignature(input, signature, publicKeyHex)
     ).rejects.toThrow('Unsupported algorithm');
   });
+
+  // P1 CRITICAL TESTS: RFC 9421 Compliance
+  
+  it('P1: should preserve exact header order (RFC 9421 Section 3.1)', () => {
+    // Test that headers appear in signature base in EXACT order specified
+    const input: SignatureInput = {
+      method: 'POST',
+      path: '/messages',
+      headers: {
+        'x-custom-header': 'value1',
+        'content-type': 'application/json',
+        'content-length': '42'
+      },
+      signatureParams: {
+        keyid: 'key-1',
+        algorithm: 'ed25519',
+        created: 1618884473
+      }
+    };
+
+    const signatureBase = buildSignatureBase(input);
+    const lines = signatureBase.split('\n');
+    
+    // Verify order: @method, @path, then headers in order they were added
+    expect(lines[0]).toContain('"@method":');
+    expect(lines[1]).toContain('"@path":');
+    expect(lines[2]).toContain('"x-custom-header":'); // First added
+    expect(lines[3]).toContain('"content-type":');     // Second added
+    expect(lines[4]).toContain('"content-length":');   // Third added
+    
+    // Last line should be @signature-params
+    expect(lines[lines.length - 1]).toContain('"@signature-params":');
+  });
+
+  it('P1: should include @signature-params with all metadata', () => {
+    const input: SignatureInput = {
+      method: 'POST',
+      path: '/api/endpoint',
+      headers: {
+        'content-type': 'application/json'
+      },
+      signatureParams: {
+        keyid: 'test-key-123',
+        algorithm: 'ed25519',
+        created: 1618884473,
+        expires: 1618885073
+      }
+    };
+
+    const signatureBase = buildSignatureBase(input);
+    
+    // @signature-params MUST be present
+    expect(signatureBase).toContain('"@signature-params":');
+    
+    // Must include all covered fields
+    expect(signatureBase).toContain('"@method"');
+    expect(signatureBase).toContain('"@path"');
+    expect(signatureBase).toContain('"content-type"');
+    
+    // Must include parameters
+    expect(signatureBase).toContain('created=1618884473');
+    expect(signatureBase).toContain('keyid="test-key-123"');
+    expect(signatureBase).toContain('alg="ed25519"');
+    expect(signatureBase).toContain('expires=1618885073');
+  });
+
+  it('P1: changing header order should produce different signature base', () => {
+    const input1: SignatureInput = {
+      method: 'POST',
+      path: '/test',
+      headers: {
+        'header-a': 'value-a',
+        'header-b': 'value-b'
+      },
+      signatureParams: {
+        keyid: 'key-1',
+        algorithm: 'ed25519',
+        created: 1618884473
+      }
+    };
+
+    const input2: SignatureInput = {
+      method: 'POST',
+      path: '/test',
+      headers: {
+        'header-b': 'value-b',  // Swapped order
+        'header-a': 'value-a'
+      },
+      signatureParams: {
+        keyid: 'key-1',
+        algorithm: 'ed25519',
+        created: 1618884473
+      }
+    };
+
+    const base1 = buildSignatureBase(input1);
+    const base2 = buildSignatureBase(input2);
+    
+    // Different order = different base string
+    expect(base1).not.toBe(base2);
+  });
 });
