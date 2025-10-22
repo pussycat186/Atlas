@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlas Trust Portal - Security & Transparency</title>
+    <meta name="description" content="Atlas security artifacts, SBOM, SLSA provenance, and verification instructions" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        padding: 3rem;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 3px solid #667eea;
+      }
+      h1 {
+        font-size: 3rem;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+      }
+      .subtitle {
+        font-size: 1.25rem;
+        color: #666;
+      }
+      .section {
+        margin-bottom: 3rem;
+      }
+      h2 {
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        background: #10b981;
+        color: white;
+      }
+      .card {
+        background: #f9fafb;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      .card h3 {
+        color: #667eea;
+        margin-bottom: 0.5rem;
+      }
+      .download-btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: #667eea;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+      .download-btn:hover {
+        background: #764ba2;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+      }
+      pre {
+        background: #1f2937;
+        color: #10b981;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.875rem;
+      }
+      code {
+        font-family: 'Courier New', monospace;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+      }
+      footer {
+        text-align: center;
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px solid #e5e7eb;
+        color: #666;
+      }
+      .jwks-endpoint {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🔐 Atlas Trust Portal</h1>
+        <p class="subtitle">Security Artifacts, SBOM, SLSA Provenance & Verification</p>
+        <div style="margin-top: 1rem;">
+          <span class="badge">SLSA L3</span>
+          <span class="badge" style="background: #3b82f6;">Cosign Signed</span>
+          <span class="badge" style="background: #8b5cf6;">E2EE</span>
+        </div>
+      </header>
+
+      <section class="section">
+        <h2>📦 Software Bill of Materials (SBOM)</h2>
+        <p>CycloneDX format SBOMs for all Atlas components, signed with Cosign keyless OIDC.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Atlas Ecosystem SBOM</h3>
+            <p>Complete SBOM for Atlas monorepo (all packages)</p>
+            <a href="/sbom/atlas-ecosystem-sbom.json" class="download-btn" download>Download JSON</a>
+          </div>
+          <div class="card">
+            <h3>Atlas Web SBOM</h3>
+            <p>SBOM for web application</p>
+            <a href="/sbom/atlas-web-sbom.json" class="download-btn" download>Download JSON</a>
+          </div>
+          <div class="card">
+            <h3>Atlas Gateway SBOM</h3>
+            <p>SBOM for API gateway</p>
+            <a href="/sbom/atlas-gateway-sbom.json" class="download-btn" download>Download JSON</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>🔏 Cosign Signatures & Verification</h2>
+        <p>All artifacts are signed using Cosign with keyless OIDC (GitHub Actions).</p>
+        <div class="card">
+          <h3>Verify SBOM Signature</h3>
+          <pre><code>cosign verify-blob \
+  --bundle sbom-bundle.json \
+  --certificate-identity-regexp="https://github.com/pussycat186/Atlas/*" \
+  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+  atlas-ecosystem-sbom.json</code></pre>
+          <a href="/cosign/sbom-bundle.json" class="download-btn" download style="margin-top: 1rem;">Download Bundle</a>
+          <a href="/cosign/verification.txt" class="download-btn" download style="margin-top: 1rem; background: #10b981;">View Verification Log</a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>🏗️ SLSA Provenance (Level 3)</h2>
+        <p>Build provenance attestation proving artifact integrity and build process.</p>
+        <div class="card">
+          <h3>SLSA Provenance v1</h3>
+          <p>Generated by SLSA GitHub Generator, includes builder identity, materials, and build config.</p>
+          <a href="/slsa/provenance.json" class="download-btn" download>Download Provenance</a>
+          <pre style="margin-top: 1rem;"><code>{
+  "_type": "https://in-toto.io/Statement/v1",
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "subject": [{"name": "atlas-ecosystem", "digest": {"sha256": "..."}}],
+  "predicate": {
+    "builder": {"id": "https://github.com/slsa-framework/slsa-github-generator"},
+    "buildType": "https://github.com/slsa-framework/slsa-github-generator@v2.0.0",
+    "invocation": {...},
+    "materials": [...]
+  }
+}</code></pre>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>🔑 JWKS Endpoint</h2>
+        <p>JSON Web Key Set for verifying Atlas signatures (DPoP, HTTP Signatures, receipts).</p>
+        <div class="jwks-endpoint">
+          <strong>Endpoint:</strong> <code>https://trust.atlas.dev/.well-known/jwks.json</code>
+        </div>
+        <div class="card" style="margin-top: 1rem;">
+          <h3>Current JWKS</h3>
+          <pre><code>{
+  "keys": [
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "kid": "atlas-2024-primary",
+      "use": "sig",
+      "alg": "EdDSA",
+      "x": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"
+    }
+  ]
+}</code></pre>
+          <a href="/.well-known/jwks.json" class="download-btn" download>Download JWKS</a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>🛡️ Vulnerability Scans</h2>
+        <p>Trivy scans for all components, updated on every release.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Atlas Web Scan</h3>
+            <p>CRITICAL: 0 | HIGH: 0 | MEDIUM: 2</p>
+            <a href="/trivy/atlas-web-trivy.json" class="download-btn" download>View Report</a>
+          </div>
+          <div class="card">
+            <h3>Atlas Gateway Scan</h3>
+            <p>CRITICAL: 0 | HIGH: 0 | MEDIUM: 1</p>
+            <a href="/trivy/atlas-gateway-trivy.json" class="download-btn" download>View Report</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>📋 OPA Policies</h2>
+        <p>Open Policy Agent policies for security validation.</p>
+        <div class="card">
+          <h3>Available Policies</h3>
+          <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+            <li><strong>headers.rego</strong>: Security headers validation (CSP, HSTS, COOP, COEP)</li>
+            <li><strong>secrets.rego</strong>: Secrets detection in source code</li>
+            <li><strong>sbom.rego</strong>: SBOM validation (CycloneDX, vulnerabilities, licenses)</li>
+            <li><strong>provenance.rego</strong>: SLSA L3 provenance validation</li>
+          </ul>
+          <a href="/policies/policies.tar.gz" class="download-btn" download style="margin-top: 1rem;">Download All Policies</a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>📚 Documentation</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Security Policy</h3>
+            <p>Vulnerability disclosure and security practices</p>
+            <a href="/docs/security.md" class="download-btn">Read More</a>
+          </div>
+          <div class="card">
+            <h3>Privacy Policy</h3>
+            <p>Data handling, encryption, and retention</p>
+            <a href="/docs/privacy.md" class="download-btn">Read More</a>
+          </div>
+          <div class="card">
+            <h3>Verification Guide</h3>
+            <p>Step-by-step verification instructions</p>
+            <a href="/docs/verification.md" class="download-btn">Read More</a>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <p><strong>Atlas v2.0</strong> - End-to-End Encrypted Messaging</p>
+        <p style="margin-top: 0.5rem; font-size: 0.875rem;">
+          Built with ❤️ | Open Source | <a href="https://github.com/pussycat186/Atlas" style="color: #667eea;">GitHub</a>
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

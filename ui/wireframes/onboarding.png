@@ -1,0 +1,15 @@
+Onboarding Wireframe Placeholder
+
+[Image dimensions: 375x812px - Mobile viewport]
+
+This is a placeholder for the onboarding wireframe PNG.
+In production, this would be an actual PNG image showing:
+
+1. Atlas logo at top
+2. Welcome message
+3. Input field for username
+4. "Create Passkey" button
+5. Security features list at bottom
+
+The actual wireframe would be created using design tools like Figma or Sketch.
+File size target: < 500KB as per spec.

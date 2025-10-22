@@ -1,0 +1,61 @@
+# Pull Request Link
+
+**Branch:** `reboot/atlas-security-core`  
+**Target:** `main`  
+**Title:** Atlas v2 Security-Core (M0→M1 auto)
+
+## Manual PR Creation Link
+
+https://github.com/pussycat186/Atlas/pull/new/reboot/atlas-security-core
+
+## Instructions
+
+1. Click the link above
+2. GitHub will open the "Create Pull Request" page
+3. Set title: **Atlas v2 Security-Core (M0→M1 auto)**
+4. Copy content from `PR_DESCRIPTION.md` into the PR body
+5. Add labels: `area:security`, `type:feature`
+6. Request reviewers:
+   - @atlas-security (security review)
+   - @atlas-infra (infrastructure review)
+   - @atlas-backend (code review)
+7. Create PR
+
+## PR Body Content
+
+See: `PR_DESCRIPTION.md` (280+ lines comprehensive description)
+
+Key sections:
+- Changes Overview (crypto, auth, testing, infra)
+- Security Analysis (cryptographic soundness, properties achieved)
+- Testing Evidence (unit, E2E, performance)
+- Risk Assessment (low/medium/high with mitigation)
+- Deployment Plan (phased rollout)
+- Post-Merge Actions
+
+## Evidence Attachment
+
+Append content from `evidence/validation.txt` to PR body for complete audit trail.
+
+## Alternative: GitHub CLI (if available)
+
+```powershell
+# Install GitHub CLI
+winget install GitHub.cli
+
+# Authenticate
+gh auth login
+
+# Create PR
+gh pr create `
+  --base main `
+  --head reboot/atlas-security-core `
+  --title "Atlas v2 Security-Core (M0→M1 auto)" `
+  --body-file PR_DESCRIPTION.md `
+  --label "area:security,type:feature"
+```
+
+---
+
+**Generated:** 2025-10-21 01:52:40  
+**Auto-Execution Status:** Node.js blocker, manual PR creation required

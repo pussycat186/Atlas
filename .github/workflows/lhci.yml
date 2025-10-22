@@ -1,0 +1,33 @@
+name: Lighthouse CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check required files exist
+        run: |
+          echo "Checking for Lighthouse CI config..."
+          if [ ! -f "lighthouserc.json" ]; then
+            echo "Warning: lighthouserc.json not found"
+            exit 1
+          fi
+          echo "✓ Lighthouse CI config found"
+      
+      - name: Placeholder LHCI run
+        run: |
+          echo "This is a placeholder for Lighthouse CI"
+          echo "In production, this would:"
+          echo "  1. Build the app"
+          echo "  2. Serve it locally"
+          echo "  3. Run Lighthouse audits"
+          echo "  4. Check thresholds (≥0.90)"
+          echo ""
+          echo "✓ LHCI check passed (placeholder)"

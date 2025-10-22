@@ -1,0 +1,4 @@
+
+> @atlas/ui-primitives@0.1.0 build D:\Atlas\packages\ui-primitives
+> npx tsc -p tsconfig.json
+

@@ -1,0 +1,28 @@
+# Test Input: Valid Security Headers
+# Use: conftest test --policy policies/ --namespace atlas.security.headers test-headers.yaml
+
+headers:
+  content-security-policy:
+    value: "default-src 'self'; script-src 'self' 'strict-dynamic' 'nonce-{random}'; object-src 'none'; base-uri 'self'; require-trusted-types-for 'script'"
+    present: true
+  strict-transport-security:
+    value: "max-age=63072000; includeSubDomains; preload"
+    present: true
+  cross-origin-opener-policy:
+    value: "same-origin"
+    present: true
+  cross-origin-embedder-policy:
+    value: "require-corp"
+    present: true
+  x-content-type-options:
+    value: "nosniff"
+    present: true
+  x-frame-options:
+    value: "DENY"
+    present: true
+  referrer-policy:
+    value: "no-referrer"
+    present: true
+  permissions-policy:
+    value: "geolocation=(), microphone=(), camera=()"
+    present: true

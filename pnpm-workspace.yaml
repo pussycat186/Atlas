@@ -1,4 +1,6 @@
+# pnpm workspace configuration
+# Defines monorepo packages for Atlas v2
+
 packages:
-  - 'apps/*'
-  - 'services/*'
   - 'packages/*'
+  - 'services/*'

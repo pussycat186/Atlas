@@ -1,0 +1,4 @@
+
+> @atlas/fabric-client@0.1.0 build D:\Atlas\packages\fabric-client
+> npx tsc -b .
+

@@ -1,0 +1,18 @@
+metric,unit,quantity,unit_price_usd,monthly_cost_usd,note
+Cloud Run vCPU-seconds,vCPU-seconds,2592000,0.00002400,62.21,1 vCPU * 30 days * 86400 sec/day * $0.000024
+Cloud Run Memory GB-seconds,GB-seconds,1296000,0.00000250,3.24,512 MB * 30 days * 86400 sec/day * $0.0000025
+Cloud Run Requests,requests,10000000,0.00000040,4.00,10M requests/month * $0.0000004
+Cloud CDN,GB,1000,0.08000000,80.00,1 TB egress * $0.08/GB
+Cloud Load Balancer,hours,720,0.02500000,18.00,30 days * 24 hours * $0.025
+Firestore Storage,GB,50,0.18000000,9.00,50 GB * $0.18/GB
+Firestore Reads,reads,100000000,0.00000006,6.00,100M reads * $0.00000006
+Secret Manager,secret-versions,50,0.06000000,3.00,50 active secrets * $0.06
+Cloud Logging,GB,100,0.50000000,50.00,100 GB logs * $0.50/GB
+Cloud Monitoring,MB,10000,0.00025800,2.58,10k MB metrics * $0.000258/MB
+Total,,,,,237.03,Estimated monthly cost
+Canary Traffic (10%),,,,,23.70,Additional cost during canary (10% of total)
+備註,,,,,,"- CPU: 1 vCPU * 5 services * concurrency 80
+- Memory: 512 MB per container
+- Requests: Assuming 10M req/month across all services
+- CDN: 1 TB egress for media and static assets
+- Cold start mitigation: min instances = 0 (cost optimized)"
