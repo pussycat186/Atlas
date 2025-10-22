@@ -9,3 +9,26 @@ Target: main
 [✓] git status --porcelain (clean)
 [✓] git rev-parse --abbrev-ref HEAD = ga/merge-security-core-20251022-1618
 
+== PHASE B: CI INFRASTRUCTURE HARDENING ==
+[✓] Updated 107 workflow files to enforce pnpm@8.15.0
+[✓] Changed PNPM_VERSION env vars from '9' to '8.15.0'
+[✓] Updated pnpm/action-setup version specifications
+[✓] Updated Dockerfile in GCP migration workflow
+[✓] Committed: 43173f9 - chore(ci): enforce pnpm@8.15.0 across all workflows
+[✓] Committed: c38061f - docs: add GA final run session log and helper scripts
+[✓] Pushed to PR branch
+
+== PHASE D: VERCEL PREVIEW READINESS ==
+✅ All Next.js apps already have:
+   - Security headers (8 headers: HSTS, CSP, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, COOP, COEP, CORP)
+   - JWKS endpoints at /.well-known/jwks.json
+   - Health check endpoints at /api/healthz
+
+Apps verified:
+  ✓ dev-portal (App Router, has security headers + JWKS + healthz)
+  ✓ admin-insights (App Router, has security headers + JWKS + healthz)
+  ✓ proof-messenger (App Router, has security headers + JWKS + healthz)
+  ✓ messenger (App Router, has security headers + JWKS + healthz)
+  ✓ verify (App Router, has security headers + JWKS + healthz)
+  - trust-portal (Vite app, not Next.js - separate deployment)
+
