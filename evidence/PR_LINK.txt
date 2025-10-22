@@ -6,7 +6,7 @@
 
 ## Manual PR Creation Link
 
-https://github.com/pussycat186/Atlas/pull/new/reboot/atlas-security-core
+https://github.com/pussycat186/Atlas/compare/main...ga/merge-security-core-20251022-1618?expand=1
 
 ## Instructions
 
