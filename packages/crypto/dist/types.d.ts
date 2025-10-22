@@ -65,8 +65,8 @@ export interface PQCConfig {
  * Error types cho crypto operations
  */
 export declare class CryptoError extends Error {
-    code: 'INVALID_KEY' | 'DECRYPTION_FAILED' | 'SIGNATURE_INVALID' | 'NONCE_REUSED' | 'EXPIRED';
+    code: 'INVALID_KEY' | 'DECRYPTION_FAILED' | 'SIGNATURE_INVALID' | 'NONCE_REUSED' | 'EXPIRED' | 'MAX_SKIP_EXCEEDED';
     details?: unknown;
-    constructor(message: string, code: 'INVALID_KEY' | 'DECRYPTION_FAILED' | 'SIGNATURE_INVALID' | 'NONCE_REUSED' | 'EXPIRED', details?: unknown);
+    constructor(message: string, code: 'INVALID_KEY' | 'DECRYPTION_FAILED' | 'SIGNATURE_INVALID' | 'NONCE_REUSED' | 'EXPIRED' | 'MAX_SKIP_EXCEEDED', details?: unknown);
 }
 //# sourceMappingURL=types.d.ts.map

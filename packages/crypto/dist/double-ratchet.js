@@ -4,6 +4,11 @@
 import sodium from 'libsodium-wrappers';
 import { CryptoError } from './types.js';
 /**
+ * Giới hạn số lượng message keys có thể skip (theo Signal Protocol spec)
+ * Prevents DoS attack bằng cách giới hạn số lượng skipped keys phải lưu
+ */
+const MAX_SKIP = 1000;
+/**
  * Khởi tạo session với Alice (người khởi tạo)
  * @param bobPublicKey - Bob's initial X25519 public key
  * @param sharedSecret - Pre-shared secret từ X3DH handshake (32 bytes)
@@ -22,6 +27,7 @@ export async function initAlice(bobPublicKey, sharedSecret) {
         sendChain: { key: sendingKey, index: 0 },
         recvChain: { key: new Uint8Array(32), index: 0 },
         receivedMessages: new Set(),
+        skippedKeys: new Map(),
         sessionId: sodium.to_hex(sodium.randombytes_buf(16)),
         createdAt: Date.now()
     };
@@ -42,6 +48,7 @@ export async function initBob(dhPrivateKey, sharedSecret) {
         sendChain: { key: new Uint8Array(32), index: 0 },
         recvChain: { key: receivingKey, index: 0 },
         receivedMessages: new Set(),
+        skippedKeys: new Map(),
         sessionId: sodium.to_hex(sodium.randombytes_buf(16)),
         createdAt: Date.now()
     };
@@ -84,7 +91,7 @@ export async function encrypt(state, plaintext) {
     };
 }
 /**
- * Giải mã encrypted message
+ * Giải mã encrypted message với hỗ trợ out-of-order delivery
  * @param state - Current ratchet state
  * @param encrypted - Encrypted message cần giải mã
  * @returns Decrypted plaintext + updated state
@@ -95,9 +102,48 @@ export async function decrypt(state, encrypted) {
     if (state.receivedMessages.has(encrypted.sequence)) {
         throw new CryptoError('Message replayed', 'NONCE_REUSED', { sequence: encrypted.sequence });
     }
-    // Derive message key từ receiving chain
-    const messageKey = await deriveKey(state.recvChain.key, new Uint8Array(32), 'message-key');
-    const newChainKey = await deriveKey(state.recvChain.key, new Uint8Array(32), 'chain-key');
+    // Kiểm tra xem message key đã được skip trước đó chưa
+    const skippedKeyId = `${encrypted.sequence}`;
+    const skippedKey = state.skippedKeys.get(skippedKeyId);
+    let messageKey;
+    let newChainKey;
+    let newChainIndex;
+    if (skippedKey) {
+        // Message đã được skip trước đó, dùng saved key
+        messageKey = skippedKey;
+        newChainKey = state.recvChain.key;
+        newChainIndex = state.recvChain.index;
+        // Xóa skipped key sau khi dùng
+        const newSkippedKeys = new Map(state.skippedKeys);
+        newSkippedKeys.delete(skippedKeyId);
+        state = { ...state, skippedKeys: newSkippedKeys };
+    }
+    else if (encrypted.sequence > state.recvChain.index) {
+        // Out-of-order: message trong tương lai, cần skip intermediate keys
+        const skipCount = encrypted.sequence - state.recvChain.index;
+        if (skipCount > MAX_SKIP) {
+            throw new CryptoError(`Too many skipped messages: ${skipCount} > ${MAX_SKIP}`, 'MAX_SKIP_EXCEEDED', { skipCount, maxSkip: MAX_SKIP });
+        }
+        // Lưu tất cả intermediate message keys
+        const newSkippedKeys = new Map(state.skippedKeys);
+        let chainKey = state.recvChain.key;
+        for (let i = state.recvChain.index; i < encrypted.sequence; i++) {
+            const intermediateKey = await deriveKey(chainKey, new Uint8Array(32), 'message-key');
+            newSkippedKeys.set(`${i}`, intermediateKey); // Key just by sequence number
+            chainKey = await deriveKey(chainKey, new Uint8Array(32), 'chain-key');
+        }
+        // Derive key cho current message
+        messageKey = await deriveKey(chainKey, new Uint8Array(32), 'message-key');
+        newChainKey = await deriveKey(chainKey, new Uint8Array(32), 'chain-key');
+        newChainIndex = encrypted.sequence + 1;
+        state = { ...state, skippedKeys: newSkippedKeys };
+    }
+    else {
+        // In-order message, decrypt bình thường
+        messageKey = await deriveKey(state.recvChain.key, new Uint8Array(32), 'message-key');
+        newChainKey = await deriveKey(state.recvChain.key, new Uint8Array(32), 'chain-key');
+        newChainIndex = state.recvChain.index + 1;
+    }
     try {
         // Giải mã với ChaCha20-Poly1305
         const ciphertext = sodium.from_base64(encrypted.ciphertext, sodium.base64_variants.URLSAFE_NO_PADDING);
@@ -110,11 +156,11 @@ export async function decrypt(state, encrypted) {
             ...state,
             recvChain: {
                 key: newChainKey,
-                index: state.recvChain.index + 1
+                index: newChainIndex
             },
             receivedMessages: new Set([...state.receivedMessages, encrypted.sequence])
         };
-        // Xóa message key
+        // Xóa message key khỏi memory
         sodium.memzero(messageKey);
         return {
             plaintext: sodium.to_string(plaintextBytes),

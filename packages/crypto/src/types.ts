@@ -76,7 +76,7 @@ export interface PQCConfig {
 export class CryptoError extends Error {
   constructor(
     message: string,
-    public code: 'INVALID_KEY' | 'DECRYPTION_FAILED' | 'SIGNATURE_INVALID' | 'NONCE_REUSED' | 'EXPIRED',
+    public code: 'INVALID_KEY' | 'DECRYPTION_FAILED' | 'SIGNATURE_INVALID' | 'NONCE_REUSED' | 'EXPIRED' | 'MAX_SKIP_EXCEEDED',
     public details?: unknown
   ) {
     super(message);

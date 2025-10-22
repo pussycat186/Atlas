@@ -16,6 +16,7 @@ export interface RatchetState {
     sendChain: ChainKey;
     recvChain: ChainKey;
     receivedMessages: Set<number>;
+    skippedKeys: Map<string, Uint8Array>;
     sessionId: string;
     createdAt: number;
 }
@@ -42,7 +43,7 @@ export declare function encrypt(state: RatchetState, plaintext: string): Promise
     newState: RatchetState;
 }>;
 /**
- * Giải mã encrypted message
+ * Giải mã encrypted message với hỗ trợ out-of-order delivery
  * @param state - Current ratchet state
  * @param encrypted - Encrypted message cần giải mã
  * @returns Decrypted plaintext + updated state
