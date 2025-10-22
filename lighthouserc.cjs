@@ -1,12 +1,20 @@
+// Lighthouse CI Configuration for Atlas GA
+// Uses Cloud Run URLs (to be set via environment or locally served apps)
+
 module.exports = {
   ci: {
     collect: {
+      // URLs will be set dynamically via LHCI_SERVER_BASE_URL environment variable
+      // or during local development via http://localhost:<port>
       url: [
-        'https://atlas-proof-messenger.vercel.app/prism',
-        'https://atlas-admin-insights.vercel.app/prism',
-        'https://atlas-dev-portal.vercel.app/prism'
+        process.env.LHCI_URL_PROOF || 'http://localhost:3000',
+        process.env.LHCI_URL_ADMIN || 'http://localhost:3001',
+        process.env.LHCI_URL_DEV || 'http://localhost:3002'
       ],
-      numberOfRuns: 3
+      numberOfRuns: 3,
+      settings: {
+        chromeFlags: '--no-sandbox --disable-dev-shm-usage'
+      }
     },
     assert: {
       assertions: {

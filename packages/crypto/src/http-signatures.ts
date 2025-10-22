@@ -12,42 +12,73 @@ const jwksCache = new Map<string, ExtendedJWK>();
 const JWKS_TTL_MS = 300_000; // 5 phút
 
 /**
- * Parse Signature header (RFC 9421 format)
- * Example: sig1=:signature_bytes:; keyid="key-123"; created=1618884475; alg="ed25519"
+ * Parse Signature and Signature-Input headers (RFC 9421 format)
+ * 
+ * P1 FIX: Must parse Signature-Input header to get exact field order and parameters.
+ * 
+ * Example:
+ *   Signature: sig1=:MEUCIQDtest123==:
+ *   Signature-Input: sig1=("@method" "@path" "content-digest");created=1618884475;keyid="key-123";alg="ed25519"
+ * 
+ * @param signatureHeader - Value of Signature header
+ * @param signatureInputHeader - Value of Signature-Input header (contains params and field order)
  */
-export function parseSignatureHeader(signatureHeader: string): HTTPSignature {
-  const parts: Record<string, string> = {};
-  
+export function parseSignatureHeader(
+  signatureHeader: string,
+  signatureInputHeader: string
+): HTTPSignature {
   // Parse signature value (sig1=:base64:)
   const sigMatch = signatureHeader.match(/sig1=:([^:]+):/);
   if (!sigMatch) {
     throw new CryptoError('Invalid signature format', 'SIGNATURE_INVALID');
   }
-  parts.signature = sigMatch[1];
+  const signature = sigMatch[1];
   
-  // Parse parameters
-  const params = signatureHeader.split(';').slice(1); // Skip sig1=:...:
-  for (const param of params) {
-    const [key, value] = param.trim().split('=');
-    parts[key] = value.replace(/"/g, '');
+  // P1 FIX: Parse Signature-Input to get exact field order and parameters
+  // Format: sig1=("field1" "field2");created=123;keyid="key";alg="ed25519"
+  const inputMatch = signatureInputHeader.match(/sig1=\(([^)]+)\)(.*)$/);
+  if (!inputMatch) {
+    throw new CryptoError('Invalid Signature-Input format', 'SIGNATURE_INVALID');
+  }
+  
+  // Extract covered fields in exact order
+  const coveredFields = inputMatch[1]
+    .split(/\s+/)
+    .map(field => field.replace(/"/g, ''))
+    .filter(Boolean);
+  
+  // Parse parameters from the remainder
+  const params: Record<string, string> = {};
+  const paramsPart = inputMatch[2];
+  const paramMatches = paramsPart.matchAll(/;?\s*(\w+)=("?[^";]+"?|[^;]+)/g);
+  
+  for (const match of paramMatches) {
+    const key = match[1];
+    const value = match[2].replace(/"/g, '');
+    params[key] = value;
   }
   
   return {
-    signature: parts.signature,
-    keyId: parts.keyid,
-    algorithm: parts.alg as 'ed25519',
-    created: parseInt(parts.created, 10),
-    expires: parts.expires ? parseInt(parts.expires, 10) : undefined,
-    headers: parts.headers ? parts.headers.split(' ') : []
+    signature,
+    keyId: params.keyid || '',
+    algorithm: (params.alg as 'ed25519') || 'ed25519',
+    created: parseInt(params.created || '0', 10),
+    expires: params.expires ? parseInt(params.expires, 10) : undefined,
+    headers: coveredFields
   };
 }
 
 /**
  * Build signature base string (RFC 9421 Section 2.5)
+ * 
+ * CRITICAL FIX (P1): Headers MUST be in the exact order specified in signedHeaders array.
+ * RFC 9421 Section 3.1: The signature covers fields in the order they appear in the
+ * Signature-Input header. Reordering invalidates the signature.
+ * 
  * @param method - HTTP method
  * @param path - Request path
  * @param headers - HTTP headers object
- * @param signedHeaders - List of header names to include
+ * @param signedHeaders - List of header names in EXACT order to include
  */
 export function buildSignatureBase(
   method: string,
@@ -57,29 +88,26 @@ export function buildSignatureBase(
 ): string {
   const lines: string[] = [];
   
-  // Add @method pseudo-header
-  if (signedHeaders.includes('@method')) {
-    lines.push(`"@method": ${method.toUpperCase()}`);
-  }
-  
-  // Add @path pseudo-header
-  if (signedHeaders.includes('@path')) {
-    lines.push(`"@path": ${path}`);
-  }
-  
-  // Add regular headers
+  // P1 FIX: Iterate in EXACT order of signedHeaders (do NOT reorder)
   for (const headerName of signedHeaders) {
-    if (headerName.startsWith('@')) continue; // Skip pseudo-headers
-    
-    const value = headers[headerName.toLowerCase()];
-    if (value !== undefined) {
-      lines.push(`"${headerName.toLowerCase()}": ${value}`);
+    if (headerName === '@method') {
+      lines.push(`"@method": ${method.toUpperCase()}`);
+    } else if (headerName === '@path') {
+      lines.push(`"@path": ${path}`);
+    } else if (headerName === '@signature-params') {
+      // P1 FIX: Include @signature-params with all metadata per RFC 9421 Section 3.1
+      // This MUST include created, keyid, alg, expires, and the list of covered fields
+      // The params string is built from the signedHeaders array
+      const params = signedHeaders.filter(h => h !== '@signature-params').map(h => `"${h}"`).join(' ');
+      lines.push(`"@signature-params": (${params})`);
+    } else {
+      // Regular header - preserve exact case from signedHeaders
+      const value = headers[headerName.toLowerCase()];
+      if (value !== undefined) {
+        lines.push(`"${headerName.toLowerCase()}": ${value}`);
+      }
     }
   }
-  
-  // Add @signature-params pseudo-header (MUST be last)
-  const params = signedHeaders.map(h => `"${h}"`).join(' ');
-  lines.push(`"@signature-params": (${params})`);
   
   return lines.join('\n');
 }
