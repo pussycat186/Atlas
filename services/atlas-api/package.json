@@ -1,0 +1,26 @@
+{
+  "name": "@atlas/api",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc && esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --platform=node --target=esnext --external:cloudflare:*",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^1.7.1",
+    "@noble/hashes": "^1.3.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.2.2",
+    "vitest": "^1.0.0",
+    "wrangler": "^3.80.0"
+  }
+}
