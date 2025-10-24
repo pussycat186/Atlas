@@ -1,83 +1,163 @@
-# Pull Request: Atlas v2 Security-Core (Agent-First)
+# Atlas Messenger — Complete Cloudflare Migration ✅# Pull Request: Atlas v2 Security-Core (Agent-First)
 
-## 📋 Summary
 
-This PR introduces a complete scaffold for Atlas Messenger v2, rebuilt from scratch on an orphan branch with an **Agent-First** and **Security-Core** architecture. This is a clean slate rebuild that replaces the existing codebase while preserving repository secrets.
 
-**Branch**: `reboot/atlas-security-core` → `main`  
+## Summary## 📋 Summary
+
+
+
+Complete end-to-end migration of Atlas Messenger to Cloudflare-only infrastructure. Production-ready E2EE messaging platform with RFC 9421/9449 compliance, full PWA, and automated quality gates.This PR introduces a complete scaffold for Atlas Messenger v2, rebuilt from scratch on an orphan branch with an **Agent-First** and **Security-Core** architecture. This is a clean slate rebuild that replaces the existing codebase while preserving repository secrets.
+
+
+
+## Deliverables**Branch**: `reboot/atlas-security-core` → `main`  
+
 **Type**: Major architectural change (M0 scaffold)  
-**Status**: ✅ Ready for Review
 
----
+✅ **Backend**: Cloudflare Workers (atlas-api)  **Status**: ✅ Ready for Review
 
-## 🎯 Objectives
+✅ **Frontend**: Next.js PWA on Pages (messenger-web)  
+
+✅ **Infrastructure**: KV + D1 + R2  ---
+
+✅ **Security**: CSP, HSTS, COOP, COEP, Trusted Types  
+
+✅ **CI/CD**: Automated deploy + gates  ## 🎯 Objectives
+
+✅ **Documentation**: INVENTORY, RUNBOOKS, TRUST
 
 1. **Agent-First Development**: All code is designed to be built and verified by autonomous agents with guardrails
-2. **Security-Core**: Security is the foundation, not an afterthought
+
+## Live URLs (After Deploy)2. **Security-Core**: Security is the foundation, not an afterthought
+
 3. **E2EE First**: End-to-end encryption is mandatory, not optional
-4. **Verifiable Trust**: Public receipts, JWKS, SBOM, SLSA provenance, Cosign signatures
-5. **Vietnamese-First**: All documentation and code comments in Vietnamese
 
----
+- **Pages**: https://atlas-messenger.pages.dev4. **Verifiable Trust**: Public receipts, JWKS, SBOM, SLSA provenance, Cosign signatures
 
-## 📦 What's Included
+- **Workers**: https://atlas-api.workers.dev5. **Vietnamese-First**: All documentation and code comments in Vietnamese
 
-### 1. Master Specification
+
+
+## Files Changed---
+
+
+
+**Removed**:## 📦 What's Included
+
+- `infra/cloud-run/` - GCP configs
+
+- `.github/workflows/dns-pages.yml` - DOMAINS_JSON workflow### 1. Master Specification
+
 - **`/atlas.md`**: Complete 26-section specification covering:
-  - Product vision and competitive positioning
-  - Threat model and security architecture
-  - Cryptography stack (Double Ratchet, MLS, RFC 9421, RFC 9449)
-  - Web hardening (CSP, HSTS, COOP, COEP)
-  - Anti-abuse (PoW, rate limiting, reputation)
-  - CI/CD gates and Definition of Done
-  - Agent-First workflow and guardrails
 
-### 2. Cryptography Stubs (`/crypto/`)
+**Added**:  - Product vision and competitive positioning
+
+- `infra/cloudflare/` - Complete Cloudflare setup  - Threat model and security architecture
+
+- `services/atlas-api/` - Workers backend (JWKS, verify, DPoP, messages, health)  - Cryptography stack (Double Ratchet, MLS, RFC 9421, RFC 9449)
+
+- `apps/messenger-web/` - Next.js PWA (7 screens, VN-first, a11y AA)  - Web hardening (CSP, HSTS, COOP, COEP)
+
+- `.github/workflows/` - 4 CI workflows  - Anti-abuse (PoW, rate limiting, reputation)
+
+- `tests/` - Playwright + k6 + Lighthouse  - CI/CD gates and Definition of Done
+
+- `docs/` - INVENTORY, RUNBOOKS, TRUST  - Agent-First workflow and guardrails
+
+
+
+## Deployment### 2. Cryptography Stubs (`/crypto/`)
+
 - **`double-ratchet.ts`**: Double Ratchet implementation stub with Vietnamese comments
-  - Forward Secrecy (FS) and Post-Compromise Security (PCS)
-  - X25519 key exchange, HKDF derivation, AEAD encryption
-- **`dpop.ts`**: DPoP (RFC 9449) proof generation and verification
-  - Anti-replay with JTI tracking
+
+### 1. Provision  - Forward Secrecy (FS) and Post-Compromise Security (PCS)
+
+```bash  - X25519 key exchange, HKDF derivation, AEAD encryption
+
+gh workflow run provision.yml -f create_resources=true- **`dpop.ts`**: DPoP (RFC 9449) proof generation and verification
+
+```  - Anti-replay with JTI tracking
+
   - JWT-based proof-of-possession
-- **`http-signature-verify.ts`**: HTTP Message Signatures (RFC 9421)
-  - Receipt verification with JWKS lookup
-  - PQC algorithm support (future)
-- **`tests/double-ratchet.test.ts`**: Unit test skeleton
 
-### 3. Architecture Diagrams (`/diagrams/`)
-- **`mls-sequence.svg`**: MLS (RFC 9420) sequence diagram showing TreeKEM and epochs
-- **`architecture-overview.svg`**: Complete system architecture (client, gateway, services, infra)
+### 2. Deploy- **`http-signature-verify.ts`**: HTTP Message Signatures (RFC 9421)
 
-### 4. UI Components (`/ui/`)
-- **`components/OnboardingPasskey.tsx`**: Passkey/WebAuthn onboarding flow
-- **`components/ChatView.tsx`**: Chat interface with E2EE indicators and lock badge tap-to-verify
-- **`components/VerifyPortal.tsx`**: Trust Portal for receipt verification with QR scan
+```bash  - Receipt verification with JWKS lookup
+
+# Workers  - PQC algorithm support (future)
+
+cd services/atlas-api && wrangler deploy- **`tests/double-ratchet.test.ts`**: Unit test skeleton
+
+
+
+# Pages### 3. Architecture Diagrams (`/diagrams/`)
+
+cd apps/messenger-web && wrangler pages deploy .vercel/output/static- **`mls-sequence.svg`**: MLS (RFC 9420) sequence diagram showing TreeKEM and epochs
+
+```- **`architecture-overview.svg`**: Complete system architecture (client, gateway, services, infra)
+
+
+
+### 3. Verify### 4. UI Components (`/ui/`)
+
+```bash- **`components/OnboardingPasskey.tsx`**: Passkey/WebAuthn onboarding flow
+
+curl https://atlas-api.workers.dev/healthz- **`components/ChatView.tsx`**: Chat interface with E2EE indicators and lock badge tap-to-verify
+
+```- **`components/VerifyPortal.tsx`**: Trust Portal for receipt verification with QR scan
+
 - **`components/SettingsPanel.tsx`**: Settings with PQC toggle, JWKS rotation, privacy controls
-- **`styles/tokens.json`**: Design tokens (colors #0A2540/#00D4AA, typography, spacing)
+
+## Quality Gates- **`styles/tokens.json`**: Design tokens (colors #0A2540/#00D4AA, typography, spacing)
+
 - **`a11y-checklist.md`**: WCAG 2.1 Level AA compliance checklist
-- **`wireframes/`**: Placeholder wireframes for all screens
 
-### 5. API Specification (`/api/`)
-- **`openapi.yaml`**: OpenAPI 3.1 specification with:
+- ✅ **Headers**: CSP, HSTS, COOP, COEP enforced- **`wireframes/`**: Placeholder wireframes for all screens
+
+- ✅ **Playwright**: Smoke tests pass (onboarding → verify)
+
+- ⏳ **k6**: 500 RPS/60s (pending production URL)### 5. API Specification (`/api/`)
+
+- ⏳ **Lighthouse**: Perf ≥0.9, A11y ≥0.95 (pending Pages)- **`openapi.yaml`**: OpenAPI 3.1 specification with:
+
   - `POST /messages`: Send E2EE messages
-  - `GET /receipts/{id}`: Fetch receipts
+
+## Rollback  - `GET /receipts/{id}`: Fetch receipts
+
   - `POST /verify`: Verify receipt signatures
-  - `GET /.well-known/jwks.json`: Public JWKS
-  - `POST /dpop/nonce`: Get DPoP nonce
-  - Complete schemas: Envelope, Receipt, JWKS, Error
-- **`README.md`**: API usage guide with curl examples
 
-### 6. Microservices (`/services/`)
+```bash  - `GET /.well-known/jwks.json`: Public JWKS
+
+wrangler pages deployment list --project-name=atlas-messenger  - `POST /dpop/nonce`: Get DPoP nonce
+
+wrangler pages deployment promote <previous-id>  - Complete schemas: Envelope, Receipt, JWKS, Error
+
+```- **`README.md`**: API usage guide with curl examples
+
+
+
+## Documentation### 6. Microservices (`/services/`)
+
 Documentation stubs for:
-- **chat-delivery**: Message routing and receipt generation
-- **key-directory**: JWKS hosting and key rotation
-- **identity**: User management and Passkey registry
-- **media**: E2EE attachment handling
-- **risk-guard**: Anti-abuse and reputation scoring
 
-### 7. Infrastructure (`/infra/cloud-run/`)
-Cloud Run YAML configs for all services:
-- CPU: 1, Memory: 512Mi
+- [`docs/INVENTORY.md`](./docs/INVENTORY.md) - Changes & issues- **chat-delivery**: Message routing and receipt generation
+
+- [`docs/RUNBOOKS.md`](./docs/RUNBOOKS.md) - Operations- **key-directory**: JWKS hosting and key rotation
+
+- [`docs/TRUST.md`](./docs/TRUST.md) - Security & compliance- **identity**: User management and Passkey registry
+
+- **media**: E2EE attachment handling
+
+---- **risk-guard**: Anti-abuse and reputation scoring
+
+
+
+**Ready to merge** ✅  ### 7. Infrastructure (`/infra/cloud-run/`)
+
+**Commit**: d17dc7c  Cloud Run YAML configs for all services:
+
+**Date**: 2025-10-25- CPU: 1, Memory: 512Mi
+
 - Autoscaling: min 0, max 3
 - Concurrency: 80, Timeout: 300s
 - Environment variables with Secret Manager refs
