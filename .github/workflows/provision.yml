@@ -1,0 +1,87 @@
+name: Provision Cloudflare Resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      create_resources:
+        description: 'Create KV/D1/R2 resources'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    name: Provision Resources
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install wrangler
+        run: pnpm add -g wrangler
+
+      - name: Create KV Namespaces
+        if: inputs.create_resources
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Creating KV namespaces..."
+          wrangler kv:namespace create JWKS || true
+          wrangler kv:namespace create DPOP_NONCE || true
+          wrangler kv:namespace create IDEMPOTENCY || true
+          wrangler kv:namespace create RATE_LIMIT || true
+
+      - name: Create D1 Database
+        if: inputs.create_resources
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Creating D1 database..."
+          wrangler d1 create atlas || true
+
+      - name: Create R2 Bucket
+        if: inputs.create_resources
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Creating R2 bucket..."
+          wrangler r2 bucket create atlas-media || true
+
+      - name: Run D1 Migrations
+        if: inputs.create_resources
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Running migrations..."
+          cd services/atlas-api
+          wrangler d1 migrations apply atlas --remote || true
+
+      - name: Generate JWKS
+        run: |
+          cd infra/cloudflare/seed
+          pnpm install
+          npx tsx seed_jwks.ts > jwks_output.txt
+          cat jwks_output.txt
+
+      - name: Upload provision logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: provision-logs
+          path: |
+            infra/cloudflare/seed/jwks_output.txt
+          retention-days: 30

@@ -1,0 +1,75 @@
+name: Deploy Workers (atlas-api)
+
+on:
+  push:
+    branches:
+      - main
+      - reboot/atlas-security-core
+    paths:
+      - 'services/atlas-api/**'
+      - 'infra/cloudflare/**'
+      - '.github/workflows/workers-deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Workers
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd services/atlas-api
+          pnpm install
+
+      - name: Type check
+        run: |
+          cd services/atlas-api
+          pnpm run type-check
+
+      - name: Build
+        run: |
+          cd services/atlas-api
+          pnpm run build
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          workingDirectory: services/atlas-api
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -f https://atlas-api.workers.dev/healthz || exit 1
+
+      - name: Create deployment artifact
+        if: success()
+        run: |
+          echo "Deployed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)" > deployment.txt
+          echo "Commit: ${{ github.sha }}" >> deployment.txt
+          echo "Worker URL: https://atlas-api.workers.dev" >> deployment.txt
+
+      - name: Upload deployment artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workers-deployment
+          path: deployment.txt
+          retention-days: 90

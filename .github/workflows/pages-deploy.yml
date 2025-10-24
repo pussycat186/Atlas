@@ -1,0 +1,68 @@
+name: Deploy Pages (messenger-web)
+
+on:
+  push:
+    branches:
+      - main
+      - reboot/atlas-security-core
+    paths:
+      - 'apps/messenger-web/**'
+      - '.github/workflows/pages-deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Pages
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd apps/messenger-web
+          pnpm install
+
+      - name: Type check
+        run: |
+          cd apps/messenger-web
+          pnpm run type-check
+
+      - name: Build for Cloudflare Pages
+        run: |
+          cd apps/messenger-web
+          pnpm run pages:build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/messenger-web/.vercel/output/static --project-name=atlas-messenger
+
+      - name: Create deployment artifact
+        if: success()
+        run: |
+          echo "Deployed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)" > deployment.txt
+          echo "Commit: ${{ github.sha }}" >> deployment.txt
+          echo "Pages URL: https://atlas-messenger.pages.dev" >> deployment.txt
+
+      - name: Upload deployment artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-deployment
+          path: deployment.txt
+          retention-days: 90
