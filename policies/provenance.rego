@@ -41,10 +41,9 @@ deny[msg] {
   msg := "Provenance missing builder.id (required for SLSA)"
 }
 
-# Deny nếu builder không phải trusted CI (GitHub Actions, Cloud Build)
+# Deny nếu builder không phải trusted CI (GitHub Actions)
 trusted_builders := [
   "https://github.com/actions/runner",
-  "https://cloudbuild.googleapis.com",
   "https://github.com/slsa-framework/slsa-github-generator"
 ]
 
