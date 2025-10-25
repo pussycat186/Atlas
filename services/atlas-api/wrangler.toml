@@ -1,0 +1,54 @@
+# Cloudflare Workers Configuration for Atlas API
+# This is a template. CI/CD will inject actual namespace/database IDs.
+
+name = "atlas-api"
+main = "src/index.ts"
+compatibility_date = "2025-10-25"
+node_compat = true
+
+# Workers AI/Bindings
+# KV Namespaces - IDs injected by CI
+[[kv_namespaces]]
+binding = "JWKS"
+id = "__JWKS_NAMESPACE_ID__"
+preview_id = "__JWKS_NAMESPACE_ID__"
+
+[[kv_namespaces]]
+binding = "DPOP_NONCE"
+id = "__DPOP_NONCE_NAMESPACE_ID__"
+preview_id = "__DPOP_NONCE_NAMESPACE_ID__"
+
+[[kv_namespaces]]
+binding = "IDEMPOTENCY"
+id = "__IDEMPOTENCY_NAMESPACE_ID__"
+preview_id = "__IDEMPOTENCY_NAMESPACE_ID__"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "__RATE_LIMIT_NAMESPACE_ID__"
+preview_id = "__RATE_LIMIT_NAMESPACE_ID__"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "atlas"
+database_id = "__D1_DATABASE_ID__"
+preview_database_id = "__D1_DATABASE_ID__"
+
+# R2 Storage
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "atlas-media"
+preview_bucket_name = "atlas-media"
+
+# Environment Variables (non-secret)
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+
+# Build configuration
+[build]
+command = "npm run build"
+
+[build.upload]
+format = "service-worker"
