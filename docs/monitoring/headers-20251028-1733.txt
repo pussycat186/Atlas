@@ -1,0 +1,10 @@
+ATLAS Security Headers Validation
+Timestamp: 2025-10-28T17:33:31+00:00
+==========================================
+
+Checking: https://atlas-admin-insights.vercel.app/prism
+❌ FAILED: Could not fetch headers
+Checking: https://atlas-dev-portal.vercel.app/prism
+❌ FAILED: Could not fetch headers
+Checking: https://atlas-proof-messenger.vercel.app/prism
+❌ FAILED: Could not fetch headers
