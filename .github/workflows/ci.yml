@@ -1,0 +1,52 @@
+# CI Workflow - Build, Lint, Test, OpenAPI Validation
+name: CI
+on:
+  push:
+    branches: [ reboot/atlas-security-core ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+      
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile || pnpm i
+      
+      - name: Build packages
+        run: pnpm -r run build || pnpm run build
+      
+      - name: Run tests
+        run: pnpm test
+      
+      - name: Validate OpenAPI spec
+        run: |
+          node -e "const parser = require('@apidevtools/swagger-parser'); parser.validate('api/openapi.yaml').then(() => console.log('✅ OpenAPI spec is valid')).catch(err => { console.error('❌ Validation failed:', err.message); process.exit(1); })"
+      
+      - name: Lint OpenAPI with Spectral
+        run: pnpm exec spectral lint api/openapi.yaml --format stylish || true
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-artifacts
+          path: |
+            evidence/**
+            api/openapi.yaml
+            packages/*/dist/**

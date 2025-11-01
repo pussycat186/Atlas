@@ -1,0 +1,238 @@
+// Atlas Security-Core: Double Ratchet Implementation
+// Triển khai E2EE 1-1 messaging với Forward Secrecy + Post-Compromise Security
+// Dựa trên Signal Protocol, sử dụng Web Crypto API + libsodium
+import sodium from 'libsodium-wrappers';
+import { CryptoError } from './types.js';
+/**
+ * Giới hạn số lượng message keys có thể skip (theo Signal Protocol spec)
+ * Prevents DoS attack bằng cách giới hạn số lượng skipped keys phải lưu
+ */
+const MAX_SKIP = 1000;
+/**
+ * Khởi tạo session với Alice (người khởi tạo)
+ * @param bobPublicKey - Bob's initial X25519 public key
+ * @param sharedSecret - Pre-shared secret từ X3DH handshake (32 bytes)
+ */
+export async function initAlice(bobPublicKey, sharedSecret) {
+    await sodium.ready;
+    // Tạo DH key pair cho Alice
+    const dhKeyPair = sodium.crypto_box_keypair();
+    // Derive root key và sending chain từ shared secret
+    const rootKey = await deriveKey(sharedSecret, new Uint8Array(32), 'root-init');
+    const sendingKey = await deriveKey(sharedSecret, new Uint8Array(32), 'sending-init');
+    return {
+        dhSend: dhKeyPair.privateKey,
+        dhRecv: bobPublicKey,
+        rootKey,
+        sendChain: { key: sendingKey, index: 0 },
+        recvChain: { key: new Uint8Array(32), index: 0 },
+        receivedMessages: new Set(),
+        skippedKeys: new Map(),
+        sessionId: sodium.to_hex(sodium.randombytes_buf(16)),
+        createdAt: Date.now()
+    };
+}
+/**
+ * Khởi tạo session với Bob (người nhận)
+ * @param dhPrivateKey - Bob's X25519 private key
+ * @param sharedSecret - Pre-shared secret từ X3DH handshake
+ */
+export async function initBob(dhPrivateKey, sharedSecret) {
+    await sodium.ready;
+    const rootKey = await deriveKey(sharedSecret, new Uint8Array(32), 'root-init');
+    const receivingKey = await deriveKey(sharedSecret, new Uint8Array(32), 'sending-init');
+    return {
+        dhSend: dhPrivateKey,
+        dhRecv: null, // Chưa nhận Alice's public key
+        rootKey,
+        sendChain: { key: new Uint8Array(32), index: 0 },
+        recvChain: { key: receivingKey, index: 0 },
+        receivedMessages: new Set(),
+        skippedKeys: new Map(),
+        sessionId: sodium.to_hex(sodium.randombytes_buf(16)),
+        createdAt: Date.now()
+    };
+}
+/**
+ * Mã hóa plaintext message
+ * @param state - Current ratchet state
+ * @param plaintext - Message cần mã hóa (UTF-8 string)
+ * @returns Encrypted message + updated state
+ */
+export async function encrypt(state, plaintext) {
+    await sodium.ready;
+    // Derive message key từ sending chain
+    const messageKey = await deriveKey(state.sendChain.key, new Uint8Array(32), 'message-key');
+    const newChainKey = await deriveKey(state.sendChain.key, new Uint8Array(32), 'chain-key');
+    // Mã hóa với ChaCha20-Poly1305 (libsodium default AEAD)
+    const nonce = sodium.randombytes_buf(sodium.crypto_aead_chacha20poly1305_ietf_NPUBBYTES);
+    const plaintextBytes = sodium.from_string(plaintext);
+    const ciphertext = sodium.crypto_aead_chacha20poly1305_ietf_encrypt(plaintextBytes, null, // No additional data
+    null, // Secret nonce (null = use provided nonce)
+    nonce, messageKey);
+    // Update sending chain
+    const newState = {
+        ...state,
+        sendChain: {
+            key: newChainKey,
+            index: state.sendChain.index + 1
+        }
+    };
+    // Xóa message key khỏi memory (security best practice)
+    sodium.memzero(messageKey);
+    return {
+        encrypted: {
+            ciphertext: sodium.to_base64(ciphertext, sodium.base64_variants.URLSAFE_NO_PADDING),
+            nonce: sodium.to_base64(nonce, sodium.base64_variants.URLSAFE_NO_PADDING),
+            sequence: state.sendChain.index,
+            timestamp: new Date().toISOString()
+        },
+        newState
+    };
+}
+/**
+ * Giải mã encrypted message với hỗ trợ out-of-order delivery
+ * @param state - Current ratchet state
+ * @param encrypted - Encrypted message cần giải mã
+ * @returns Decrypted plaintext + updated state
+ */
+export async function decrypt(state, encrypted) {
+    await sodium.ready;
+    // Replay protection: kiểm tra sequence number
+    if (state.receivedMessages.has(encrypted.sequence)) {
+        throw new CryptoError('Message replayed', 'NONCE_REUSED', { sequence: encrypted.sequence });
+    }
+    // Kiểm tra xem message key đã được skip trước đó chưa
+    const skippedKeyId = `${encrypted.sequence}`;
+    const skippedKey = state.skippedKeys.get(skippedKeyId);
+    let messageKey;
+    let newChainKey;
+    let newChainIndex;
+    if (skippedKey) {
+        // Message đã được skip trước đó, dùng saved key
+        messageKey = skippedKey;
+        newChainKey = state.recvChain.key;
+        newChainIndex = state.recvChain.index;
+        // Xóa skipped key sau khi dùng
+        const newSkippedKeys = new Map(state.skippedKeys);
+        newSkippedKeys.delete(skippedKeyId);
+        state = { ...state, skippedKeys: newSkippedKeys };
+    }
+    else if (encrypted.sequence > state.recvChain.index) {
+        // Out-of-order: message trong tương lai, cần skip intermediate keys
+        const skipCount = encrypted.sequence - state.recvChain.index;
+        if (skipCount > MAX_SKIP) {
+            throw new CryptoError(`Too many skipped messages: ${skipCount} > ${MAX_SKIP}`, 'MAX_SKIP_EXCEEDED', { skipCount, maxSkip: MAX_SKIP });
+        }
+        // Lưu tất cả intermediate message keys
+        const newSkippedKeys = new Map(state.skippedKeys);
+        let chainKey = state.recvChain.key;
+        for (let i = state.recvChain.index; i < encrypted.sequence; i++) {
+            const intermediateKey = await deriveKey(chainKey, new Uint8Array(32), 'message-key');
+            newSkippedKeys.set(`${i}`, intermediateKey); // Key just by sequence number
+            chainKey = await deriveKey(chainKey, new Uint8Array(32), 'chain-key');
+        }
+        // Derive key cho current message
+        messageKey = await deriveKey(chainKey, new Uint8Array(32), 'message-key');
+        newChainKey = await deriveKey(chainKey, new Uint8Array(32), 'chain-key');
+        newChainIndex = encrypted.sequence + 1;
+        state = { ...state, skippedKeys: newSkippedKeys };
+    }
+    else {
+        // In-order message, decrypt bình thường
+        messageKey = await deriveKey(state.recvChain.key, new Uint8Array(32), 'message-key');
+        newChainKey = await deriveKey(state.recvChain.key, new Uint8Array(32), 'chain-key');
+        newChainIndex = state.recvChain.index + 1;
+    }
+    try {
+        // Giải mã với ChaCha20-Poly1305
+        const ciphertext = sodium.from_base64(encrypted.ciphertext, sodium.base64_variants.URLSAFE_NO_PADDING);
+        const nonce = sodium.from_base64(encrypted.nonce, sodium.base64_variants.URLSAFE_NO_PADDING);
+        const plaintextBytes = sodium.crypto_aead_chacha20poly1305_ietf_decrypt(null, // Secret nonce
+        ciphertext, null, // No additional data
+        nonce, messageKey);
+        // Update receiving chain và replay protection
+        const newState = {
+            ...state,
+            recvChain: {
+                key: newChainKey,
+                index: newChainIndex
+            },
+            receivedMessages: new Set([...state.receivedMessages, encrypted.sequence])
+        };
+        // Xóa message key khỏi memory
+        sodium.memzero(messageKey);
+        return {
+            plaintext: sodium.to_string(plaintextBytes),
+            newState
+        };
+    }
+    catch (err) {
+        sodium.memzero(messageKey);
+        throw new CryptoError('Decryption failed', 'DECRYPTION_FAILED', err);
+    }
+}
+/**
+ * Thực hiện DH ratchet step khi nhận public key mới từ peer
+ * @param state - Current state
+ * @param theirPublicKey - Peer's new DH public key
+ */
+export async function ratchetStep(state, theirPublicKey) {
+    await sodium.ready;
+    // Tạo DH key pair mới
+    const newKeyPair = sodium.crypto_box_keypair();
+    // Tính DH shared secret với peer's public key
+    const dhOutput = sodium.crypto_scalarmult(state.dhSend, theirPublicKey);
+    // Derive new root key và receiving chain key
+    const newRootKey = await deriveKey(state.rootKey, dhOutput, 'root-ratchet');
+    const newRecvKey = await deriveKey(newRootKey, new Uint8Array(32), 'recv-chain');
+    // Derive new sending chain key
+    const dhOutput2 = sodium.crypto_scalarmult(newKeyPair.privateKey, theirPublicKey);
+    const newRootKey2 = await deriveKey(newRootKey, dhOutput2, 'root-ratchet-2');
+    const newSendKey = await deriveKey(newRootKey2, new Uint8Array(32), 'send-chain');
+    return {
+        ...state,
+        dhSend: newKeyPair.privateKey,
+        dhRecv: theirPublicKey,
+        rootKey: newRootKey2,
+        sendChain: { key: newSendKey, index: 0 },
+        recvChain: { key: newRecvKey, index: 0 }
+    };
+}
+/**
+ * Export public key hiện tại (để gửi cho peer)
+ */
+export function exportPublicKey(state) {
+    const publicKey = sodium.crypto_scalarmult_base(state.dhSend);
+    return {
+        kty: 'OKP',
+        crv: 'X25519',
+        x: sodium.to_base64(publicKey, sodium.base64_variants.URLSAFE_NO_PADDING),
+        use: 'enc',
+        kid: state.sessionId
+    };
+}
+// ============================================================================
+// Helper Functions
+// ============================================================================
+/**
+ * Derive key sử dụng HKDF-SHA256 (Web Crypto API)
+ * @param ikm - Input key material
+ * @param salt - Salt value
+ * @param info - Context information
+ */
+async function deriveKey(ikm, salt, info) {
+    // Import IKM as raw key
+    const key = await crypto.subtle.importKey('raw', ikm, // TS5.x ArrayBuffer/SharedArrayBuffer DOM types workaround
+    { name: 'HKDF' }, false, ['deriveBits']);
+    // Derive 32 bytes using HKDF-SHA256
+    const derivedBits = await crypto.subtle.deriveBits({
+        name: 'HKDF',
+        hash: 'SHA-256',
+        salt: salt,
+        info: new TextEncoder().encode(info)
+    }, key, 256 // 32 bytes = 256 bits
+    );
+    return new Uint8Array(derivedBits);
+}
+//# sourceMappingURL=double-ratchet.js.map

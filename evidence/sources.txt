@@ -1,0 +1,15 @@
+# Atlas Evidence - Sources
+
+No external network calls were made during scaffold generation.
+All content is based on:
+- RFC specifications (9421, 9449, 9420)
+- WCAG 2.1 guidelines
+- SLSA framework documentation
+- Sigstore/Cosign documentation
+- OpenAPI 3.1 specification
+
+All code and documentation were generated locally without browsing external websites.
+
+---
+
+**Ngày tạo**: 2025-10-21

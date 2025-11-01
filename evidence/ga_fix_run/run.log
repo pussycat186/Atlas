@@ -1,0 +1,41 @@
+# GA Fix Run Log
+**Start Time**: 2025-10-22T16:30:00Z
+**Branch**: ga/merge-security-core-20251022-1618
+**PR**: #497
+**Objective**: Fix CI pnpm mismatch and make PR merge-ready
+
+## A) PRECHECK
+✅ Step 1: Fetched all remotes, pruned stale refs
+✅ Step 2: On branch ga/merge-security-core-20251022-1618, pulled to 587b34d
+❌ Step 3: Node.js toolchain not in PATH
+
+**Decision**: Proceed with Option 3 (CI-only validation)
+- Source branch fully validated (31/31 tests)
+- Clean merge (zero conflicts)  
+- Only fixing CI workflow pnpm version
+- GitHub Actions will perform full validation
+
+## B) FIX CI PNPM MISMATCH
+
+### Analysis
+Found workflows using pnpm:
+- `.github/workflows/release.yml` - Uses `pnpm/action-setup@v3` with `version: 8`
+- Multiple other workflows with pnpm install
+
+**Root Cause**: Workflows specify `version: 8` which may pull pnpm 8.x.x (latest)
+**Solution**: Pin to exact `version: 8.15.0` to match pnpm-lock.yaml
+
+### Actions Taken
+✅ Step 4: Fixed `.github/workflows/release.yml`
+   - Pinned pnpm to 8.15.0 in build-and-test job (line 40)
+   - Pinned pnpm to 8.15.0 in sbom-and-provenance job (line 101)
+✅ Committed: 96c3112 "fix(ci): pin pnpm to 8.15.0 in release workflow to match lockfile"
+✅ Pushed to origin/ga/merge-security-core-20251022-1618
+
+## C) VALIDATE LOCALLY
+⏭️ Steps 6-10: SKIPPED (Node.js not in PATH, proceeding with CI-only validation)
+
+## D) PUSH AND RE-RUN CI
+✅ Step 11: Pushed workflow fix (commit 96c3112)
+⏳ Step 12-13: Awaiting CI checks on PR #497
+

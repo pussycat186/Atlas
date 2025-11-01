@@ -54,7 +54,7 @@ jobs:
           node-version: '20'
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.0.0
+          version: 8.15.0
       - run: |
           pnpm install --frozen-lockfile
           pnpm -w run tokens:build || echo "BLOCKER_SD_CONFIG"
@@ -99,7 +99,7 @@ jobs:
           node-version: '20'
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.0.0
+          version: 8.15.0
       - run: |
           set -euo pipefail
           if ! command -v jq >/dev/null; then sudo apt-get update -y && sudo apt-get install -y jq; fi
@@ -169,7 +169,7 @@ jobs:
           node-version: '20'
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.0.0
+          version: 8.15.0
       - run: |
           set -euo pipefail
           if ! command -v jq >/dev/null; then sudo apt-get update -y && sudo apt-get install -y jq; fi

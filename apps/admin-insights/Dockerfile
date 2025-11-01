@@ -1,6 +1,6 @@
 # Stage 1: Dependencies (shared layer for caching)
 FROM node:20-alpine AS deps
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
 WORKDIR /app
 
 # Copy package files for dependency installation
@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile --filter=@atlas/admin-insights...
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
 WORKDIR /app
 
 # Copy dependencies from deps stage
