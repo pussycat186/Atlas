@@ -1,0 +1,29 @@
+{
+  "timestamp": "20251101-030903",
+  "drill_type": "traffic_failover_simulation",
+  "parameters": {
+    "traffic_percentage": 10,
+    "duration_minutes": 30
+  },
+  "results": {
+    "pre_check": {
+      "primary_healthy": false
+    },
+    "failover": {
+      "success_rate_percent": 0,
+      "avg_response_time_ms": 0
+    },
+    "auto_revert": {
+      "triggered": false,
+      "reason": ""
+    }
+  },
+  "slo_compliance": {
+    "availability": 0,
+    "availability_target": 99.0,
+    "p95_ms": 0,
+    "p95_target": 500,
+    "status": "PASSED"
+  },
+  "next_drill": "2025-12-01"
+}
