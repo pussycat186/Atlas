@@ -1,0 +1,25 @@
+ATLAS Security Headers Validation
+Timestamp: 2025-11-11T11:48:18+00:00
+==========================================
+
+Checking: https://atlas-admin-insights.vercel.app/prism
+  ❌ CSP: Missing or no nonce
+  ❌ Trusted-Types: Missing
+  ❌ COOP: Missing
+  ❌ COEP: Missing
+  ✅ HSTS: Preload enabled
+
+Checking: https://atlas-dev-portal.vercel.app/prism
+  ❌ CSP: Missing or no nonce
+  ❌ Trusted-Types: Missing
+  ❌ COOP: Missing
+  ❌ COEP: Missing
+  ✅ HSTS: Preload enabled
+
+Checking: https://atlas-proof-messenger.vercel.app/prism
+  ❌ CSP: Missing or no nonce
+  ❌ Trusted-Types: Missing
+  ❌ COOP: Missing
+  ❌ COEP: Missing
+  ✅ HSTS: Preload enabled
+
