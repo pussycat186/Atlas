@@ -1,0 +1,16 @@
+Settings Panel Wireframe Placeholder
+
+[Image dimensions: 375x812px - Mobile viewport]
+
+This is a placeholder for the settings panel wireframe PNG.
+In production, this would show:
+
+1. Settings header
+2. PQC toggle switch
+3. JWKS rotation slider
+4. Privacy level selection (Low/Medium/High)
+5. Telemetry opt-out checkbox
+6. Eco-Score display
+7. Save button at bottom
+
+File size target: < 500KB as per spec.

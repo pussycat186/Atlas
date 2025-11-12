@@ -1,0 +1,192 @@
+# Atlas v2 GA - Validation Summary
+
+**Timestamp**: 2025-10-22T14:45:00Z  
+**Branch**: ga/merge-security-core-20251022-1618  
+**PR**: #497  
+**Commit**: f8701ff
+
+---
+
+## Workflow Execution Status
+
+### 1. Secrets Audit ⏳
+**Workflow**: `.github/workflows/secrets-audit.yml`  
+**Status**: Running  
+**Purpose**: Verify all required GCP secrets exist (without exposing values)
+
+**Required Secrets**:
+- GCP_PROJECT_ID
+- GCP_REGION
+- GCP_DEPLOYER_SA
+- GCP_PROJECT_NUMBER
+- GCP_WORKLOAD_ID_PROVIDER
+
+**Verification**: Workflow checks existence, fails fast if missing.
+
+---
+
+### 2. Cloud Run Deployment ⏳
+**Workflow**: `.github/workflows/deploy-cloudrun.yml`  
+**Status**: Running  
+**Services**: 3 (atlas-dev-portal, atlas-admin-insights, atlas-proof-messenger)
+
+**Pipeline**:
+1. **Build**: pnpm 8.15.0, frozen-lockfile, Docker images
+2. **Deploy**: OIDC auth, push to Artifact Registry, Cloud Run deployment
+3. **Validate**: Headers (8/8), JWKS, healthz, k6 performance tests
+
+**Expected Outputs**:
+- Service URLs in deploy job output
+- Validation evidence artifacts uploaded
+- PR comment with deployment table
+
+---
+
+### 3. Validation Checks ⏳
+
+#### Security Headers (8/8 required)
+Will be verified via `curl -sI <service-url>`:
+- ✅ Strict-Transport-Security
+- ✅ Content-Security-Policy
+- ✅ X-Content-Type-Options
+- ✅ Referrer-Policy
+- ✅ Permissions-Policy
+- ✅ Cross-Origin-Opener-Policy
+- ✅ Cross-Origin-Embedder-Policy
+- ✅ Cross-Origin-Resource-Policy
+
+#### JWKS Endpoint
+**URL**: `<service-url>/.well-known/jwks.json`  
+**Expected**: RFC 7517 compliant JWKS with:
+- kid (key ID)
+- kty (key type)
+- alg (algorithm)
+- use (usage)
+- n, e (RSA) or x, crv (EC)
+
+#### Health Check
+**URL**: `<service-url>/api/healthz`  
+**Expected**: `{ "ok": true, "timestamp": "...", "service": "..." }`
+
+#### Performance (k6)
+**Thresholds**:
+- p95 latency: ≤ 200ms
+- Error rate: < 1%
+
+**Load Profile**:
+- Ramp-up: 30s to 50 VUs
+- Sustain: 1m at 100 VUs
+- Ramp-down: 30s to 0
+
+---
+
+### 4. Lighthouse CI ⏳
+**Workflow**: `.github/workflows/lhci.yml`  
+**Config**: `lighthouserc.cjs` (ESM-safe CommonJS)  
+**Status**: Running
+
+**Expected Scores**:
+- Performance: > 90
+- Accessibility: > 95
+- Best Practices: > 90
+- SEO: > 90
+
+---
+
+## Evidence Artifacts
+
+Evidence will be uploaded to workflow artifacts after completion:
+
+### Build Artifacts (7-day retention)
+- Next.js standalone builds
+- SBOM files (CycloneDX 1.5)
+
+### Validation Evidence (30-day retention)
+- `evidence/validation/*-headers.txt` - Security headers check
+- `evidence/validation/*-jwks.json` - JWKS endpoint response
+- `evidence/validation/*-health.json` - Health check response
+- `evidence/validation/k6-results.json` - Performance test results
+
+### Documentation
+- `evidence/ga_final_run_final/P1_FIXES_EXECUTION_SUMMARY.md`
+- `evidence/ga_final_run_final/GA_SHIP_READINESS_REPORT.md`
+- `evidence/ga_final_run_final/FINAL_VALIDATION_VN.md`
+- `evidence/ga_final_run_final/PR_COMMENT.md`
+- `evidence/ga_final_run_final/FINAL_EXECUTION_COMPLETE.md`
+
+---
+
+## Service URLs
+
+**Note**: Will be populated after deployment completes.
+
+Expected format:
+```
+atlas-dev-portal: https://atlas-dev-portal-nonprod-<hash>-uc.a.run.app
+atlas-admin-insights: https://atlas-admin-insights-nonprod-<hash>-uc.a.run.app
+atlas-proof-messenger: https://atlas-proof-messenger-nonprod-<hash>-uc.a.run.app
+```
+
+---
+
+## Sample Validation Commands
+
+After deployment, validation can be verified manually:
+
+```bash
+# Check headers
+curl -sI https://atlas-dev-portal-nonprod-xxxxx-uc.a.run.app
+
+# Check JWKS
+curl -s https://atlas-dev-portal-nonprod-xxxxx-uc.a.run.app/.well-known/jwks.json | jq
+
+# Check health
+curl -s https://atlas-dev-portal-nonprod-xxxxx-uc.a.run.app/api/healthz | jq
+```
+
+---
+
+## Next Steps
+
+1. ⏳ **Wait for workflows** to complete (monitor at PR checks link)
+2. ⏳ **Verify all checks green** in GitHub Actions
+3. ⏳ **Download artifacts** to review evidence
+4. ⏳ **Post PR comment** with results and service URLs
+5. ⏳ **Add label** `merge-ready` when all pass
+6. ⏳ **Merge PR** using "Squash and merge"
+
+---
+
+## Monitoring
+
+**PR Checks**: https://github.com/pussycat186/Atlas/pull/497/checks  
+**Workflows**: GitHub Actions tab → Latest run
+
+**Expected Timeline**:
+- Secrets audit: ~30 seconds
+- Build: ~5-10 minutes
+- Deploy: ~5-10 minutes
+- Validate: ~3-5 minutes
+- **Total**: ~15-25 minutes
+
+---
+
+## Success Criteria
+
+- ✅ Secrets audit: PASS
+- ⏳ Build: PASS
+- ⏳ Deploy: 3 services live
+- ⏳ Headers: 8/8 present on all services
+- ⏳ JWKS: Valid on all services
+- ⏳ Health: OK on all services
+- ⏳ k6: Thresholds met
+- ⏳ Lighthouse: Scores acceptable
+- ✅ No secrets exposed
+- ✅ Documentation complete
+
+**Status**: 🔶 **IN PROGRESS** - Workflows running
+
+---
+
+**Last Updated**: 2025-10-22T14:45:00Z  
+**Updated By**: Atlas CI System

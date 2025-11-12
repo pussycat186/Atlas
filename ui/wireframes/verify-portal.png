@@ -1,0 +1,14 @@
+Verify Portal Wireframe Placeholder
+
+[Image dimensions: 1024x768px - Desktop viewport]
+
+This is a placeholder for the verify portal wireframe PNG.
+In production, this would show:
+
+1. Trust Portal header
+2. Receipt input field with QR scan button
+3. Filter controls (kid, epoch)
+4. Results grid with verification status
+5. Detailed receipt information cards
+
+File size target: < 500KB as per spec.

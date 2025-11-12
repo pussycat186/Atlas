@@ -1,0 +1,450 @@
+openapi: 3.1.0
+info:
+  title: Atlas Messenger API
+  version: 1.0.0
+  description: |
+    API cho Atlas Messenger - nền tảng nhắn tin E2EE với receipts ký số và DPoP.
+    
+    Tất cả endpoints yêu cầu DPoP proof trong header `DPoP`.
+    
+    **Tính năng chính**:
+    - E2EE messaging (Double Ratchet, MLS)
+    - HTTP Message Signatures (RFC 9421)
+    - DPoP (RFC 9449)
+    - JWKS rotation
+    - Receipt verification
+  contact:
+    name: Atlas Security Team
+    email: security@atlas.example
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.atlas.example
+    description: Production server
+  - url: https://staging-api.atlas.example
+    description: Staging server
+  - url: http://localhost:8080
+    description: Local development
+
+security:
+  - dpopAuth: []
+
+tags:
+  - name: messages
+    description: Gửi và nhận tin nhắn E2EE
+  - name: receipts
+    description: Quản lý và xác thực receipts
+  - name: verification
+    description: Xác thực chữ ký và JWKS
+  - name: dpop
+    description: DPoP nonce management
+
+paths:
+  /messages:
+    post:
+      tags:
+        - messages
+      summary: Gửi tin nhắn E2EE
+      description: |
+        Gửi tin nhắn đã mã hóa đầu cuối. Tin nhắn phải được mã hóa bằng 
+        Double Ratchet (1-1) hoặc MLS (nhóm) trước khi gửi.
+      operationId: sendMessage
+      security:
+        - dpopAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Envelope'
+            examples:
+              doubleRatchetMessage:
+                summary: Double Ratchet message (1-1)
+                value:
+                  msg_id: "msg_20251021_abc123"
+                  conv_id: "conv_xyz789"
+                  sender_id: "user_alice"
+                  epoch: 0
+                  ciphertext: "base64_encrypted_content"
+                  aad: "base64_additional_auth_data"
+                  ts: 1729533600
+      responses:
+        '201':
+          description: Tin nhắn đã được gửi thành công
+          headers:
+            X-Receipt-ID:
+              description: ID của receipt được tạo
+              schema:
+                type: string
+                example: "receipt_abc123xyz"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: string
+                  receipt_id:
+                    type: string
+                  delivered_at:
+                    type: integer
+                    format: int64
+                    description: Unix timestamp
+                required:
+                  - message_id
+                  - receipt_id
+                  - delivered_at
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /receipts/{receiptId}:
+    get:
+      tags:
+        - receipts
+      summary: Lấy receipt theo ID
+      description: Trả về receipt đầy đủ với chữ ký để xác thực
+      operationId: getReceipt
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "receipt_abc123xyz"
+      responses:
+        '200':
+          description: Receipt được tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /verify:
+    post:
+      tags:
+        - verification
+      summary: Xác thực receipt hoặc chữ ký
+      description: |
+        Xác thực receipt bằng cách kiểm tra chữ ký HTTP Message Signature
+        với JWKS công khai.
+      operationId: verifyReceipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                receipt_id:
+                  type: string
+                  description: ID của receipt cần xác thực
+                signature:
+                  type: string
+                  description: Chữ ký (base64)
+                signature_input:
+                  type: string
+                  description: Signature-Input header value
+              required:
+                - receipt_id
+      responses:
+        '200':
+          description: Kết quả xác thực
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  kid:
+                    type: string
+                    description: Key ID đã dùng để ký
+                  algorithm:
+                    type: string
+                  verified_at:
+                    type: integer
+                    format: int64
+                  details:
+                    type: string
+                    description: Chi tiết xác thực (nếu thất bại)
+                required:
+                  - valid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /.well-known/jwks.json:
+    get:
+      tags:
+        - verification
+      summary: Lấy JWKS công khai
+      description: |
+        Trả về JSON Web Key Set công khai dùng để xác thực chữ ký.
+        Keys được rotation định kỳ (mặc định 30 ngày).
+      operationId: getJWKS
+      security: []
+      responses:
+        '200':
+          description: JWKS công khai
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JWKS'
+              examples:
+                jwks:
+                  summary: JWKS với 2 keys
+                  value:
+                    keys:
+                      - kid: "key-2025-01"
+                        kty: "OKP"
+                        alg: "EdDSA"
+                        use: "sig"
+                        crv: "Ed25519"
+                        x: "base64_public_key"
+                      - kid: "key-2024-12"
+                        kty: "OKP"
+                        alg: "EdDSA"
+                        use: "sig"
+                        crv: "Ed25519"
+                        x: "base64_public_key_old"
+
+  /dpop/nonce:
+    post:
+      tags:
+        - dpop
+      summary: Lấy DPoP nonce mới
+      description: Server-issued nonce để chống replay DPoP proofs
+      operationId: getDPoPNonce
+      security: []
+      responses:
+        '200':
+          description: Nonce mới
+          headers:
+            DPoP-Nonce:
+              description: Server-issued nonce
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nonce:
+                    type: string
+                  expires_in:
+                    type: integer
+                    description: TTL trong giây
+                required:
+                  - nonce
+                  - expires_in
+
+components:
+  schemas:
+    Envelope:
+      type: object
+      description: Envelope chứa tin nhắn E2EE
+      properties:
+        msg_id:
+          type: string
+          description: Message ID duy nhất
+        conv_id:
+          type: string
+          description: Conversation ID
+        sender_id:
+          type: string
+          description: User ID của người gửi
+        epoch:
+          type: integer
+          description: MLS epoch (cho group chat)
+          minimum: 0
+        ciphertext:
+          type: string
+          description: Nội dung đã mã hóa (base64)
+        aad:
+          type: string
+          description: Additional Authenticated Data (base64)
+        ts:
+          type: integer
+          format: int64
+          description: Unix timestamp
+      required:
+        - msg_id
+        - conv_id
+        - sender_id
+        - epoch
+        - ciphertext
+        - aad
+        - ts
+
+    Receipt:
+      type: object
+      description: Receipt ký số cho tin nhắn
+      properties:
+        receipt_id:
+          type: string
+        message_id:
+          type: string
+        signature:
+          type: string
+          description: Chữ ký HTTP Message Signature (RFC 9421)
+        signature_input:
+          type: string
+          description: Signature-Input header
+        kid:
+          type: string
+          description: Key ID đã dùng để ký
+        algorithm:
+          type: string
+          enum:
+            - ed25519
+            - ecdsa-p256-sha256
+            - rsa-pss-sha512
+        created_at:
+          type: integer
+          format: int64
+        pqc:
+          type: boolean
+          description: Có sử dụng Post-Quantum Cryptography không
+          default: false
+      required:
+        - receipt_id
+        - message_id
+        - signature
+        - signature_input
+        - kid
+        - algorithm
+        - created_at
+
+    JWKS:
+      type: object
+      description: JSON Web Key Set (RFC 7517)
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            properties:
+              kid:
+                type: string
+                description: Key ID
+              kty:
+                type: string
+                description: Key Type (OKP, EC, RSA)
+              alg:
+                type: string
+                description: Algorithm (EdDSA, ES256, RS256, etc.)
+              use:
+                type: string
+                description: Public key use (sig, enc)
+              crv:
+                type: string
+                description: Curve name (Ed25519, P-256, etc.)
+              x:
+                type: string
+                description: X coordinate (base64url)
+              y:
+                type: string
+                description: Y coordinate (base64url, for EC keys)
+            required:
+              - kid
+              - kty
+              - alg
+              - use
+      required:
+        - keys
+
+    Error:
+      type: object
+      description: Cấu trúc lỗi chuẩn
+      properties:
+        error:
+          type: string
+          description: Mã lỗi machine-readable
+        error_description:
+          type: string
+          description: Mô tả lỗi chi tiết
+        error_uri:
+          type: string
+          format: uri
+          description: URI tài liệu về lỗi
+        trace_id:
+          type: string
+          description: Trace ID cho debugging
+      required:
+        - error
+        - error_description
+
+  responses:
+    BadRequest:
+      description: Request không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "invalid_request"
+            error_description: "Missing required field: ciphertext"
+            trace_id: "trace_abc123"
+
+    Unauthorized:
+      description: Không được phép - DPoP proof không hợp lệ hoặc thiếu
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "invalid_dpop_proof"
+            error_description: "DPoP proof signature verification failed"
+
+    NotFound:
+      description: Resource không tồn tại
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "not_found"
+            error_description: "Receipt with ID receipt_abc123 not found"
+
+    RateLimited:
+      description: Vượt quá rate limit
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Số request tối đa mỗi cửa sổ thời gian
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Số request còn lại
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+            format: int64
+          description: Unix timestamp khi rate limit reset
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "rate_limited"
+            error_description: "Too many requests. Please retry after 60 seconds."
+
+  securitySchemes:
+    dpopAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: DPoP
+      description: |
+        DPoP-bound access token theo RFC 9449.
+        
+        **Headers required**:
+        - `Authorization: DPoP <access_token>`
+        - `DPoP: <dpop_proof_jwt>`
