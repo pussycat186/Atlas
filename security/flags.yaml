@@ -1,4 +1,4 @@
-# ATLAS Security Flags - Updated 2025-11-14T16:28:55+00:00
+# ATLAS Security Flags - Updated 2025-11-14T20:25:23+00:00
 security_flags:
   CSP_STRICT:
     enabled: true
