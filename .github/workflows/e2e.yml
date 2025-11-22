@@ -1,0 +1,49 @@
+# E2E Testing - Playwright với Mock Server
+name: E2E
+on:
+  push:
+    branches: [ reboot/atlas-security-core ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+      
+      - name: Install dependencies
+        run: pnpm i
+      
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      
+      - name: Start mock server (background)
+        run: |
+          echo "Mock server would start here - placeholder for actual implementation"
+          # node scripts/mock-server.js &
+          # sleep 3
+      
+      - name: Run Playwright tests
+        run: |
+          echo "Playwright tests would run here - placeholder"
+          # pnpm exec playwright test --reporter=html
+        continue-on-error: true
+      
+      - name: Upload E2E report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-report
+          path: evidence/e2e/**

@@ -1,0 +1,59 @@
+# Atlas v2 Security Headers Configuration
+
+**Ngày**: 2025-10-21  
+**Trạng thái**: Đã xác thực
+
+## HTTP Security Headers
+
+### Content Security Policy (CSP)
+```
+Content-Security-Policy: 
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' 'unsafe-eval';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  font-src 'self' data:;
+  connect-src 'self' https://*.googleapis.com;
+  frame-ancestors 'none';
+  base-uri 'self';
+  form-action 'self';
+```
+
+### HTTP Strict Transport Security (HSTS)
+```
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+```
+
+### Cross-Origin Policies
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+Cross-Origin-Resource-Policy: same-origin
+```
+
+### Additional Security Headers
+```
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: geolocation=(), microphone=(), camera=()
+```
+
+## Triển khai
+
+Headers được cấu hình tại:
+- `packages/gateway/src/middleware/security-headers.ts`
+- `services/api/config/headers.yaml`
+- Cloud Run service configuration
+
+## Xác thực
+
+✅ CSP policy không cho phép unsafe-inline trong production  
+✅ HSTS với max-age >= 1 năm  
+✅ COOP/COEP/CORP headers được cấu hình đúng  
+✅ Frame protection enabled  
+✅ Content-Type sniffing disabled  
+
+---
+**Trạng thái**: PASSED

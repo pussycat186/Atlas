@@ -1,0 +1,4 @@
+
+> @atlas/ui@0.1.0 build D:\Atlas\packages\ui
+> npx tsc -p tsconfig.json
+
