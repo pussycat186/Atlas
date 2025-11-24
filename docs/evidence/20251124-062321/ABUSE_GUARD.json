@@ -1,0 +1,23 @@
+{
+  "timestamp": "20251124-062321",
+  "synthetic_tests": {
+    "rate_limits": {
+      "status": "FAILED",
+      "burst_protection": "active"
+    },
+    "media_validation": {
+      "status": "FAILED",
+      "max_file_size_mb": 10
+    },
+    "suspicious_content": {
+      "status": "FAILED",
+      "patterns_checked": ["bit.ly", "crypto scams", "phishing"]
+    }
+  },
+  "waf": {
+    "provider": "cloudflare",
+    "status": "template_only",
+    "rules_snapshot": "infra/cloudflare/rules.json"
+  },
+  "policy_config": "services/risk-guard/policy.json"
+}
