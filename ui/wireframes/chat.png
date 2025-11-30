@@ -1,0 +1,15 @@
+Chat View Wireframe Placeholder
+
+[Image dimensions: 375x812px - Mobile viewport]
+
+This is a placeholder for the chat view wireframe PNG.
+In production, this would show:
+
+1. Header with conversation name and E2EE indicator
+2. Messages area with bubbles
+3. Lock badges on messages for verification
+4. Epoch indicators
+5. Input field at bottom
+6. Send button
+
+File size target: < 500KB as per spec.

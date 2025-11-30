@@ -1,0 +1,77 @@
+# GA CI/Preview Recovery - Principal Release Engineer Log
+
+**Start Time**: 2025-10-22T17:45:00Z
+**Branch**: ga/merge-security-core-20251022-1618
+**Initial HEAD**: 43ecaaf90b6123f156d6424b5b5c99693a9f0540
+**PR**: https://github.com/pussycat186/Atlas/pull/497
+
+## OBJECTIVE
+Make ALL PR checks green and ALL Vercel previews succeed.
+
+## A) PREP ✅
+- Fetched all remotes
+- Checked out ga/merge-security-core-20251022-1618
+- Current HEAD: 43ecaaf
+
+## B) CI WORKFLOW HARDENING
+Starting comprehensive workflow fixes...
+
+### CI Workflows Fixed
+✅ `.github/workflows/ci-build-test.yml`
+- Removed pnpm/action-setup (was using 8.15.0)
+- Added corepack enable + prepare pnpm@8.15.0
+- Added version verification: `pnpm -v | grep '^8\.15\.0$'`
+- Kept upload-artifact@v4 (already updated)
+
+✅ `.github/workflows/ci-cleanup-verify.yml`
+- Updated from pnpm 9.0.0 to corepack-managed 8.15.0
+- Added corepack enable + prepare pnpm@8.15.0
+- Added version verification
+
+### Apps Fixed - All 8 Security Headers
+✅ `apps/dev-portal/next.config.js`
+- Added all 8 required security headers
+- HSTS: max-age=63072000 with preload
+- CSP: strict directives (base-uri 'none', frame-ancestors 'none')
+- Added X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- Added COOP, COEP, CORP
+
+✅ `apps/admin-insights/next.config.js`
+- Same 8 security headers
+
+✅ `apps/proof-messenger/next.config.js`
+- Fixed syntax error (removed stray `experimental:`)
+- Added all 8 security headers
+
+### JWKS Endpoints Created (RFC 7517)
+✅ `apps/dev-portal/app/.well-known/jwks.json/route.ts`
+✅ `apps/admin-insights/app/.well-known/jwks.json/route.ts`
+✅ `apps/proof-messenger/app/.well-known/jwks.json/route.ts`
+
+Each JWKS endpoint includes:
+- kid (key ID)
+- kty (RSA)
+- alg (RS256)
+- use (sig)
+- n (modulus)
+- e (exponent)
+- Proper caching (max-age=3600)
+- CORS enabled
+
+### Healthz Endpoints Created
+✅ `apps/dev-portal/app/api/healthz/route.ts`
+✅ `apps/admin-insights/app/api/healthz/route.ts`
+✅ `apps/proof-messenger/app/api/healthz/route.ts`
+
+Each returns: `{ok: true, timestamp, service}`
+
+### Commit & Push
+✅ Committed: 6dfe38b "fix(ci,vercel): enforce pnpm 8.15.0, add 8 security headers, JWKS + healthz endpoints"
+✅ Pushed to origin/ga/merge-security-core-20251022-1618
+
+## C) CI RE-RUN TRIGGERED
+⏳ GitHub Actions automatically triggered on push
+⏳ Vercel previews deploying with new headers and JWKS
+
+## D) VERIFICATION STATUS
+Awaiting CI completion and Vercel preview deployment...
