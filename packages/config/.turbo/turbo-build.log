@@ -1,0 +1,4 @@
+
+> @atlas/config@0.0.0 build D:\Atlas\packages\config
+> npx tsc -p tsconfig.node.json && npx tsc -p tsconfig.browser.json
+
