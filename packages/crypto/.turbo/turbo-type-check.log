@@ -1,0 +1,14 @@
+
+> @atlas/crypto@0.1.0 type-check D:\Atlas\packages\crypto
+> tsc --noEmit
+
+error TS2688: Cannot find type definition file for 'hapi__catbox'.
+  The file is in the program because:
+    Entry point for implicit type library 'hapi__catbox'
+error TS2688: Cannot find type definition file for 'hapi__shot'.
+  The file is in the program because:
+    Entry point for implicit type library 'hapi__shot'
+error TS2688: Cannot find type definition file for 'minimatch'.
+  The file is in the program because:
+    Entry point for implicit type library 'minimatch'
+ ELIFECYCLE  Command failed with exit code 2.

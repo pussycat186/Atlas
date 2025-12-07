@@ -1,0 +1,30 @@
+# Conftest Configuration for Atlas Security Policies
+# Usage: conftest test --policy policies/ <input-file>
+
+[default]
+# All policies in policies/ directory
+policy = ["policies"]
+
+# Output format
+output = "json"
+
+# Fail on warnings (strict mode)
+fail-on-warn = false
+
+# Trace execution for debugging
+trace = false
+
+# Namespaces to check
+namespace = [
+  "atlas.security.headers",
+  "atlas.security.secrets",
+  "atlas.security.sbom",
+  "atlas.security.provenance"
+]
+
+# Data files (optional)
+# data = ["data"]
+
+[test]
+# Run tests with conftest verify
+policy = ["policies"]

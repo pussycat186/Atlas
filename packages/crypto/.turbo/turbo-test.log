@@ -1,0 +1,17 @@
+
+> @atlas/crypto@0.1.0 test D:\Atlas\packages\crypto
+> vitest run
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mD:/Atlas/packages/crypto[39m
+
+ [32m✓[39m src/__tests__/dpop.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/__tests__/mls.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/__tests__/http-signature.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 125[2mms[22m[39m
+ [32m✓[39m src/__tests__/double-ratchet.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[33m 542[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m25 passed[39m[22m[90m (25)[39m
+[2m   Start at [22m 15:24:58
+[2m   Duration [22m 1.61s[2m (transform 342ms, setup 1ms, collect 834ms, tests 717ms, environment 1ms, prepare 1.27s)[22m
+

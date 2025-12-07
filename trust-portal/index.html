@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlas Trust Portal - Minh bạch và Kiểm chứng</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>🔐 Atlas Trust Portal</h1>
+      <p>Minh bạch, Kiểm chứng, Tin cậy</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- JWKS Section -->
+    <section class="card">
+      <h2>🔑 JWKS (JSON Web Key Set)</h2>
+      <p>Khóa công khai để xác thực chữ ký receipts</p>
+      <a href="/.well-known/jwks.json" class="btn" target="_blank">Xem JWKS →</a>
+    </section>
+
+    <!-- SBOM Section -->
+    <section class="card">
+      <h2>📦 SBOM (Software Bill of Materials)</h2>
+      <p>Danh sách đầy đủ các thành phần và dependencies</p>
+      <ul>
+        <li><a href="/sbom/atlas-web.json">atlas-web-sbom.json (CycloneDX)</a></li>
+        <li><a href="/sbom/atlas-gateway.json">atlas-gateway-sbom.json</a></li>
+      </ul>
+    </section>
+
+    <!-- SLSA Provenance Section -->
+    <section class="card">
+      <h2>🛡️ SLSA Provenance</h2>
+      <p>Chứng chỉ nguồn gốc build (SLSA Level 3)</p>
+      <ul>
+        <li><a href="/provenance/slsa-provenance.json">Latest Release</a></li>
+      </ul>
+    </section>
+
+    <!-- Cosign Verification Section -->
+    <section class="card">
+      <h2>✍️ Cosign Verification</h2>
+      <p>Xác thực chữ ký container images</p>
+      <pre><code>cosign verify \
+  --certificate-identity-regexp=".*@atlas\.example" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+  gcr.io/atlas-project/chat-delivery:latest</code></pre>
+    </section>
+
+    <!-- CI/CD Gates Section -->
+    <section class="card">
+      <h2>✅ CI/CD Gates Results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Gate</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Last Run</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lighthouse CI</td>
+            <td><span class="badge success">PASS</span></td>
+            <td>0.95</td>
+            <td>2025-10-21 10:30</td>
+          </tr>
+          <tr>
+            <td>k6 Performance</td>
+            <td><span class="badge success">PASS</span></td>
+            <td>p95: 142ms</td>
+            <td>2025-10-21 10:25</td>
+          </tr>
+          <tr>
+            <td>Playwright E2E</td>
+            <td><span class="badge success">PASS</span></td>
+            <td>100%</td>
+            <td>2025-10-21 10:20</td>
+          </tr>
+          <tr>
+            <td>Headers Check</td>
+            <td><span class="badge success">PASS</span></td>
+            <td>100%</td>
+            <td>2025-10-21 10:15</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SLO Section -->
+    <section class="card">
+      <h2>📊 SLO (Service Level Objectives)</h2>
+      <div class="slo-grid">
+        <div class="slo-item">
+          <div class="slo-value">99.99%</div>
+          <div class="slo-label">Uptime (30 days)</div>
+        </div>
+        <div class="slo-item">
+          <div class="slo-value">142ms</div>
+          <div class="slo-label">p95 Latency (VN)</div>
+        </div>
+        <div class="slo-item">
+          <div class="slo-value">0.12%</div>
+          <div class="slo-label">Error Rate</div>
+        </div>
+        <div class="slo-item">
+          <div class="slo-value">&lt;5s</div>
+          <div class="slo-label">Receipt Verify</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sample Receipts Section -->
+    <section class="card">
+      <h2>📝 Sample Receipts</h2>
+      <p>Mẫu receipts để testing và integration</p>
+      <a href="/samples/receipt-sample.json" class="btn">Download Sample →</a>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2025 Atlas Messenger - Built with transparency and trust</p>
+      <p><a href="https://github.com/pussycat186/Atlas">GitHub</a> | <a href="/docs">Docs</a> | <a href="/api">API</a></p>
+    </div>
+  </footer>
+</body>
+</html>
