@@ -28,7 +28,7 @@ permissions:
 
 env:
   NODE_VERSION: "20"
-  PNPM_VERSION: "9"
+  PNPM_VERSION: "8.15.0"
   EVIDENCE_BASE: "docs/evidence"
   MAX_REPAIR_ATTEMPTS: "5"
 

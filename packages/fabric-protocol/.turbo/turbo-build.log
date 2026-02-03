@@ -1,0 +1,4 @@
+
+> @atlas/fabric-protocol@0.1.0 build D:\Atlas\packages\fabric-protocol
+> npx tsc -b .
+

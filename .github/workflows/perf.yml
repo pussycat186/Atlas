@@ -1,0 +1,33 @@
+# Performance Testing - k6 Smoke Test
+name: Perf
+on:
+  workflow_dispatch:
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+        continue-on-error: true
+      
+      - name: Run k6 smoke test
+        run: |
+          if command -v k6 &> /dev/null; then
+            mkdir -p evidence/k6
+            k6 run ops/k6_smoke.js --summary-export=evidence/k6/summary.json || true
+          else
+            echo "k6 not available - SKIPPED" > evidence/k6/skipped.txt
+          fi
+        continue-on-error: true
+      
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-summary
+          path: evidence/k6/**

@@ -45,7 +45,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   NODE_VERSION: '20'
-  PNPM_VERSION: '9'
+  PNPM_VERSION: '8.15.0'
 
 jobs:
   # Pre-deployment Security Validation

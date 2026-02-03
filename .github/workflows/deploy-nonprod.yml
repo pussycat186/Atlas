@@ -1,0 +1,55 @@
+# Deploy to GCP Cloud Run (Nonprod)
+name: Deploy Nonprod
+on:
+  workflow_dispatch:
+  push:
+    branches: [ reboot/atlas-security-core ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ secrets.GCP_REGION }}
+      ARTIFACT_REPO: ${{ secrets.ARTIFACT_REPO }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_ID_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+      
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+      
+      - name: Configure gcloud project
+        run: gcloud config set project "$GCP_PROJECT_ID"
+      
+      - name: Verify authentication (no secret values printed)
+        run: |
+          echo "✅ Authenticated to GCP"
+          echo "📍 Project: ${GCP_PROJECT_ID}"
+          echo "🌍 Region: ${GCP_REGION}"
+          echo "📦 Artifact Registry: ${ARTIFACT_REPO}"
+      
+      - name: Cloud Run deployment plan (canary)
+        run: |
+          echo "🚀 Would deploy Cloud Run services:"
+          echo "  - atlas-gateway (canary 10%)"
+          echo "  - atlas-api (canary 10%)"
+          echo "  - Region: ${GCP_REGION}"
+          echo "  - Image: ${ARTIFACT_REPO}/atlas-security-core:${GITHUB_SHA::8}"
+          echo ""
+          echo "Actual deployment command (dry-run):"
+          echo "gcloud run deploy atlas-gateway \\"
+          echo "  --image=${ARTIFACT_REPO}/atlas-security-core:${GITHUB_SHA::8} \\"
+          echo "  --region=${GCP_REGION} \\"
+          echo "  --traffic=PREV=90,CURRENT=10"

@@ -1,0 +1,44 @@
+# SBOM Generation & Container Signing
+name: SBOM & Sign
+on:
+  push:
+    branches: [ reboot/atlas-security-core ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sbom_sign:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: evidence/sbom.json
+      
+      - name: Build container image (placeholder)
+        run: |
+          echo "Container build would happen here"
+          echo "Image: atlas-security-core:${GITHUB_SHA::8}"
+      
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+      
+      - name: Cosign keyless sign (dry-run)
+        run: |
+          echo "Cosign keyless signing would happen here"
+          echo "cosign sign --yes <image-digest>"
+          echo "Note: Actual signing requires built image"
+      
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: evidence/sbom.json

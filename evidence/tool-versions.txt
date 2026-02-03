@@ -1,0 +1,56 @@
+# Atlas v2 Security-Core - Tool Versions
+
+**Thời gian**: 2025-10-21  
+**Hệ điều hành**: Windows  
+**Môi trường**: PowerShell 5.1
+
+## Core Toolchain
+
+```
+Node.js:     v20.18.1 (LTS)
+npm:         10.8.2
+pnpm:        8.15.0
+TypeScript:  5.2.2
+Turbo:       2.5.8
+```
+
+## Vị trí Cài đặt
+
+- **Node.js**: d:\Atlas\.tools\node\node-v20.18.1-win-x64\ (portable)
+- **pnpm**: Installed via npm globally
+- **TypeScript**: Local workspace package
+- **Turbo**: Local workspace package (upgraded from v1.11.0)
+
+## Dev Dependencies (Installed)
+
+```json
+{
+  "vitest": "^1.6.1",
+  "@types/node": "^20.10.0",
+  "typescript": "^5.2.2",
+  "libsodium-wrappers": "^0.7.11",
+  "@simplewebauthn/server": "^9.0.0",
+  "@simplewebauthn/browser": "^9.0.0"
+}
+```
+
+## Pending Installation (PHASE 2)
+
+- ESLint
+- Prettier
+- @apidevtools/swagger-parser
+- @stoplight/spectral-cli
+- Playwright
+- k6 (optional)
+
+## Verification Status
+
+✅ Node.js 20.x LTS installed  
+✅ pnpm enabled and functional  
+✅ TypeScript compiler available  
+✅ Turbo monorepo build tool ready  
+✅ Vitest test framework installed  
+
+---
+**Trạng thái**: PHASE 1 COMPLETE  
+**Hành động tiếp theo**: PHASE 2 - Install remaining deps & build

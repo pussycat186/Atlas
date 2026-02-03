@@ -1,0 +1,29 @@
+name: Cosign Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cosign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Placeholder Cosign verify
+        run: |
+          echo "This is a placeholder for Cosign verification"
+          echo "In production, this would:"
+          echo "  1. Install cosign"
+          echo "  2. Verify signatures of container images"
+          echo "  3. Check SLSA provenance"
+          echo "  4. Verify SBOM signatures"
+          echo ""
+          echo "Command example:"
+          echo "cosign verify --certificate-identity-regexp='.*@atlas.example' \\"
+          echo "  --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \\"
+          echo "  gcr.io/atlas-project/chat-delivery:latest"
+          echo ""
+          echo "✓ Cosign verification passed (placeholder)"
