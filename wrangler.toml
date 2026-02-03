@@ -1,4 +1,4 @@
-name = "atlas-rate-limit-proxy"
+name = "atlas-gateway"
 main = "worker.js"
 workers_dev = true
 compatibility_date = "2025-10-01"
